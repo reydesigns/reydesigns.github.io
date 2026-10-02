@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toy Restyle Comparison</title>
+<style>
+  :root { --bg: #f6f3ec; --ink: #2a1512; --muted: #7a6a64; --card: #fff; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; padding: 32px 16px; }
+  h1 { font-size: 22px; margin: 0 auto 4px; max-width: 1200px; }
+  p.lede { color: var(--muted); margin: 0 auto 28px; max-width: 1200px; }
+  .ref { max-width: 1200px; margin: 0 auto 32px; display: flex; gap: 16px; align-items: center; }
+  .ref img { width: 180px; border-radius: 12px; }
+  .grid { max-width: 1200px; margin: 0 auto; display: grid; gap: 28px; }
+  .model { background: var(--card); border-radius: 16px; padding: 16px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; }
+  figure img { width: 100%; display: block; border-radius: 10px; background: var(--bg); }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+  .name { font-weight: 600; text-align: center; margin-top: 12px; }
+</style>
+</head>
+<body>
+  <h1>Designer-toy restyle</h1>
+  <p class="lede">Before and after for each landing-page drawing. Regenerate with <code>node scripts/model-shots.mjs before|after</code> (dev server running).</p>
+  <div class="ref">
+    <img src="../Assets/experiments/3D%20model%20example/3D%20model%20example.png" alt="Style reference">
+    <span>Style reference</span>
+  </div>
+  <div class="grid">
+    <div class="model">
+      <div class="pair">
+        <figure><img src="renders/self-portrait-before.png" alt="Self-portrait before"><figcaption>Before</figcaption></figure>
+        <figure><img src="renders/self-portrait-after.png" alt="Self-portrait after"><figcaption>After</figcaption></figure>
+      </div>
+      <div class="name">self-portrait</div>
+    </div>
+    <div class="model">
+      <div class="pair">
+        <figure><img src="renders/strawberry-cat-before.png" alt="Strawberry cat before"><figcaption>Before</figcaption></figure>
+        <figure><img src="renders/strawberry-cat-after.png" alt="Strawberry cat after"><figcaption>After</figcaption></figure>
+      </div>
+      <div class="name">strawberry-cat</div>
+    </div>
+  </div>
+</body>
+</html>

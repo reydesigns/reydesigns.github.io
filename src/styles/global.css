@@ -1,0 +1,327 @@
+@import 'tailwindcss';
+@import './fonts.css';
+@import './tokens.css';
+
+/* ---------------------------------------------------------------------------
+   Global layout
+--------------------------------------------------------------------------- */
+
+html {
+  /* Lenis drives scrolling; this is the no-JS / reduced-motion fallback. */
+  scroll-behavior: smooth;
+  background: var(--color-bg);
+  /* The scroll lock during the loader sets `overflow: hidden` on <html>. On a
+     platform with classic (space-taking) scrollbars that would reflow the page
+     mid-animation, so reserve the gutter up front. No-op where scrollbars
+     overlay, which is every platform the comps were designed on. */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-brand);
+  font-size: var(--text-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* The burgundy dot (CustomCursor.jsx) is the only cursor on a mouse. The
+   class is set by that component once it is running, and the !important beats
+   every element-level cursor (pointer, grab on the drawings, …). */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+
+/* Lenis needs the native smooth-scroll off while it is running. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Kumbh Sans has no italic cut. The comps are slanted because Figma
+   synthesised an oblique, so reproduce that rather than letting the browser
+   pick its own faux-italic angle. */
+.font-oblique {
+  transform: skewX(-11deg);
+  transform-origin: 0 100%;
+  display: inline-block;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+/* Pixelta has no quote glyphs — keep quotes in the brand font so they don't
+   silently fall back to whatever the OS picks. */
+.quote-mark {
+  font-family: var(--font-brand);
+}
+
+/* ---------------------------------------------------------------------------
+   Stacking: sparkles sit behind everything and never take clicks.
+--------------------------------------------------------------------------- */
+.layer-sparkles {
+  z-index: 0;
+}
+.layer-content {
+  position: relative;
+  z-index: 1;
+}
+.layer-chrome {
+  position: relative;
+  z-index: 10;
+}
+
+/* ---------------------------------------------------------------------------
+   The nav pill's frosted glass. Translucent white over a blurred, slightly
+   saturated backdrop; a light inner edge on top for the glass rim; and two
+   shadows tinted with the ink colour — a tight one for contact, a wide one for
+   lift. Falls back to a near-opaque fill where backdrop-filter is unsupported.
+--------------------------------------------------------------------------- */
+.nav-glass {
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-surface) 90%, transparent),
+    0 1px 3px color-mix(in srgb, var(--color-ink) 10%, transparent),
+    0 12px 32px -6px color-mix(in srgb, var(--color-ink) 22%, transparent);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .nav-glass {
+    background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Loader wordmark: hidden on the hero, eases in as the take-over glide brings
+   its screen up (see LoaderStage). The delay lets the glide get going first.
+--------------------------------------------------------------------------- */
+.loader-mark {
+  opacity: 0;
+  transform: translateY(1.25rem) scale(0.94);
+  transition:
+    opacity 650ms var(--ease-brand) 120ms,
+    transform 900ms var(--ease-brand) 120ms;
+}
+.loader-mark[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The landing headline's typing caret: solid while it types, then a steady
+   on/off blink once the line is done.
+--------------------------------------------------------------------------- */
+.type-caret--blink {
+  animation: type-caret-blink 1.05s steps(1, end) infinite;
+}
+@keyframes type-caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Speech bubbles on the landing drawings (SpeechBubble.jsx). The card surface
+   and ink, with a rotated-square tail in the same fill pointing at the
+   speaker; drop-shadow rather than box-shadow so the tail is shaded too.
+
+   Placement is the `translate` property (Tailwind's translate utilities), so
+   `transform` is free for the pop: it scales up from the tail's tip with a
+   small overshoot, and drops away quicker than it came. Reduced motion
+   collapses both transitions in the override at the bottom of this file.
+--------------------------------------------------------------------------- */
+.speech-bubble {
+  --tail: 0.85em;
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 0.6em 1.05em;
+  border-radius: 1.15em;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-brand);
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: 1.2;
+  filter: drop-shadow(0 1px 1.5px color-mix(in srgb, var(--color-ink) 16%, transparent))
+    drop-shadow(0 10px 18px color-mix(in srgb, var(--color-ink) 12%, transparent));
+  opacity: 0;
+  transform: scale(0.55);
+  transition:
+    opacity 140ms ease-in,
+    transform 160ms ease-in;
+}
+.speech-bubble[data-open] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 120ms ease-out,
+    transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  width: var(--tail);
+  height: var(--tail);
+  background: inherit;
+}
+/* Above the speaker, tail down. */
+.speech-bubble--top {
+  transform-origin: 50% calc(100% + var(--tail) * 0.6);
+}
+.speech-bubble--top::after {
+  left: 50%;
+  bottom: calc(var(--tail) * -0.42);
+  translate: -50% 0;
+  rotate: 45deg;
+  border-bottom-right-radius: 0.2em;
+}
+/* Beside the speaker, tail left. */
+.speech-bubble--right {
+  transform-origin: calc(var(--tail) * -0.6) 50%;
+}
+.speech-bubble--right::after {
+  top: 50%;
+  left: calc(var(--tail) * -0.42);
+  translate: 0 -50%;
+  rotate: 45deg;
+  border-bottom-left-radius: 0.2em;
+}
+
+/* ---------------------------------------------------------------------------
+   Focus — recruiters tab through things, and the comps don't define a state.
+--------------------------------------------------------------------------- */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+/* The skip link's targets take focus programmatically (tabindex="-1") so the
+   next Tab starts inside the content; a 2px ring around the whole page would
+   just be noise. */
+:where(#main, [data-skip-target]):focus-visible {
+  outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Touch hit area: grows an element's clickable box to at least 44x44px,
+   centred on it, without changing how big it looks or how it lays out. For
+   small text links (the footer, the top bar) that sit in tightly measured
+   bands where real padding would move everything around them.
+--------------------------------------------------------------------------- */
+.hit-44 {
+  position: relative;
+}
+.hit-44::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* The phone nav's "links" sheet rises out of the pill. It is the same glass,
+   frosted harder: it carries words rather than icons, and over a maroon card
+   thumbnail the pill's 45% fill leaves them too faint to read. Reduced motion
+   is covered by the global override below, which collapses the animation. */
+.nav-pop {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  animation: nav-pop-in 180ms var(--ease-brand) both;
+  transform-origin: bottom right;
+}
+@keyframes nav-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem) scale(0.96);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The landing page is one continuous document: hero, loader, works. Nothing
+   inside it may widen the page, and the three screens are measured in dvh.
+--------------------------------------------------------------------------- */
+.screen {
+  min-height: 100dvh;
+}
+/* The first screen has to swallow the top bar, which sits above it in flow. */
+.screen-first {
+  min-height: calc(100dvh - var(--topbar-h));
+}
+
+/* The landing drawings flank the centred headline and may overlap its
+   edges a little (client, round 6). Sizes are plain viewport fractions,
+   small enough that, with the overlap, neither reaches the window's edge. */
+.hero-drawing {
+  aspect-ratio: 1;
+}
+.hero-drawing--cat {
+  width: clamp(7rem, 18vw, 21rem);
+}
+.hero-drawing--self {
+  width: clamp(7rem, 19vw, 22rem);
+}
+
+/* The "online" dot in the status pill: a solid green dot with a ring that
+   swells and fades behind it. Under reduced motion the global rule runs the
+   animation once, instantly, and the ring ends invisible: just the dot. */
+.status-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--fz-dot-green);
+}
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--fz-dot-green);
+  animation: status-pulse 1.8s ease-out infinite;
+}
+@keyframes status-pulse {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

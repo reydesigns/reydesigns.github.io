@@ -1,0 +1,166 @@
+/* ---------------------------------------------------------------------------
+   Design tokens — the single source of truth.
+
+   Every colour here was measured from the Figma screenshots in
+   Assets/site-design/images/ and Assets/heyso/images/, by histogram rather
+   than eyedropper (the comps carry a subtle paper texture, so point-sampling
+   picks up anti-aliasing instead of the real value).
+
+   Use ONLY these tokens. No raw hex anywhere else in the codebase.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* --- colour ------------------------------------------------------------ */
+  /* Page ground: a warm off-white. (The comps measured #e9e8dd; lightened
+     towards white by client request.) */
+  --color-bg: #f6f3ea;
+  /* Primary ink: logo, headline, body copy, top-bar links, case-study nav. */
+  --color-ink: #2d0510;
+  /* Secondary ink: hero eyebrow, tagline, status-pill copy. */
+  --color-ink-muted: #523138;
+  /* Thumbnail / video placeholder fill. 37% of the Works page. */
+  --color-maroon: #440000;
+
+  /* Surfaces */
+  --color-surface: #ffffff;        /* project cards, phone-mockup cards       */
+  --color-surface-alt: #fbfbfb;    /* case-study image cards                  */
+  --color-surface-sunken: #efede5; /* statistics + insights cards             */
+  --color-surface-persona: #eae8e0;/* persona card — only 5 levels above bg   */
+  --color-nav: #d9d2ca;            /* bottom / side nav pill background       */
+  /* Secondary hero labels (eyebrow + tagline). Raised from the comps' 30% so
+     they read clearly. */
+  --hero-label-opacity: 0.75;
+
+  /* --- type -------------------------------------------------------------- */
+  --font-brand: 'Kumbh Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Pixelta', 'Kumbh Sans', ui-serif, serif;
+
+  /* Fluid scale. Reference width is 1728px (the comps are 6912px = 4×).
+     Verified side-by-side against the screenshots in QA. */
+  --text-hero: clamp(3rem, 7.4vw, 8.25rem);
+  /* The landing headline runs to four lines, so it sits below --text-hero. */
+  --text-landing-headline: clamp(2.25rem, 4.4vw, 5.5rem);
+  --text-h1: clamp(1.75rem, 2.6vw, 2.75rem);
+  --text-h2: clamp(1.4rem, 1.9vw, 2rem);
+  /* Case-study headings: one size for every heading, 30px on desktop. */
+  --text-cs-head: clamp(1.5rem, 2.1vw, 1.875rem);
+  --text-card-title: clamp(1.75rem, 3vw, 3.25rem);
+  --text-body: clamp(0.9rem, 1.02vw, 1.0625rem);
+  --text-eyebrow: clamp(0.7rem, 0.78vw, 0.8125rem);
+  /* Works cards. Measured off works-page.png: the Pixelta title is 69px at the
+     1728px reference width (cap height 46.25px / Pixelta's 0.659em cap ratio,
+     cross-checked against the glyph advances), and the client name and tag pill
+     are both 14px — between --text-eyebrow and --text-body, so neither fits. */
+  --text-works-title: clamp(2.25rem, 4vw, 4.3125rem);
+  --text-works-meta: clamp(0.8125rem, 0.81vw, 0.875rem);
+
+  /* --- layout ------------------------------------------------------------ */
+  --page-gutter: clamp(1.25rem, 3.7vw, 4rem);
+  --radius-card: 1.5rem;
+  --radius-pill: 999px;
+  /* The nav pill: a soft, iOS-style rounded rectangle. */
+  --radius-nav: 22px;
+
+  /* --- motion ------------------------------------------------------------ */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  /* --- motion ------------------------------------------------------------ */
+  /* These live here rather than in @theme because Tailwind v4 only emits the
+     theme variables its utilities actually reference, and these are read from
+     JavaScript (getComputedStyle) rather than from a class. A tree-shaken
+     token would silently resolve to the empty string.
+
+     The loader runs two loops in 2s flat. The source GIF's own rate is 4
+     frames / 1.32s and a browser cannot retime a GIF, so the loader drives the
+     four frames itself at --loader-frame-ms each instead of using the .gif. */
+  --loader-frame-ms: 250ms;
+  --loader-loop-ms: 1000ms;
+  --loader-total-ms: 2000ms;
+  /* Monogram GIF is 5 frames / 1.65s — plays once on load, then freezes. */
+  --monogram-ms: 1650ms;
+
+  /* Live height of the top bar, written by Layout with a ResizeObserver. The
+     scroll sequence needs the landing's first screen to be exactly one viewport
+     tall *including* the bar, and the bar's height is fluid (clamped padding
+     plus the monogram), so it cannot be a constant. This is the pre-measurement
+     fallback and is overwritten within a frame. */
+  --topbar-h: 5.25rem;
+
+  /* --- sparkle layer ----------------------------------------------------- */
+  /* Base cell. Sparkles sit on every other row and column, and only every
+     other one of those is drawn, staggered row to row — see SparkleGrid.jsx. */
+  --sparkle-cell: 130px;
+  --sparkle-size: 22px;
+  --sparkle-opacity: 0.2;
+
+  /* --- TMU K-POP case study -------------------------------------------- */
+  /* The club site's red and its translucent card fill, for the live cards
+     rebuilt inside the Current Events mockup. Sampled from the screenshot. */
+  --tk-red: #c8382f;
+  --tk-card: rgba(30, 22, 22, 0.86);
+  /* Attendance chart: before / after the relaunch, restyled after the client's
+     "bar graph example" (flat solid bars). "After" is the club's own red;
+     "before" a light coral in the same family. Run through the dataviz palette
+     validator against the page background it sits on (--color-bg): lightness,
+     chroma, CVD (ΔE 16.7) and normal-vision (ΔE 18.3) all pass; "before" is
+     2.3:1 on it, so the chart also carries in-bar values, a tooltip and a table. In-bar text: ink
+     on "before" (7.2:1), white on "after" (5.2:1). */
+  --chart-before: #e58a7c;
+  --chart-after: var(--tk-red);
+  --chart-grid: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  /* The chart's condensed display face: the club site's Bebas Neue (loaded in
+     fonts.css), echoing the example's bold condensed bar labels. */
+  --font-tk-display: 'Bebas Neue', 'Kumbh Sans', sans-serif;
+
+  /* --- Funzies ----------------------------------------------------------- */
+  /* Window chrome on the tiles and the popup: the maroon title bar from
+     Assets/funzies/funzies page.png, with a red close dot and a grey one. */
+  --fz-dot-red: #ff3b30;
+  --fz-dot-green: #28c840;
+  --fz-dot-grey: #b9b1ae;
+  --fz-divider: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  /* The popup's header is Pixelta at 40px. */
+  --fz-pop-title: 2.5rem;
+
+  /* --- Terminal (Me page): a Python REPL in Python's blue and yellow ----- */
+  --term-bg: #14202f;
+  --term-bar: #1e2e42;
+  --term-text: #e4e9f0;
+  --term-muted: #8394aa;
+  --term-prompt: #ffd43b;
+  --term-kw: #79b0e6;
+  --term-fn: #9fd88b;
+  --term-py-blue: #4b8bbe;
+  --term-py-yellow: #ffd43b;
+  --term-dot-yellow: #febc2e;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* --- GIF content boxes -------------------------------------------------- */
+  /* Each GIF canvas carries transparent padding around the artwork. These are
+     the measured content bounds, used to crop the mark to its ink. */
+  --monogram-x: 0.277;   /* content starts at 27.7% across the canvas */
+  --monogram-y: 0.449;
+  --monogram-w: 0.529;   /* content occupies 52.9% of canvas width    */
+  --monogram-h: 0.465;
+
+  /* Loader wordmark, same treatment. The 3000x2500 canvas is blank down to
+     27.12%; the ink then runs to the bottom edge. Measured from the alpha
+     channel of loader-wordmark-still.png, not eyeballed.
+
+     The rendered width is 10.07% of the viewport in
+     Assets/site-design/images/loading-page.png, centred on the page. */
+  --loader-mark-w: clamp(9rem, 10.1vw, 15rem);
+  --loader-mark-x: 0;
+  --loader-mark-y: 0.2712;
+  --loader-mark-cw: 0.9967;
+  --loader-mark-ch: 0.7224;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --sparkle-cell: 96px;
+    --sparkle-size: 18px;
+  }
+}

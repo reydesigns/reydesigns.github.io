@@ -1,0 +1,1093 @@
+/* ---------------------------------------------------------------------------
+   Funzies page: a compact bento, centred on the page. The headline, the intro
+   and the grid all share one column, so their left and right edges line up
+   exactly; every window sits on the same 4-column grid with one gap between
+   neighbours, so all the edges line up with each other too.
+--------------------------------------------------------------------------- */
+
+.fz-page {
+  --fz-gap: clamp(0.75rem, 1.1vw, 1.125rem);
+  /* The bento sizes its rows off this column's width (cqw), which, unlike
+     vw, is exact whether or not the browser shows a scrollbar. */
+  container-type: inline-size;
+  width: min(60rem, 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-top: clamp(2rem, 5vw, 5rem);
+  /* Clear the fixed nav pill (NavDock publishes --dock-clear). */
+  padding-bottom: max(4rem, var(--dock-clear, 7rem));
+}
+
+/* --- intro --------------------------------------------------------------- */
+.fz-headline {
+  font-size: clamp(2.75rem, 6.2vw, 6.25rem);
+  line-height: 0.95;
+  color: var(--color-ink);
+  margin: 0;
+}
+/* Runs the full width of the bento, edge to edge with it. */
+.fz-lede {
+  margin-top: clamp(1.25rem, 2.2vw, 2.25rem);
+  font-size: var(--text-body);
+  color: var(--color-ink);
+}
+.fz-lede p {
+  margin: 0 0 0.8em;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* The kaomoji: brand font (Pixelta has no ᴗ or „), smaller than the headline
+   and on its baseline, eyes raised the way they are in the comp. */
+.fz-face {
+  display: inline-block;
+  font-family: var(--font-brand);
+  font-size: 0.32em;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  vertical-align: 0.15em;
+  margin-left: 0.4em;
+}
+.fz-face__head {
+  display: inline-block;
+  transform-origin: 50% 80%;
+  animation: fz-face-tilt 2.4s var(--ease-brand) infinite;
+}
+.fz-face__eye {
+  position: relative;
+  display: inline-block;
+  width: 0.62em;
+  text-align: center;
+  vertical-align: 0.42em;
+  font-size: 0.8em;
+}
+.fz-face__open,
+.fz-face__shut,
+.fz-face__spark {
+  animation: fz-wink-open 2.4s steps(1, end) infinite;
+}
+.fz-face__shut,
+.fz-face__spark {
+  position: absolute;
+  inset: 0;
+  animation-name: fz-wink-shut;
+}
+.fz-face__spark {
+  inset: -0.7em auto auto 0.7em;
+  font-size: 0.6em;
+  animation-name: fz-wink-spark;
+  animation-timing-function: ease-out;
+}
+/* Hold for ~1.2s, then wink for ~0.7s. */
+@keyframes fz-wink-open {
+  0%, 100% { opacity: 1; }
+  52%, 82% { opacity: 0; }
+  82.01% { opacity: 1; }
+}
+@keyframes fz-wink-shut {
+  0%, 100% { opacity: 0; }
+  52% { opacity: 1; }
+  82.01% { opacity: 0; }
+}
+@keyframes fz-wink-spark {
+  0%, 52%, 82%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  58% { opacity: 1; transform: scale(1.15) rotate(30deg); }
+  76% { opacity: 1; transform: scale(1) rotate(60deg); }
+}
+@keyframes fz-face-tilt {
+  0%, 46%, 90%, 100% { transform: none; }
+  54%, 80% { transform: rotate(-8deg) translateY(-0.06em); }
+}
+
+/* --- bento ---------------------------------------------------------------- */
+/* "Click on me" over the grid: the case studies' eyebrow (size, weight,
+   tracking, ink at 40%). It takes the space the grid's top margin had. */
+.fz-hint {
+  margin: clamp(2rem, 3.5vw, 3.5rem) 0 0.6rem;
+  font-size: var(--text-eyebrow);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  opacity: 0.4;
+}
+
+/* Rows are half a column tall, so windows come in three shapes: square (1x2
+   rows), 2:3 portrait (1x3) and 2:1 landscape (2x2) — no long skinny ones.
+   On desktop the foldered windows are square and the rest 2:3.
+   A span of n rows is n rows plus n-1 gaps, which is why a row is
+   (column - gap) / 2: then two rows and their gap make exactly one column. */
+.fz-bento {
+  --fz-col: calc((100cqw - var(--fz-gap)) / 2);
+  display: grid;
+  gap: var(--fz-gap);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  --fz-row: calc((var(--fz-col) - var(--fz-gap)) / 2);
+  /* The sticker sheet's row, last, is as tall as the sheet needs. */
+  grid-template-rows: repeat(12, var(--fz-row)) auto;
+  grid-template-areas:
+    'mag  pc'
+    'mag  pc'
+    'mag  pc'
+    'tmu  sdz'
+    'tmu  sdz'
+    'prt  inf'
+    'prt  inf'
+    'prt  inf'
+    'room room'
+    'room room'
+    'room room'
+    'room room'
+    'stk  stk';
+}
+@media (min-width: 48rem) {
+  .fz-bento {
+    --fz-col: calc((100cqw - 3 * var(--fz-gap)) / 4);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(6, var(--fz-row)) auto;
+    /* Left: two rows of 2:3 windows — the magazine and PC build, then Print
+       and the infographics. Right: the two foldered windows (TMU K-POP, SDZ)
+       as squares side by side, over the tall isometric room, with the
+       sticker sheet under the room at its width. */
+    grid-template-areas:
+      'mag  pc   tmu  sdz'
+      'mag  pc   tmu  sdz'
+      'mag  pc   room room'
+      'prt  inf  room room'
+      'prt  inf  room room'
+      'prt  inf  room room'
+      '.    .    stk  stk';
+  }
+}
+/* Wide screens: the sheet leaves the grid and stands upright to the right
+   of the room, which shifts to the left edge of its cell (StickerRoom), the
+   sheet running past the grid's right edge into the page margin. */
+@media (min-width: 80rem) {
+  .fz-bento {
+    position: relative;
+    grid-template-rows: repeat(6, var(--fz-row));
+    grid-template-areas:
+      'mag  pc   tmu  sdz'
+      'mag  pc   tmu  sdz'
+      'mag  pc   room room'
+      'prt  inf  room room'
+      'prt  inf  room room'
+      'prt  inf  room room';
+  }
+}
+.fz-area-mag  { grid-area: mag; }
+.fz-area-sdz  { grid-area: sdz; }
+.fz-area-pc   { grid-area: pc; }
+.fz-area-tmu  { grid-area: tmu; }
+.fz-area-prt  { grid-area: prt; }
+.fz-area-inf  { grid-area: inf; }
+.fz-area-room { grid-area: room; }
+.fz-area-stk  { grid-area: stk; }
+
+/* --- window chrome (tiles + popup) ---------------------------------------- */
+/* iOS-style frosted glass for the windows: a translucent white fill over a
+   heavy blur of whatever is behind (with the saturation boost iOS adds, so
+   colours glow through rather than greying out), a bright hairline rim, and a
+   specular line along the top edge. */
+.fz-window,
+.fz-pop__window {
+  --fz-glass-fill: color-mix(in srgb, #ffffff 58%, transparent);
+  --fz-glass-rim:
+    inset 0 0 0 1px color-mix(in srgb, #ffffff 65%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 90%, transparent);
+  background: var(--fz-glass-fill);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+}
+
+/* Dots on the left, the file name centred on the whole bar: the two outer
+   columns are both the dots' width, so the middle one is centred and a long
+   name ellipsises before it can run into the dots. */
+.fz-bar {
+  --fz-dots-w: 1.9rem;
+  display: grid;
+  grid-template-columns: var(--fz-dots-w) minmax(0, 1fr) var(--fz-dots-w);
+  column-gap: 0.5rem;
+  align-items: center;
+  flex: none;
+  min-height: 2.125rem;
+  padding: 0 1.15rem;
+  background: var(--color-maroon);
+  color: var(--color-surface);
+  font-family: var(--font-brand);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.fz-bar__dots {
+  display: inline-flex;
+  gap: 0.45rem;
+}
+/* On a one-column tile, the longest names (PCBUILDOFMYDREAMS_FINAL) only fit
+   if the label takes everything right of the dots, centred in that. */
+@container (max-width: 17rem) {
+  .fz-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding-inline: 0.9rem 0.6rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.01em;
+  }
+}
+.fz-bar__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+.fz-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+.fz-dot--red { background: var(--fz-dot-red); }
+.fz-dot--grey { background: var(--fz-dot-grey); }
+/* The popup's close dot: the × appears on hover, as on macOS, and the tap
+   target is grown to 44px around the dot. */
+.fz-dot--button {
+  position: relative;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--color-maroon);
+}
+.fz-dot--button span {
+  opacity: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  transition: opacity 120ms;
+}
+.fz-dot--button:hover span,
+.fz-dot--button:focus-visible span {
+  opacity: 1;
+}
+.fz-dot--button::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.fz-window {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 1.125rem;
+  overflow: hidden;
+  box-shadow:
+    var(--fz-glass-rim),
+    0 8px 24px -14px color-mix(in srgb, var(--color-ink) 30%, transparent);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition:
+    transform 320ms var(--ease-brand),
+    box-shadow 320ms var(--ease-brand);
+}
+.fz-window:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    var(--fz-glass-rim),
+    0 14px 30px -12px color-mix(in srgb, var(--color-ink) 35%, transparent);
+}
+.fz-window:focus-visible {
+  border-radius: 1.125rem;
+}
+.fz-window__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  /* Clear: the window's glass shows through behind the artwork. */
+  background: transparent;
+}
+/* Every picture stacked, each fitted whole inside the window with an even
+   margin — never cropped. The outgoing one fades out before the next fades
+   in, since pictures of different shapes would show through each other. */
+.fz-window__body img {
+  position: absolute;
+  inset: 7%;
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  opacity: 0;
+  transition:
+    opacity 280ms ease,
+    transform 600ms var(--ease-brand);
+}
+.fz-window__body img[data-shown] {
+  opacity: 1;
+  transition:
+    opacity 380ms ease 300ms,
+    transform 600ms var(--ease-brand);
+}
+.fz-window:hover .fz-window__body img {
+  transform: scale(1.02);
+}
+.fz-window__body--icon img {
+  inset: 14%;
+  width: 72%;
+  height: 72%;
+}
+
+/* --- isometric room + sticker sheet (StickerRoom.jsx) -------------------- */
+/* Sizes are in art pixels (the drawing's own pixels), times --s, the CSS px
+   per art pixel, which the component measures from the room's cell. --u is
+   one art pixel as a length. Pixel art is scaled without smoothing. */
+.fz-room,
+.fz-sheet,
+.fz-sticker-ghost {
+  --u: calc(var(--s) * 1px);
+}
+.fz-room {
+  position: relative;
+}
+.fz-room__space {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: calc(392 * var(--u));
+  height: calc(392 * var(--u));
+}
+.fz-room__art,
+.fz-sticker img {
+  position: absolute;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.fz-room__art {
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: calc(var(--w) * var(--u));
+  height: calc(var(--h) * var(--u));
+}
+
+/* The sheet: a page of backing paper, faintly glossy, its stickers laid out
+   on a SHEET_W x SHEET_H page centred in it, and only as tall as that page
+   and its margin (--sheet-h, art px). */
+.fz-sheet {
+  position: relative;
+  height: calc(var(--sheet-h) * var(--u));
+  /* A flap's box (not its paint) reaches past its sticker; keep it from
+     widening the page when the sheet sits at the margin. */
+  overflow: clip;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(115deg, transparent 30%, color-mix(in srgb, #ffffff 55%, transparent) 46%, transparent 62%),
+    #fbf9f4;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-ink) 10%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--color-ink) 22%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 7%, transparent);
+}
+.fz-sheet__page {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: calc(var(--w) * var(--u));
+  height: calc(var(--h) * var(--u));
+}
+@media (min-width: 80rem) {
+  .fz-room__space {
+    inset: 0 auto 0 calc(-1 * var(--room-x) * var(--u));
+    margin: auto 0;
+  }
+  .fz-sheet.fz-area-stk {
+    grid-area: room;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--room-w) * var(--u) + var(--fz-gap));
+    width: calc(var(--sheet-w) * var(--u));
+    height: auto;
+  }
+  /* Its page from the top margin down, leaving the foot for the hint. */
+  .fz-sheet.fz-area-stk .fz-sheet__page {
+    top: calc(8 * var(--u));
+    bottom: auto;
+  }
+  .fz-sheet.fz-area-stk .fz-sheet__hint,
+  .fz-sheet.fz-area-stk .fz-sheet__reset {
+    right: 0;
+    left: 0;
+    text-align: center;
+  }
+}
+.fz-sheet__slot {
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: calc(var(--w) * var(--u));
+  height: calc(var(--h) * var(--u));
+}
+/* Where a sticker was: its kiss-cut line, a faint shape in the backing. */
+.fz-sheet__cut {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  -webkit-mask: var(--src) center / 100% 100% no-repeat;
+  mask: var(--src) center / 100% 100% no-repeat;
+}
+.fz-sheet__hint,
+.fz-sheet__reset {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.55rem;
+  /* The eyebrow, but never wider than the sheet's free bottom-right corner
+     (it shrinks with the sheet on phones). */
+  font-size: min(var(--text-eyebrow), calc(8.5 * var(--u)));
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  opacity: 0.4;
+}
+.fz-sheet__reset {
+  transition: opacity 0.2s;
+}
+.fz-sheet__reset:hover,
+.fz-sheet__reset:focus-visible {
+  opacity: 0.8;
+}
+
+/* A sticker. The fold runs along x + y = c (from its top-left, in CSS px):
+   --k is the furthest any of its pixels reach in x + y, and --peel (art px)
+   slides the line in from there. The front is clipped to x + y < c; the flap
+   is a copy of its outline, painted as the white back, clipped to x + y > c
+   and mirrored across the line — folded over onto the front.
+   c never comes inside the sticker's width or height (StickerRoom caps the
+   peel), so both polygons stay these simple shapes. */
+@property --peel {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+.fz-sticker {
+  --W: calc(var(--w) * var(--u));
+  --H: calc(var(--h) * var(--u));
+  --c: calc((var(--k) - var(--peel)) * var(--u));
+  --peel: var(--peel-rest);
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc(var(--y) * var(--u));
+  width: var(--W);
+  height: var(--H);
+  padding: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: --peel 0.32s cubic-bezier(0.3, 0.8, 0.35, 1);
+}
+/* The teaser peel is for the sheet; in the room a sticker lies flat. */
+.fz-sticker.is-placed {
+  --peel: 0;
+}
+.fz-sticker:hover,
+.fz-sticker:focus-visible {
+  --peel: var(--peel-hover);
+}
+.fz-sticker.is-pressed {
+  --peel: var(--peel-press);
+  transition-duration: 0.18s;
+}
+.fz-sticker:focus-visible {
+  outline: none;
+}
+.fz-sticker:focus-visible .fz-sticker__front {
+  filter: drop-shadow(0 0 0 var(--color-maroon)) drop-shadow(0 0 1.5px var(--color-maroon));
+}
+.fz-sticker__front,
+.fz-sticker__flap,
+.fz-sticker__back {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fz-sticker__front {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% max(0px, var(--c) - var(--W)),
+    max(0px, var(--c) - var(--H)) 100%,
+    0 100%
+  );
+}
+.fz-sticker img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Sitting on the page: the slightest lift off it. */
+  filter: drop-shadow(0 calc(0.6 * var(--u)) calc(0.6 * var(--u)) color-mix(in srgb, #321703 18%, transparent));
+}
+/* The flap. Mirroring across x + y = c maps (x, y) to (c - y, c - x). Its
+   shadow falls back onto the sticker under it. */
+.fz-sticker__flap {
+  transform-origin: 0 0;
+  transform: translate(var(--c), var(--c)) matrix(0, -1, -1, 0, 0, 0);
+  filter: drop-shadow(calc(-1 * var(--u)) calc(-1.5 * var(--u)) calc(1.2 * var(--u)) color-mix(in srgb, #321703 30%, transparent));
+}
+.fz-sticker__back {
+  /* The paper back: white, shaded darker toward the crease. */
+  background: linear-gradient(315deg, #e4ddd2, #ffffff 55%);
+  -webkit-mask: var(--src) center / 100% 100% no-repeat;
+  mask: var(--src) center / 100% 100% no-repeat;
+  clip-path: polygon(100% max(0px, var(--c) - var(--W)), 100% 100%, max(0px, var(--c) - var(--H)) 100%);
+}
+/* Off the page while it's being dragged (the ghost stands in for it). */
+.fz-sticker.is-away {
+  visibility: hidden;
+}
+/* Just pressed down in the room: a little squash as it sticks. */
+.fz-sticker.is-stuck {
+  animation: fz-stick 0.36s cubic-bezier(0.3, 0.8, 0.35, 1);
+}
+@keyframes fz-stick {
+  0% { transform: scale(1.08); }
+  55% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+/* The sticker in hand: lifted off the page — bigger, a deep soft shadow —
+   and swinging with the drag (--tilt, set as it moves). */
+.fz-sticker-ghost {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  transform: rotate(var(--tilt, 0deg)) scale(1.08);
+  transition: transform 0.12s ease-out;
+}
+.fz-sticker-ghost .fz-sticker {
+  --peel: 0;
+  position: relative;
+  left: 0;
+  top: 0;
+  display: block;
+}
+.fz-sticker-ghost .fz-sticker img {
+  filter:
+    drop-shadow(0 calc(2 * var(--u)) calc(1.5 * var(--u)) color-mix(in srgb, #321703 22%, transparent))
+    drop-shadow(0 calc(9 * var(--u)) calc(7 * var(--u)) color-mix(in srgb, #321703 22%, transparent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fz-sticker {
+    transition: none;
+  }
+  .fz-sticker.is-stuck {
+    animation: none;
+  }
+  .fz-sticker-ghost {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* --- popup --------------------------------------------------------------- */
+.fz-pop {
+  --fz-pop-pad: clamp(1.75rem, 3.6vw, 3.25rem);
+  /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
+  margin: auto;
+  width: min(64rem, 100% - 2rem);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  color: var(--color-ink);
+}
+.fz-pop::backdrop {
+  /* Light, so the glass window over it stays bright, as on iOS. */
+  background: color-mix(in srgb, var(--color-ink) 16%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fz-fade-in 220ms ease-out both;
+}
+.fz-pop[data-closing]::backdrop {
+  animation: fz-fade-out 180ms ease-in both;
+}
+.fz-pop__window {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 2rem);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow:
+    var(--fz-glass-rim),
+    0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
+    0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
+  animation: fz-pop-in 380ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+.fz-pop[data-closing] .fz-pop__window {
+  animation: fz-pop-out 180ms ease-in both;
+}
+.fz-pop .fz-bar {
+  font-size: 0.8125rem;
+  --fz-dots-w: 2.3rem;
+  min-height: 2.5rem;
+  padding-inline: 1.35rem;
+}
+.fz-pop .fz-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.fz-pop__body {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
+  overflow: auto;
+}
+@media (min-width: 48rem) {
+  .fz-pop__body {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.fz-pop__media {
+  display: grid;
+  justify-items: center;
+  padding: var(--fz-pop-pad);
+}
+@media (min-width: 48rem) {
+  /* The faint line between the piece and the write-up, full height. */
+  .fz-pop__media {
+    align-self: stretch;
+    border-right: 1px solid var(--fz-divider);
+  }
+}
+/* --- Finder folders (TMU K-POP) ----------------------------------------- */
+/* A foldered window is a little wider, for the sidebar. Its write-up column
+   is narrower than the other windows' and set in tighter, so the text fills
+   it rather than floating in white space. */
+.fz-pop[data-folders] {
+  width: min(68rem, 100% - 2rem);
+}
+@media (min-width: 48rem) {
+  .fz-pop[data-folders] .fz-pop__body {
+    grid-template-columns: 8.75rem minmax(0, 1.2fr) minmax(0, 0.8fr);
+  }
+  /* `contain: size` keeps the write-up from setting the window's height, so
+     the slides column (the same height in every folder) does, and the window
+     never resizes or shifts when another folder opens; a longer write-up
+     scrolls inside its column instead. */
+  .fz-pop[data-folders] .fz-pop__text {
+    align-self: stretch;
+    padding: var(--fz-pop-pad) 2rem 1.25rem 1.75rem;
+    contain: size;
+    overflow-y: auto;
+  }
+}
+/* macOS sidebar: system type at Finder's sizes, a slightly greyer glass than
+   the window, a hairline down its edge. Rows are 28px with a 6px pill when
+   selected or hovered, the blue folder glyph leading. */
+.fz-finder {
+  --fz-finder-ink: rgb(0 0 0 / 0.85);
+  align-self: stretch;
+  padding: 0.6rem 0.4rem;
+  background: color-mix(in srgb, #e8e8ed 55%, transparent);
+  border-bottom: 1px solid var(--fz-divider);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', var(--font-brand), sans-serif;
+  color: var(--fz-finder-ink);
+}
+@media (min-width: 48rem) {
+  .fz-finder {
+    padding-top: 0.85rem;
+    border-bottom: 0;
+    border-right: 1px solid var(--fz-divider);
+  }
+}
+.fz-finder__heading {
+  margin: 0 0 0.2rem;
+  padding-inline: 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.42);
+}
+/* A row of folders on phones, a column beside the slides from 48rem. */
+.fz-finder__list {
+  display: flex;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 48rem) {
+  .fz-finder__list {
+    flex-direction: column;
+  }
+}
+.fz-finder__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 1.6rem;
+  padding: 0.15rem 0.45rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.fz-finder__item:hover {
+  background: rgb(0 0 0 / 0.05);
+}
+.fz-finder__item[aria-current] {
+  background: rgb(0 0 0 / 0.1);
+  font-weight: 500;
+}
+.fz-folder-icon {
+  flex: none;
+  width: 1.15rem;
+  height: auto;
+}
+.fz-folder-icon__back { fill: var(--color-maroon); }
+.fz-folder-icon__front { fill: color-mix(in srgb, var(--color-maroon) 78%, #ffffff); }
+.fz-folder-icon__lip { fill: color-mix(in srgb, var(--color-maroon) 62%, #ffffff); }
+/* Finder's path bar, over the slides: the open folder and its item count. */
+.fz-finder__path {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(100%, 26rem, 100dvh - 18rem);
+  margin: 0 0 0.9rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', var(--font-brand), sans-serif;
+  font-size: 0.8125rem;
+}
+.fz-finder__path-name {
+  font-weight: 600;
+}
+.fz-finder__path-count {
+  margin-left: auto;
+  color: rgb(0 0 0 / 0.42);
+}
+
+/* The magazine's stacked pictures. On phones each simply takes its natural
+   height at full width. Beside the write-up they fill the column's height
+   (the popup's, less its chrome and padding): the mockup at full width at the
+   bottom, the photo above taking what is left, shown whole. */
+.fz-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+.fz-stack img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  object-fit: contain;
+}
+@media (min-width: 48rem) {
+  .fz-stack {
+    height: min(46rem, 100dvh - 2rem - 2.5rem - 2 * var(--fz-pop-pad));
+  }
+  .fz-stack img:first-child {
+    flex: 1 1 0;
+  }
+  .fz-stack img:not(:first-child) {
+    flex: none;
+  }
+}
+
+/* Opt-in (PC build): the pictures sit in the middle of the window. */
+.fz-pop__body[data-center-media] .fz-pop__media {
+  align-content: center;
+}
+/* Top-aligned with the picture: same top padding as the media column. */
+.fz-pop__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 0 var(--fz-pop-pad) var(--fz-pop-pad);
+}
+@media (min-width: 48rem) {
+  .fz-pop__text {
+    padding-top: var(--fz-pop-pad);
+  }
+}
+.fz-pop__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--fz-pop-title);
+  line-height: 1;
+}
+.fz-pop__tools {
+  margin: 0.9rem 0 0;
+  /* The list matches the case studies' section eyebrows (OBJECTIVE, …). */
+  font-size: var(--text-eyebrow);
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+/* Set exactly like the list after it, only bold. */
+.fz-pop__tools-label {
+  font-weight: 800;
+}
+/* The icons sit in a row under the label. */
+.fz-pop__tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fz-pop__tool img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 10%, transparent);
+}
+.fz-pop__copy {
+  margin-top: 0.9rem;
+  font-size: calc(var(--text-body) * 0.9);
+  line-height: 1.55;
+}
+.fz-pop__copy p,
+.fz-pop__copy ul {
+  margin: 0 0 0.7em;
+}
+.fz-pop__copy ul {
+  padding-left: 1.2em;
+  list-style: disc;
+}
+.fz-pop__copy li + li {
+  margin-top: 0.15em;
+}
+
+/* --- slides -------------------------------------------------------------- */
+.fz-slides {
+  position: relative;
+  width: min(100%, 26rem, 100dvh - 18rem);
+  container-type: inline-size;
+}
+.fz-slides__track {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.fz-slides__track::-webkit-scrollbar {
+  display: none;
+}
+/* A square stage, its top level with the write-up's; the picture is fitted
+   whole inside it, never cropped, and centred. */
+.fz-slides__slide {
+  flex: 0 0 100%;
+  /* A definite height (not aspect-ratio), so a tall picture's max-height
+     resolves and it shrinks to fit instead of stretching the stage. */
+  height: 100cqi;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+.fz-slides__slide img,
+.fz-slides__slide video {
+  display: block;
+  max-width: 100%;
+  /* The stage's own height, in container units: a percentage here resolves
+     against the grid row, not the stage, and tall pictures overflowed it. */
+  max-height: 100cqi;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.625rem;
+  user-select: none;
+}
+/* A video fills the stage box and letterboxes inside it: left to size
+   itself, it took its natural height and overflowed the stage. */
+.fz-slides__slide video {
+  width: 100%;
+  height: 100cqi;
+}
+.fz-slides__arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-top: -1.125rem;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  color: var(--color-ink);
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-ink) 20%, transparent);
+  opacity: 0;
+  transition: opacity 160ms;
+}
+.fz-slides__arrow--prev { left: -1.1rem; }
+.fz-slides__arrow--next { right: -1.1rem; }
+.fz-slides:hover .fz-slides__arrow:not(:disabled),
+.fz-slides__arrow:focus-visible {
+  opacity: 1;
+}
+.fz-slides__arrow:disabled {
+  pointer-events: none;
+}
+.fz-slides__dots {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+.fz-slides__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fz-divider);
+  transition:
+    background 200ms,
+    width 200ms var(--ease-brand);
+}
+.fz-slides__dot[aria-current] {
+  width: 1.1rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-ink);
+}
+
+/* --- game covers (PC build) ---------------------------------------------- */
+.fz-games {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fz-game img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--color-ink) 18%, transparent);
+  transition: transform 200ms var(--ease-brand);
+}
+.fz-game:hover img {
+  transform: translateY(-4px) scale(1.04);
+}
+
+/* --- floating parts (PC build) ------------------------------------------- */
+/* Set like the body copy's lead-ins ("Some of my faves:"). */
+.fz-parts__label {
+  margin: 1.5rem 0 0;
+  font-size: calc(var(--text-body) * 0.9);
+  line-height: 1.55;
+}
+.fz-parts__label + .fz-parts {
+  margin-top: 0.75rem;
+}
+.fz-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+  width: 100%;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fz-part {
+  --rx: 0deg;
+  --ry: 0deg;
+  display: grid;
+  justify-items: center;
+  perspective: 600px;
+}
+/* Idle: a slow bob, each part on its own beat. */
+.fz-part__float {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  animation: fz-bob 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.55s);
+}
+.fz-part__float img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 10px color-mix(in srgb, var(--color-ink) 22%, transparent));
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition:
+    transform 380ms var(--ease-brand),
+    filter 380ms var(--ease-brand);
+}
+/* Hover: tilts towards the pointer in 3D, lifts and drifts right. */
+.fz-part:hover .fz-part__float img {
+  transform: translate3d(8px, -4px, 30px) rotateX(var(--rx)) rotateY(var(--ry)) scale(1.1);
+  filter: drop-shadow(10px 16px 14px color-mix(in srgb, var(--color-ink) 28%, transparent));
+  transition-duration: 160ms;
+}
+.fz-part__name {
+  margin-top: 0.15rem;
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--color-ink-muted);
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity 200ms,
+    transform 200ms var(--ease-brand);
+}
+.fz-part:hover .fz-part__name {
+  opacity: 1;
+  transform: none;
+}
+@keyframes fz-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes fz-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+}
+@keyframes fz-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes fz-fade-in {
+  from { opacity: 0; }
+}
+@keyframes fz-fade-out {
+  to { opacity: 0; }
+}

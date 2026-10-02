@@ -1,0 +1,29 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# Secrets — API keys, tokens, credentials
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+secrets.*
+credentials*.json
+service-account*.json
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# Scratch scripts
+.tmp-*.mjs
+
+# Oversized design comps (>90 MB; exceed GitHub's file limit)
+Assets/tmu-kpop/tmukpop case study.png
+Assets/lipton/lipton tea case study.png
+Assets/heyso/images/case-study.png

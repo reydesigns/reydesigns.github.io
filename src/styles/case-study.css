@@ -1,0 +1,613 @@
+/* ---------------------------------------------------------------------------
+   Case study — the page's own spacing scale, plus the few rules Tailwind
+   utilities can't express.
+
+   Colours still come only from tokens.css. The one derived value here,
+   --cs-rule, is tokens' --color-ink mixed down to a hairline so the ruled
+   rows track the palette instead of hard-coding a grey.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* --- spacing scale ---------------------------------------------------- */
+  /* One scale for the whole case study. Every gap on the page is one of these
+     eight steps and nothing in the markup sets an ad-hoc margin, which is what
+     makes the rhythm read as deliberate rather than per-section. The top three
+     steps are fluid, so the page tightens on a phone instead of leaving the
+     column stranded between blocks. */
+  --cs-1: 0.25rem;
+  --cs-2: 0.5rem;
+  --cs-3: 0.75rem;
+  --cs-4: 1rem;
+  --cs-5: 1.5rem;
+  --cs-6: clamp(1.5rem, 1.9vw, 2rem);
+  --cs-7: clamp(2rem, 3.1vw, 3.25rem);
+  --cs-8: clamp(2.75rem, 4.4vw, 4.5rem);
+
+  /* Semantic aliases. The markup names the role, never the number, so the
+     whole page can be retuned from these six lines. */
+  --cs-gap-header: var(--cs-3); /* a header and the copy it introduces     */
+  --cs-gap-flow: var(--cs-4); /* consecutive blocks of body copy           */
+  --cs-gap-sub: var(--cs-6); /* before a new sub-heading                   */
+  --cs-gap-figure: var(--cs-5); /* around a figure or a card               */
+  --cs-gap-row: var(--cs-5); /* between the rows of a ruled list           */
+  --cs-gap-section: var(--cs-7); /* between the six sections               */
+  --cs-gap-outro: var(--cs-8); /* before the next-case-study link          */
+  --cs-card-pad: clamp(1.25rem, 2.4vw, 2rem);
+
+  /* --- case-study sizing ------------------------------------------------ */
+  /* The side nav panel. Its box is fixed rather than sized to its labels, so
+     it is the same panel on every case study — more sections only add rows,
+     and a long label ('RESEARCH & OUTCOME') wraps instead of widening it. One
+     padding on all four sides, and one gap above and below the section list.
+     The width is the padding, the rail's indent, and 'FINAL PRODUCT' in its
+     bold active weight (~8.45em) with a little to spare, in the labels' own
+     type size, so it fits at every desktop width. */
+  --cs-nav-pad: var(--cs-5);
+  --cs-nav-gap: var(--cs-6);
+  --cs-nav-indent: 0.9rem;
+  --cs-nav-w: calc(2 * var(--cs-nav-pad) + var(--cs-nav-indent) + 8.75 * var(--text-body));
+  /* The article column every case study reads in. */
+  --cs-col-w: 41rem;
+  --cs-nav-label: clamp(0.8125rem, 0.86vw, 0.9375rem);
+  /* Pixelta statistic figures, and the hanging numerals of an ordered list. */
+  --cs-stat: clamp(1.75rem, 2.75vw, 2.75rem);
+  --cs-list-marker: calc(var(--text-body) * 1.9);
+  --cs-emoji: clamp(1.4rem, 1.9vw, 1.75rem);
+
+  /* --- hairlines -------------------------------------------------------- */
+  --cs-rule: color-mix(in srgb, var(--color-ink) 14%, transparent);
+  /* Section headers are set back to 40% in the comp. */
+  --cs-header-opacity: 0.4;
+  /* Where a scroll-driven quote starts before it has been read into view. */
+  --cs-reveal-from: 0.15;
+}
+
+/* ---------------------------------------------------------------------------
+   Flow: the only thing that sets vertical space inside a section.
+
+   Order matters — later rules win at equal specificity, and the cascade below
+   is the priority the page wants: a header always hugs whatever follows it,
+   a sub-heading always opens a new beat, and figures get air on both sides.
+--------------------------------------------------------------------------- */
+.cs-flow > * + * {
+  margin-top: var(--cs-gap-flow);
+}
+.cs-flow > .cs-eyebrow + *,
+.cs-flow > .cs-head + * {
+  margin-top: var(--cs-gap-header);
+}
+.cs-flow > * + .cs-figure,
+.cs-flow > .cs-figure + * {
+  margin-top: var(--cs-gap-figure);
+}
+.cs-flow > * + .cs-head {
+  margin-top: var(--cs-gap-sub);
+}
+/* …but a section label or a heading and whatever it introduces are one unit,
+   whether that is copy, another heading or a figure — so every header sits the
+   same distance above its content. */
+.cs-flow > .cs-eyebrow + *,
+.cs-flow > .cs-head + * {
+  margin-top: var(--cs-gap-header);
+}
+
+.cs-section {
+  padding-top: var(--cs-gap-section);
+  /* Landing a section under the sticky phone bar, and off the top edge on
+     desktop where the nav is beside the article rather than above it. */
+  scroll-margin-top: 5.5rem;
+}
+@media (min-width: 64rem) {
+  .cs-section {
+    scroll-margin-top: 2.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Figures.
+
+   The folder tab on the research boards, the persona and the user flows is
+   painted into the slice, to the left of the card. The comp aligns the CARD
+   with the body column and lets the tab hang out into the margin, so each
+   tabbed figure is pulled left by exactly the tab's share of its own width and
+   widened by the same amount — the card then still ends on the column's right
+   edge. --cs-tab-k is that amount, computed per image in HeySoArticle from the
+   tab's measured pixel width.
+
+   The overhang is capped at the page gutter, which is the narrowest the
+   article's side margin ever gets, so it can never push the page sideways.
+--------------------------------------------------------------------------- */
+.cs-figure {
+  width: 100%;
+  margin-inline: 0;
+}
+.cs-figure--inset {
+  width: 81%;
+  margin-inline: auto;
+}
+.cs-figure--tab {
+  --cs-tab-overhang: min(var(--cs-tab-k), var(--page-gutter));
+  width: calc(100% + var(--cs-tab-overhang));
+  margin-left: calc(-1 * var(--cs-tab-overhang));
+}
+
+/* ---------------------------------------------------------------------------
+   Sunken cards — statistics, insights — and their ruled rows.
+--------------------------------------------------------------------------- */
+.cs-card {
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-card);
+  padding: var(--cs-card-pad);
+}
+.cs-card--surface {
+  background: var(--color-surface-alt);
+}
+.cs-rows > * + * {
+  margin-top: var(--cs-gap-row);
+  padding-top: var(--cs-gap-row);
+  border-top: 1px solid var(--cs-rule);
+}
+
+/* ---------------------------------------------------------------------------
+   Scroll-responsive quotes. The opacity is driven from JS by an
+   IntersectionObserver, never a scroll handler; this is only the easing.
+   Under reduced motion the component renders at full opacity from the first
+   paint, so there is nothing here to disable.
+--------------------------------------------------------------------------- */
+.cs-reveal {
+  transition: opacity 420ms var(--ease-brand);
+  will-change: opacity;
+}
+
+/* ---------------------------------------------------------------------------
+   Nav.
+--------------------------------------------------------------------------- */
+
+/* The phone nav is a horizontally scrollable strip. The scrollbar would sit
+   across the links, and it is never the affordance — the strip is short and
+   obviously swipeable. */
+.cs-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.cs-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Phone strip: the sticky band's soft lower edge, so article content slides
+   under the pill through a fade rather than against a hard line. Hangs below
+   the band and is click-through, so it never covers a tap. */
+.cs-strip-band::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 0.75rem;
+  background: linear-gradient(var(--color-bg), transparent);
+  pointer-events: none;
+}
+
+/* Desktop rail: grows or shrinks to the active section's label. */
+.cs-rail-fill {
+  transition: height 450ms var(--ease-brand);
+}
+/* Phone strip: a scroll-progress hairline under the links. */
+.cs-progress-h {
+  transform-origin: left center;
+  transition: transform 120ms linear;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-rail-fill,
+  .cs-progress-h {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   TMU K-POP: the wide band.
+
+   The page screens break out of the article column. The band is 77.5vw wide
+   and centred on the article — which already sits right of the fixed nav — so
+   it spans 13–91% of the frame, as in the comp. Below 64rem there is no side
+   nav and the band is simply the column.
+--------------------------------------------------------------------------- */
+:root {
+  --cs-wide-w: 77.5vw;
+  /* Between the page-screen rows, measured off the comp (~120pt at 1728). */
+  --tk-row-gap: clamp(3rem, 6.5vw, 7.5rem);
+}
+.cs-wide {
+  width: 100%;
+}
+.cs-flow > .cs-wide {
+  margin-top: var(--tk-row-gap);
+}
+.cs-flow > .tk-home {
+  margin-top: var(--cs-7);
+}
+.tk-home > * {
+  width: 87.7%;
+  margin-inline: auto;
+}
+
+/* A row: heading and mockup on the left, the OLD / SKETCH card on the right. */
+.tk-row-mock {
+  margin-top: var(--cs-5);
+}
+.tk-row-card {
+  width: min(100%, 24rem);
+  margin: var(--cs-5) auto 0;
+}
+
+@media (min-width: 64rem) {
+  .cs-wide {
+    width: var(--cs-wide-w);
+    margin-left: calc((100% - var(--cs-wide-w)) / 2);
+  }
+  .tk-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 31.2%;
+    grid-template-rows: auto 1fr;
+    column-gap: 2%;
+    align-items: start;
+  }
+  /* The heading lines up with the article column, not the band's edge. */
+  .tk-row-head {
+    grid-area: 1 / 1;
+    padding-left: calc((var(--cs-wide-w) - var(--cs-col-w)) / 2);
+    padding-top: var(--cs-3);
+  }
+  .tk-row-mock {
+    grid-area: 2 / 1;
+    position: relative;
+    margin-left: var(--mock-x);
+    width: var(--mock-w);
+  }
+  .tk-row-card {
+    grid-area: 1 / 2 / 3 / 3;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin: 0;
+  }
+}
+
+/* About Us: the page scrolls down to "Join our Discord", holds, and returns. */
+.tk-about-scroll {
+  animation: tk-about-scroll 11s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+@keyframes tk-about-scroll {
+  0%,
+  14% {
+    transform: translateY(0);
+  }
+  48%,
+  74% {
+    transform: translateY(-31%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Current Events: the carousel's cards glide between slots. */
+.tk-carousel-card {
+  container-type: inline-size;
+  transition:
+    left 900ms var(--ease-brand),
+    top 900ms var(--ease-brand),
+    transform 900ms var(--ease-brand),
+    opacity 900ms var(--ease-brand);
+  will-change: transform, opacity;
+}
+.tk-soon-card {
+  background: var(--tk-card);
+  padding: 0 8cqw;
+  font-family: 'Bebas Neue', 'Kumbh Sans', sans-serif;
+  line-height: 0.98;
+  color: var(--color-surface);
+}
+.tk-soon-title {
+  color: var(--tk-red);
+  font-size: 17cqw;
+}
+.tk-soon-line {
+  font-size: 10.5cqw;
+}
+
+/* Attendance chart: the end labels arrive after the columns have grown. */
+.tk-col-label {
+  animation: tk-fade-in 400ms 900ms both;
+}
+@keyframes tk-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Lipton Tea: screen compositions and their scroll motion.
+
+   A stage is the article column at the comp's aspect; tab, card and phones are
+   absolutely placed in it in percentages. useScrollMotion writes --p (0 → 1,
+   eased, as the stage enters) and --q (-0.5 … 0.5 over its whole pass), and
+   everything below is derived from those — no per-frame JavaScript styling.
+--------------------------------------------------------------------------- */
+
+/* Lipton only: more room between each header and what it introduces, and
+   between the beats (client, round 2). The shared aliases are re-pointed one
+   or two steps up the same scale, so the rhythm stays proportional and the
+   other case studies are untouched. Sections get a step beyond the scale
+   so they still read as bigger breaks than the sub-headings inside them. */
+.lp-article {
+  --cs-gap-header: var(--cs-5);
+  --cs-gap-figure: var(--cs-6);
+  --cs-gap-sub: var(--cs-8);
+  --cs-gap-section: calc(var(--cs-8) + var(--cs-6));
+}
+/* Every sub-heading in the study sits the same --cs-gap-sub below what came
+   before it (client, round 3: "very consistent"). Branding has no eyebrow, so
+   its heading reads as one more sub-heading, not a section break — it opens on
+   the sub-heading gap rather than the section one. */
+.lp-article > .lp-branding {
+  padding-top: var(--cs-gap-sub);
+}
+
+.lp-stage {
+  position: relative;
+  --p: 1;
+  --q: 0;
+}
+.lp-phone {
+  position: absolute;
+  height: auto;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--color-ink) 16%, transparent));
+  will-change: transform;
+}
+/* The tab hangs off the phone it labels (--lp-tab-x/y: that phone's left and
+   top, set per stage in LiptonArticle), identically in every stage: the same
+   size, 7.78% of the column showing to the phone's left, its right edge
+   tucked behind the phone and its top a hair below the phone's, clear of the
+   rounded corner. z-index 0 keeps it under every phone. The nudge is a
+   margin, not a top offset, because margin percentages resolve against the
+   stage's width — like the left and width — so it holds at any stage height.
+   The aspect ratio is #1's tab from the comp. */
+.lp-tab {
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--lp-tab-x) - 7.78%);
+  top: var(--lp-tab-y);
+  margin-top: 0.9%;
+  width: 9.5%;
+  aspect-ratio: 9.5 / 30.6;
+  display: grid;
+  place-items: center;
+  background: var(--color-ink);
+  border-radius: 14px 0 0 14px;
+  transform: translateX(calc((1 - var(--p)) * 70%));
+  opacity: var(--p);
+}
+.lp-tab-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  color: var(--color-surface);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.75rem, 1.15vw, 1.15rem);
+  /* centres the label in the part that shows: the phone covers the right
+     1.72% of the stage, which is 18% of the tab */
+  padding-right: 18%;
+}
+.lp-card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--cs-gap-flow);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-card);
+  /* Percentages here are of the STAGE's width (padding always resolves
+     against the containing block), which is how the comp measures them:
+     the copy starts at 66.2% of the column in #1 and 74.3% in #2. */
+  padding: var(--cs-4) 2.5% var(--cs-4) 14.2%;
+  font-size: var(--text-body);
+  opacity: var(--p);
+  transform: translateX(calc((1 - var(--p)) * 10%));
+}
+.lp-f2 .lp-card {
+  padding-left: 6.4%;
+}
+
+/* #1 — the pair rises and straightens, the second a beat behind. */
+.lp-f1-a {
+  z-index: 2;
+  transform: translateY(calc((1 - var(--p)) * 16% + var(--q) * -4%))
+    rotate(calc((1 - var(--p)) * -6deg));
+}
+.lp-f1-b {
+  z-index: 2;
+  transform: translateY(calc((1 - var(--p)) * 30% + var(--q) * 6%))
+    rotate(calc((1 - var(--p)) * 6deg));
+}
+
+/* #2 — the outer screens fan out from behind the centre one. */
+.lp-f2-l {
+  z-index: 1;
+  transform: translateX(calc((1 - var(--p)) * 85%)) rotate(calc((1 - var(--p)) * 10deg));
+  transform-origin: 50% 100%;
+}
+.lp-f2-r {
+  z-index: 1;
+  transform: translateX(calc((1 - var(--p)) * -85%)) rotate(calc((1 - var(--p)) * -10deg));
+  transform-origin: 50% 100%;
+}
+.lp-f2-c {
+  z-index: 3;
+  transform: translateY(calc((1 - var(--p)) * 8% + var(--q) * -3%))
+    scale(calc(0.9 + var(--p) * 0.1));
+}
+.lp-f2 .lp-card {
+  z-index: 0;
+}
+
+/* Product — the row lands as a staggered wave, then drifts in parallax. */
+.lp-p .lp-phone {
+  z-index: 1;
+  opacity: calc(0.25 + var(--p) * 0.75);
+}
+.lp-p-1 { transform: translateY(calc((1 - var(--p)) * 14% + var(--q) * 3%)); }
+.lp-p-2 { transform: translateY(calc((1 - var(--p)) * 26% + var(--q) * -2%)); }
+.lp-p-3 { transform: translateY(calc((1 - var(--p)) * 38% + var(--q) * 3%)); }
+.lp-p-4 { transform: translateY(calc((1 - var(--p)) * 50% + var(--q) * -2%)); }
+
+/* Walkthrough strip: a native horizontal scroller that moves only when the
+   reader moves it — a swipe, a trackpad, Shift+wheel and the arrow keys (it is
+   focusable) all reach every screen; the page scroll never drives it, and a
+   vertical wheel over it still scrolls the page. It settles on whole screens;
+   the fade at each edge leaves the next screen half seen, so it reads as
+   scrollable without a scrollbar (client, round 3: hide it — it drew a grey
+   bar under the screens). Mask colours are keywords: only the alpha matters,
+   and hex lives in tokens. */
+.lp-walk {
+  --lp-walk-h: clamp(15rem, 24vw, 22rem);
+  container-type: inline-size;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  /* the track's 6cqw lead-in, so a snapped screen clears the edge fade */
+  scroll-padding-inline: 6%;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+}
+/* The edge fade would clip an outside ring, so draw it inside. */
+.lp-walk:focus-visible {
+  outline-offset: -2px;
+}
+.lp-walk::-webkit-scrollbar {
+  display: none;
+}
+.cs-flow > .lp-walk {
+  margin-top: var(--cs-gap-figure);
+}
+.lp-walk-track {
+  display: flex;
+  gap: clamp(0.75rem, 1.4vw, 1.25rem);
+  width: max-content;
+  padding-inline: 6cqw;
+}
+.lp-walk-item {
+  scroll-snap-align: start;
+  /* pull each neighbour in over the export's own empty margin (LiptonArticle) */
+  margin-inline: calc(var(--lp-walk-h) * var(--lp-trim-l) * -1)
+    calc(var(--lp-walk-h) * var(--lp-trim-r) * -1);
+}
+.lp-walk-img {
+  display: block;
+  height: var(--lp-walk-h);
+  width: auto;
+  /* The exports stop mid-screen; let them fade out rather than end on a cut. */
+  -webkit-mask-image: linear-gradient(180deg, black 80%, transparent);
+  mask-image: linear-gradient(180deg, black 80%, transparent);
+}
+
+/* Up to small laptops: the side-by-side compositions are rebuilt as a
+   stack — tab as a small label, phones in a row, the card underneath. The
+   column is a fixed 41rem from 48rem up, so the comp's card copy is only
+   ~150px wide there; the stack gives it a full-width measure until the side
+   nav and wider screens make the comp the better read. The inline
+   left/top/width placements are desktop-only, hence !important. */
+@media (max-width: 79.99rem) {
+  .lp-stage {
+    aspect-ratio: auto !important;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--cs-3);
+    /* No clipping: it sliced the outer phones' drop shadows off flat at the
+       column edge. Nothing here moves outward any more (the card rises
+       instead of sliding in, below), and #1's tilt stays inside the gutter. */
+    padding-top: var(--cs-1);
+  }
+  /* That top padding would add to the heading's gap; take it back off, so the
+     tab (the first thing drawn) sits exactly --cs-gap-header under its
+     heading, as the copy does under "Walk through the app". */
+  .cs-flow > .cs-head + .lp-stage {
+    margin-top: calc(var(--cs-gap-header) - var(--cs-1));
+  }
+  .lp-stage > * {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  /* The tab turns upright and rises from behind the top of the phones, the
+     same "tucked behind the screen" as the comp's side tab: its foot runs
+     --lp-tab-tuck under them (the negative margin also eats the row gap). */
+  .lp-tab {
+    --lp-tab-tuck: 1.1rem;
+    order: -1;
+    flex: 0 0 100%;
+    width: auto !important;
+    aspect-ratio: auto;
+    margin: 0 0 calc(-1 * (var(--cs-3) + var(--lp-tab-tuck)));
+    padding-left: var(--cs-5);
+    display: flex;
+    justify-content: flex-start;
+    background: transparent;
+    transform: none;
+  }
+  .lp-tab-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+    padding: 0.5em 1em calc(0.5em + var(--lp-tab-tuck));
+    border-radius: 14px 14px 0 0;
+    background: var(--color-ink);
+    font-size: var(--text-eyebrow);
+  }
+  .lp-f1 .lp-phone {
+    width: calc(50% - var(--cs-3) / 2) !important;
+  }
+  /* The trio still overlaps here: the outer phones were cut where the centre
+     one covers them in the comp, so their inner edges must stay hidden. */
+  .lp-f2 {
+    column-gap: 0;
+  }
+  .lp-f2-l {
+    width: 32% !important;
+  }
+  .lp-f2-c {
+    width: 38% !important;
+    margin-left: -2%;
+  }
+  .lp-f2-r {
+    width: 34% !important;
+    margin-left: -2%;
+  }
+  .lp-f2-l { order: 1; }
+  .lp-f2-c { order: 2; }
+  .lp-f2-r { order: 3; }
+  /* Four abreast is the comp's own row and still large from 48rem. */
+  .lp-p .lp-phone {
+    width: calc(25% - var(--cs-3) * 3 / 4) !important;
+  }
+  .lp-card {
+    order: 10;
+    flex: 0 0 100%;
+    width: auto !important;
+    /* full width here, so a slide from the side would push the page wide */
+    transform: translateY(calc((1 - var(--p)) * 12%));
+    padding: var(--cs-5) !important;
+    margin-top: var(--cs-2);
+  }
+}
+@media (max-width: 47.99rem) {
+  .lp-p .lp-phone {
+    width: calc(50% - var(--cs-3) / 2) !important;
+  }
+}

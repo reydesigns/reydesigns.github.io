@@ -1,0 +1,116 @@
+/* The pixel cat and its night window (PixelCat.jsx, PixelWindow.jsx). */
+
+/* --- pixel cat ------------------------------------------------------------ */
+/* Its lane: a night window on the wall behind, the cat walking along the
+   bottom between its bed on the left and its bowl at the far right. */
+.fz-cat-lane {
+  /* How far above the lane's bottom the cat walks and the bowl sits: raised
+     so the cat brushes the bottom of the window on its way past. Less on
+     phones, where the lane is shorter. */
+  --fz-cat-floor: 8%;
+  position: relative;
+  min-height: 4rem;
+}
+@media (min-width: 48rem) {
+  .fz-cat-lane {
+    --fz-cat-floor: 24%;
+  }
+}
+.fz-cat-lane__window {
+  position: absolute;
+  top: 6%;
+  left: 18%;
+}
+.fz-cat {
+  position: absolute;
+  left: 0;
+  bottom: var(--fz-cat-floor);
+}
+.fz-cat svg,
+.fz-bowl {
+  display: block;
+  fill: var(--color-maroon);
+}
+/* The sprites face right; walking back and sleeping, it faces left. */
+.fz-cat[data-left] svg {
+  transform: scaleX(-1);
+}
+/* Asleep: three "z"s rising and fading over its head (on the left, as it
+   sleeps facing left), one after another. */
+.fz-cat__zs {
+  position: absolute;
+  left: 1rem;
+  bottom: 85%;
+  font-family: var(--font-display);
+  color: var(--color-maroon);
+  line-height: 1;
+}
+.fz-cat__zs span {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  opacity: 0;
+  animation: fz-z 2.7s steps(6, end) infinite;
+}
+.fz-cat__zs span:nth-child(1) { font-size: 0.9rem; }
+.fz-cat__zs span:nth-child(2) { font-size: 1.15rem; animation-delay: 0.9s; }
+.fz-cat__zs span:nth-child(3) { font-size: 1.4rem; animation-delay: 1.8s; }
+@keyframes fz-z {
+  0% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(1rem, -2.5rem); }
+}
+/* In front of the cat, its inside in the page colour, so a dipped head
+   disappears behind the rim. */
+.fz-bowl {
+  position: absolute;
+  bottom: var(--fz-cat-floor);
+  z-index: 1;
+}
+.fz-bowl__fill {
+  fill: var(--color-bg);
+}
+
+/* The window: see-through, in burgundy outline like the cat. */
+.fz-night__line { fill: var(--color-maroon); }
+.fz-night__edge {
+  fill: none;
+  stroke: var(--color-maroon);
+  stroke-width: 1;
+}
+.fz-night__star {
+  fill: var(--color-maroon);
+  animation: fz-twinkle 2.4s steps(2, end) infinite;
+}
+/* The breeze: each curtain billows in from its top corner on an uneven,
+   gusty rhythm, the two slightly out of step. */
+.fz-night__curtain {
+  transform-box: fill-box;
+  transform-origin: 0 0;
+  animation: fz-gust 3.6s ease-in-out infinite;
+}
+.fz-night__curtain--right {
+  animation-duration: 4.1s;
+  animation-delay: -1.3s;
+}
+@keyframes fz-gust {
+  0%, 100% { transform: skewX(0deg) scaleX(1); }
+  18% { transform: skewX(12deg) scaleX(1.18); }
+  30% { transform: skewX(6deg) scaleX(1.06); }
+  48% { transform: skewX(16deg) scaleX(1.26); }
+  70% { transform: skewX(3deg) scaleX(1.02); }
+}
+@keyframes fz-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fz-night__star,
+  .fz-night__curtain,
+  .fz-cat__zs span {
+    animation: none;
+  }
+  .fz-cat__zs span { opacity: 1; }
+  .fz-cat__zs span:nth-child(2) { transform: translate(0.5rem, -1.1rem); }
+  .fz-cat__zs span:nth-child(3) { transform: translate(1rem, -2.5rem); }
+}

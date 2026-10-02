@@ -1,0 +1,154 @@
+/* ---------------------------------------------------------------------------
+   Terminal window (Terminal.jsx): macOS-style title bar over a dark screen,
+   monospace output, and a block cursor blinking on the prompt line.
+--------------------------------------------------------------------------- */
+.term {
+  margin: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--term-bg);
+  color: var(--term-text);
+  font-family: var(--font-mono);
+  font-size: clamp(0.8125rem, 0.9vw, 0.9375rem);
+  line-height: 1.6;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-ink) 20%, transparent),
+    0 24px 50px -20px color-mix(in srgb, var(--color-ink) 50%, transparent);
+}
+.term__bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  background: var(--term-bar);
+}
+.term__dots {
+  position: absolute;
+  left: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.term__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+.term__dot--red { background: var(--fz-dot-red); }
+.term__dot--yellow { background: var(--term-dot-yellow); }
+.term__dot--green { background: var(--fz-dot-green); }
+.term__title {
+  color: var(--term-muted);
+  font-size: 0.85em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-inline: 3.5rem;
+}
+.term__screen {
+  padding: clamp(1rem, 2vw, 1.5rem) clamp(1rem, 2.2vw, 1.75rem) clamp(1.25rem, 2.4vw, 1.75rem);
+}
+.term__line,
+.term__out {
+  margin: 0;
+}
+.term__out {
+  margin-block: 0.6em;
+}
+.term__prompt {
+  color: var(--term-prompt);
+}
+.term__cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  background: var(--term-text);
+  animation: type-caret-blink 1.05s steps(1, end) infinite;
+}
+
+/* --- Python REPL ------------------------------------------------------------ */
+.term__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+}
+.term__py {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+}
+.term__banner {
+  color: var(--term-muted);
+  margin-bottom: 0.9em;
+}
+.term__prompt {
+  font-weight: 700;
+}
+.term__kw {
+  color: var(--term-kw);
+}
+.term__fn {
+  color: var(--term-fn);
+}
+.term__comment {
+  color: var(--term-muted);
+  font-style: italic;
+}
+/* Output sits a step in, like the REPL's printed block. */
+.term__out {
+  border-left: 2px solid color-mix(in srgb, var(--term-py-blue) 55%, transparent);
+  padding-inline-start: 0.9em;
+}
+.term__out p {
+  margin: 0;
+}
+.term__cmd + .term__cmd {
+  margin-top: 0.15em;
+}
+.term__str {
+  color: #f2b880;
+}
+.term__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.term__list li::before {
+  content: '• ';
+  color: var(--term-prompt);
+}
+.term__link {
+  color: var(--term-prompt);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.term__link:hover,
+.term__link:focus-visible {
+  color: var(--term-text);
+}
+
+/* Near-square and a touch taller than wide (Me page), once it has a column
+   of its own. Its height is a min-height off the width, so longer output
+   still grows the window rather than being clipped by overflow: hidden. */
+.term--tall {
+  display: flex;
+  flex-direction: column;
+}
+.term--tall .term__screen {
+  flex: 1;
+}
+@media (min-width: 48rem) {
+  .term--tall {
+    container-type: inline-size;
+  }
+  .term--tall .term__screen {
+    min-height: calc(120cqw - 2.25rem);
+  }
+}
+/* Key phrases in the output: heavier, and a shade brighter than the text. */
+.term__out strong {
+  font-weight: 700;
+  color: #ffffff;
+}

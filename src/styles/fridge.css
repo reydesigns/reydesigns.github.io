@@ -1,0 +1,81 @@
+/* ---------------------------------------------------------------------------
+   Fridge door (FridgeDoor.jsx): overlapping prints and the 3D magnets that
+   hold them. Everything is placed in % of the door, which keeps one aspect
+   ratio, so the arrangement holds at every width.
+--------------------------------------------------------------------------- */
+.fridge {
+  position: relative;
+  aspect-ratio: 5 / 6;
+  width: 100%;
+}
+
+/* A print with a white border, a little deeper at the bottom. */
+.fridge__print {
+  position: absolute;
+  margin: 0;
+  width: 50%;
+  padding: 3.5% 3.5% 9%;
+  background: #fffdf9;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-ink) 18%, transparent),
+    0 14px 30px -12px color-mix(in srgb, var(--color-ink) 40%, transparent);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.fridge__print img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+.fridge__print--waterfall {
+  top: 7%;
+  left: 2%;
+  z-index: 1;
+  transform: rotate(-6deg);
+}
+.fridge__print--helmet {
+  top: 3%;
+  right: 3%;
+  z-index: 2;
+  transform: rotate(5deg);
+}
+.fridge__print--cat {
+  top: 43%;
+  left: 24%;
+  width: 46%;
+  z-index: 3;
+  transform: rotate(-2deg);
+}
+
+/* Each magnet's box is the size of its visible artwork. */
+.fridge__magnet {
+  position: absolute;
+  z-index: 5;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.fridge__magnet > * {
+  pointer-events: auto;
+}
+/* Over the seam where the two top prints overlap, holding both. */
+.fridge__magnet--spidey {
+  top: 4%;
+  left: 36%;
+  width: 25%;
+  transform: rotate(-4deg);
+}
+/* Off to the left, on the waterfall print's top edge. */
+.fridge__magnet--strawberry {
+  top: 1%;
+  left: 14%;
+  width: 14%;
+  z-index: 6;
+  transform: rotate(-10deg);
+}
+/* On the cat photo's top edge, naturally. */
+.fridge__magnet--cat {
+  top: 39%;
+  left: 52%;
+  width: 19%;
+  transform: rotate(6deg);
+}

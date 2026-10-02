@@ -1,0 +1,31 @@
+/* ---------------------------------------------------------------------------
+   Me page: the headline (set to match Funzies' .fz-headline), the terminal and
+   the fridge door side by side, the pixel cat under both.
+--------------------------------------------------------------------------- */
+.me-page {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  width: min(68rem, 100% - 2 * var(--page-gutter));
+  margin-inline: auto;
+  padding-block: clamp(2rem, 5vw, 5rem) clamp(2.5rem, 5vw, 4rem);
+}
+
+.me-grid {
+  display: grid;
+  gap: clamp(2.5rem, 4vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 48rem) {
+  .me-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Same face, size and leading as the Funzies headline (.fz-headline). */
+.me-headline {
+  font-size: clamp(2.75rem, 6.2vw, 6.25rem);
+  line-height: 0.95;
+  color: var(--color-ink);
+  margin: 0;
+}

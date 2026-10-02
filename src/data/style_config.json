@@ -1,0 +1,188 @@
+{
+  "enabled": true,
+  "debugRegions": false,
+  "geometry": {
+    "maxSegments": 300,
+    "smoothRadius": 3,
+    "smoothPasses": 2,
+    "edgeRadius": 4,
+    "chunky": false,
+    "chunkyGamma": 0.72,
+    "chunkyDepth": 1.12
+  },
+  "render": {
+    "toneMapping": "Neutral",
+    "exposure": 1.0,
+    "environment": "studio",
+    "environmentIntensity": 0.425
+  },
+  "lights": {
+    "ambient": {
+      "color": "#ffffff",
+      "ground": "#e9ddd6",
+      "intensity": 0.705
+    },
+    "key": {
+      "color": "#fff6ee",
+      "intensity": 1.81,
+      "position": [
+        2.5,
+        3,
+        4
+      ]
+    },
+    "fill": {
+      "color": "#fff4ec",
+      "intensity": 0.53,
+      "position": [
+        -3.5,
+        0.5,
+        3
+      ]
+    },
+    "rim": {
+      "color": "#ffffff",
+      "intensity": 1.06,
+      "position": [
+        -1.5,
+        3,
+        -3
+      ]
+    },
+    "back": {
+      "color": "#ffffff",
+      "intensity": 1.4,
+      "position": [
+        -2,
+        2,
+        -4
+      ]
+    }
+  },
+  "blush": {
+    "enabled": true,
+    "feather": 9,
+    "strength": 0.9
+  },
+  "regions": [
+    {
+      "name": "eye-white",
+      "match": {
+        "lum": [
+          0.82,
+          1
+        ],
+        "sat": [
+          0,
+          0.14
+        ]
+      },
+      "roughness": 0.11,
+      "clearcoat": 0.82,
+      "clearcoatRoughness": 0.081
+    },
+    {
+      "name": "dark-gloss",
+      "note": "hair, pupils, the cat's strawberry, and the drawn lines (lines share the hair colour, so they cannot be told apart by colour)",
+      "match": {
+        "lum": [
+          0,
+          0.24
+        ]
+      },
+      "roughness": 0.152,
+      "clearcoat": 0.805,
+      "clearcoatRoughness": 0.096
+    },
+    {
+      "name": "blush",
+      "match": {
+        "hue": [
+          [
+            345,
+            360
+          ],
+          [
+            0,
+            9
+          ]
+        ],
+        "sat": [
+          0.35,
+          1
+        ],
+        "lum": [
+          0.3,
+          0.75
+        ]
+      },
+      "roughness": 0.389,
+      "clearcoat": 0.269,
+      "clearcoatRoughness": 0.23,
+      "sheen": 0.6,
+      "glow": 0.06
+    },
+    {
+      "name": "skin",
+      "match": {
+        "hue": [
+          [
+            8,
+            32
+          ]
+        ],
+        "sat": [
+          0.2,
+          0.52
+        ],
+        "lum": [
+          0.43,
+          0.68
+        ]
+      },
+      "roughness": 0.41,
+      "clearcoat": 0.234,
+      "clearcoatRoughness": 0.23,
+      "sheen": 0.6,
+      "glow": 0.06
+    },
+    {
+      "name": "hair-highlight",
+      "note": "the lighter brown strands drawn into the hair",
+      "match": {
+        "hue": [
+          [
+            0,
+            40
+          ]
+        ],
+        "sat": [
+          0.15,
+          0.6
+        ],
+        "lum": [
+          0.24,
+          0.43
+        ]
+      },
+      "roughness": 0.198,
+      "clearcoat": 0.79,
+      "clearcoatRoughness": 0.11
+    },
+    {
+      "name": "plastic",
+      "note": "everything else: the cat's fur, the leaf, hearts, earrings, hair tie",
+      "match": {},
+      "roughness": 0.345,
+      "clearcoat": 0.445,
+      "clearcoatRoughness": 0.174
+    }
+  ],
+  "sheenColor": "#ffd9c8",
+  "glowColor": "#ff9a7a",
+  "backFace": {
+    "roughness": 0.345,
+    "clearcoat": 0.445,
+    "clearcoatRoughness": 0.174
+  }
+}
