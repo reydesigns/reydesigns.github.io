@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-  // GitHub Pages serves the site from /portfolio/; the deploy workflow sets
-  // BASE_PATH. Everywhere else (dev, Vercel) it stays at the root.
+  // The deploy workflow sets BASE_PATH; GitHub Pages (reydesigns.github.io)
+  // serves from the root, as do dev and Vercel.
   base: process.env.BASE_PATH || '/',
   plugins: [react(), tailwindcss()],
   resolve: {
