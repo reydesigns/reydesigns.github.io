@@ -359,12 +359,14 @@
   flex: 0 0 100%;
 }
 
-/* 'hover' tiles: the preview card. Fixed to the viewport, centred on the
-   tile above or below it, and never in the pointer's way. */
+/* 'hover' tiles: the preview card. Fixed to the viewport and centred over
+   the tile it previews; once open it takes the pointer, and a click on it
+   opens the popup like a click on the tile. */
 .fz-preview {
   position: fixed;
   z-index: 60;
   pointer-events: none;
+  cursor: pointer;
   padding: 0.75rem;
   border-radius: 1rem;
   background: var(--color-surface);
@@ -372,26 +374,15 @@
     0 0 0 1px color-mix(in srgb, var(--color-ink) 8%, transparent),
     0 18px 40px -16px color-mix(in srgb, var(--color-ink) 40%, transparent);
   opacity: 0;
+  transform: translate(-50%, -50%) scale(0.94);
   transition:
     opacity 180ms ease,
     transform 260ms var(--ease-brand);
 }
-.fz-preview[data-side='top'] {
-  transform: translate(-50%, calc(-100% + 6px)) scale(0.98);
-  transform-origin: 50% 100%;
-}
-.fz-preview[data-side='bottom'] {
-  transform: translate(-50%, -6px) scale(0.98);
-  transform-origin: 50% 0;
-}
 .fz-preview[data-open] {
+  pointer-events: auto;
   opacity: 1;
-}
-.fz-preview[data-open][data-side='top'] {
-  transform: translate(-50%, -100%);
-}
-.fz-preview[data-open][data-side='bottom'] {
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -50%);
 }
 .fz-preview__head {
   display: flex;

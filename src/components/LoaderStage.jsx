@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react'
 import { CroppedMark } from './GifMark'
-import { loaderTotalMs } from '@/lib/loaderTiming'
+import { cssMs, loaderTotalMs } from '@/lib/loaderTiming'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 // 750x625 WebP copies of the 3000x2500 frame-0N.png originals (exactly a
 // quarter scale, so the crop fractions below hold for both). The mark is never
@@ -45,10 +45,7 @@ const FRAMES = [frame01, frame02, frame03, frame04]
 const LAST = FRAMES.length - 1
 
 function frameMs() {
-  if (typeof window === 'undefined') return 250
-  const raw = getComputedStyle(document.documentElement).getPropertyValue('--loader-frame-ms')
-  const n = Number.parseFloat(raw)
-  return Number.isFinite(n) && n > 0 ? n : 250
+  return cssMs('--loader-frame-ms', 250)
 }
 
 /**

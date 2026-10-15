@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useInView } from '@/lib/useInView'
 import { useMediaQuery, HOVER } from '@/lib/useMediaQuery'
@@ -39,6 +39,12 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
   const swipe = TILE_MOTION === 'swipe'
   const preview = usePreview(ref, !swipe && canHover)
   const bodyClass = `fz-window__body ${tile === 'icon' ? 'fz-window__body--icon' : ''}`
+  // The card covers the tile, so clicking it has to do what clicking the tile
+  // does; the popup still opens from (and returns focus to) the tile.
+  const open = () => {
+    preview.hide()
+    onOpen(item, ref.current)
+  }
 
   return (
     <>
@@ -46,12 +52,9 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
         ref={ref}
         type="button"
         className={`fz-window ${className}`}
-        onClick={(e) => {
-          preview.hide()
-          onOpen(item, e.currentTarget)
-        }}
+        onClick={open}
         onPointerEnter={preview.onEnter}
-        onPointerLeave={preview.hide}
+        onPointerLeave={preview.onLeave}
         aria-haspopup="dialog"
         aria-label={`Open ${item.title}`}
       >
@@ -64,7 +67,7 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
           </span>
         )}
       </button>
-      {preview.anchor && <PreviewCard item={item} images={images} {...preview} />}
+      {preview.anchor && <PreviewCard item={item} images={images} onOpen={open} {...preview} />}
     </>
   )
 }
@@ -134,33 +137,48 @@ function SwipeBody({ className, images, delay, paused }) {
 
 /**
  * Where the preview card goes and whether it is showing. The card is placed
- * from the tile's box when the pointer arrives, above the tile when there is
- * room and below it otherwise, and hidden again on leave, click or scroll.
- * It ignores the pointer entirely, so a click always reaches the tile.
+ * from the tile's box when the pointer arrives, centred over the tile, and
+ * hidden again on scroll, click, or once the pointer has left both the tile
+ * and the card. Moving from one to the other is not leaving: the grace period
+ * covers the hop, since the card sits on top of the tile.
  */
+const LEAVE_GRACE_MS = 80
+
 function usePreview(ref, enabled) {
   const [anchor, setAnchor] = useState(null)
   const [open, setOpen] = useState(false)
+  const openRef = useRef(false)
   const timer = useRef()
+
+  const show = (next) => {
+    openRef.current = next
+    setOpen(next)
+  }
 
   const hide = useCallback(() => {
     clearTimeout(timer.current)
-    setOpen(false)
+    show(false)
   }, [])
 
   const onEnter = useCallback(
     (e) => {
       if (!enabled || e.pointerType !== 'mouse') return
       clearTimeout(timer.current)
+      if (openRef.current) return
       timer.current = setTimeout(() => {
         const el = ref.current
         if (!el) return
         setAnchor(el.getBoundingClientRect())
-        setOpen(true)
+        show(true)
       }, PREVIEW_DELAY_MS)
     },
     [enabled, ref],
   )
+
+  const onLeave = useCallback(() => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => show(false), LEAVE_GRACE_MS)
+  }, [])
 
   useEffect(() => {
     if (!open) return undefined
@@ -174,32 +192,44 @@ function usePreview(ref, enabled) {
 
   useEffect(() => () => clearTimeout(timer.current), [])
 
-  return { anchor, open, onEnter, hide }
+  return { anchor, open, onEnter, onLeave, hide }
 }
 
 const GUTTER = 16
-const GAP = 12
 
-function PreviewCard({ item, images, anchor, open }) {
+/** `value` pulled inside [lo, hi]; centred between them if they cross. */
+const clamp = (value, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(Math.max(value, lo), hi))
+
+function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
+  const cardRef = useRef(null)
+  const [height, setHeight] = useState(0)
   const shown = images.slice(0, PREVIEW_MAX)
   const more = images.length - shown.length
   const cols = Math.min(shown.length, 4)
-  // ~7.5rem a picture, never wider than the viewport allows.
-  const width = Math.min(cols * 120 + (cols - 1) * 8 + 24, window.innerWidth - 2 * GUTTER)
-  const center = anchor.left + anchor.width / 2
-  const left = Math.min(Math.max(center, GUTTER + width / 2), window.innerWidth - GUTTER - width / 2)
-  const above = anchor.top > window.innerHeight * 0.45
-  const style = above
-    ? { left, top: anchor.top - GAP, width }
-    : { left, top: anchor.bottom + GAP, width }
+  // ~7.5rem a picture, at least a little wider than the tile so it covers
+  // it, and never wider than the viewport allows.
+  const natural = cols * 120 + (cols - 1) * 8 + 24
+  const width = Math.min(Math.max(natural, anchor.width + 32), window.innerWidth - 2 * GUTTER)
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const left = clamp(anchor.left + anchor.width / 2, GUTTER + width / 2, vw - GUTTER - width / 2)
+  const top = clamp(anchor.top + anchor.height / 2, GUTTER + height / 2, vh - GUTTER - height / 2)
+
+  // Its height depends on its contents, so it is measured before it shows.
+  useLayoutEffect(() => {
+    setHeight(cardRef.current?.offsetHeight ?? 0)
+  }, [anchor, width])
 
   return createPortal(
     <div
+      ref={cardRef}
       className="fz-preview"
       data-open={open || undefined}
-      data-side={above ? 'top' : 'bottom'}
-      style={{ ...style, '--fz-preview-cols': cols }}
+      style={{ left, top, width, '--fz-preview-cols': cols }}
       aria-hidden="true"
+      onClick={onOpen}
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
     >
       <div className="fz-preview__head">
         <span className="fz-preview__title">{item.title}</span>
