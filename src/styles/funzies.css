@@ -324,25 +324,15 @@
   /* Clear: the window's glass shows through behind the artwork. */
   background: transparent;
 }
-/* Every picture stacked, each fitted whole inside the window with an even
-   margin — never cropped. The outgoing one fades out before the next fades
-   in, since pictures of different shapes would show through each other. */
+/* The picture fitted whole inside the window with an even margin — never
+   cropped. */
 .fz-window__body img {
   position: absolute;
   inset: 7%;
   width: 86%;
   height: 86%;
   object-fit: contain;
-  opacity: 0;
-  transition:
-    opacity 280ms ease,
-    transform 600ms var(--ease-brand);
-}
-.fz-window__body img[data-shown] {
-  opacity: 1;
-  transition:
-    opacity 380ms ease 300ms,
-    transform 600ms var(--ease-brand);
+  transition: transform 600ms var(--ease-brand);
 }
 .fz-window:hover .fz-window__body img {
   transform: scale(1.02);
@@ -351,6 +341,116 @@
   inset: 14%;
   width: 72%;
   height: 72%;
+}
+
+/* 'swipe' tiles (TILE_MOTION in FunzieWindow.jsx): the pictures sit side by
+   side, one window wide each, on a track that slides left. */
+.fz-swipe {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  transition: transform 750ms var(--ease-brand);
+}
+.fz-swipe[data-snap] {
+  transition: none;
+}
+.fz-swipe__slide {
+  position: relative;
+  flex: 0 0 100%;
+}
+
+/* 'hover' tiles: the preview card. Fixed to the viewport, centred on the
+   tile above or below it, and never in the pointer's way. */
+.fz-preview {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-ink) 8%, transparent),
+    0 18px 40px -16px color-mix(in srgb, var(--color-ink) 40%, transparent);
+  opacity: 0;
+  transition:
+    opacity 180ms ease,
+    transform 260ms var(--ease-brand);
+}
+.fz-preview[data-side='top'] {
+  transform: translate(-50%, calc(-100% + 6px)) scale(0.98);
+  transform-origin: 50% 100%;
+}
+.fz-preview[data-side='bottom'] {
+  transform: translate(-50%, -6px) scale(0.98);
+  transform-origin: 50% 0;
+}
+.fz-preview[data-open] {
+  opacity: 1;
+}
+.fz-preview[data-open][data-side='top'] {
+  transform: translate(-50%, -100%);
+}
+.fz-preview[data-open][data-side='bottom'] {
+  transform: translate(-50%, 0);
+}
+.fz-preview__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.1rem 0.2rem 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+.fz-preview__title {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.fz-preview__count {
+  color: var(--color-ink-muted);
+}
+.fz-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--fz-preview-cols, 4), minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.fz-preview__cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+.fz-preview__cell img {
+  position: absolute;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+}
+.fz-preview__more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-surface);
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+}
+.fz-preview__hint {
+  padding: 0.6rem 0.2rem 0.05rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fz-swipe,
+  .fz-preview {
+    transition: none;
+  }
 }
 
 /* --- isometric room + sticker sheet (StickerRoom.jsx) -------------------- */

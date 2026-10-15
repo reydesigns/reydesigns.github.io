@@ -76,7 +76,7 @@ export const FUNZIES = [
     thumb: m('magazine-photo.webp'),
     /* The popup shows these two stacked down its left side in place of the
        slides: the photo of the printed issue whole on top, the cover +
-       spread mockup under it. `media` is still what the tile cycles. */
+       spread mockup under it. `media` is still what the tile previews. */
     stack: [m('magazine-photo.webp'), m('magazine-mockup.webp')],
     media: [
       m('magazine-photo.webp'),
@@ -271,7 +271,7 @@ export const FUNZIES = [
   },
 ]
 
-/* A foldered window's tile cycles through its folders' pictures, the open
+/* A foldered window's tile previews its folders' pictures, the open
    folder's first; its popup reads `folders` instead. Icon folders (`tile:
    'icon'`) and any marked `preview: false` stay out of the tile. */
 for (const f of FUNZIES) {
