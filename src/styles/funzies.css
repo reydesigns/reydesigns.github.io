@@ -367,6 +367,9 @@
   z-index: 60;
   pointer-events: none;
   cursor: pointer;
+  /* As wide as its row, not squeezed by how far right `left` puts it. */
+  width: max-content;
+  box-sizing: border-box;
   padding: 0.75rem;
   border-radius: 1rem;
   background: var(--color-surface);
@@ -400,34 +403,26 @@
 .fz-preview__count {
   color: var(--color-ink-muted);
 }
-.fz-preview__grid {
-  display: grid;
-  grid-template-columns: repeat(var(--fz-preview-cols, 4), minmax(0, 1fr));
-  gap: 0.5rem;
-}
-.fz-preview__cell {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 0.5rem;
+/* One row of pictures at a common height, each at its own shape, with a
+   little space between them. A row too long for the viewport fades out at
+   its right edge rather than wrapping. */
+.fz-preview__row {
+  --fz-preview-h: clamp(7rem, 11vw, 9.5rem);
+  display: flex;
+  justify-content: center;
+  gap: 0.625rem;
   overflow: hidden;
-  background: var(--color-surface-sunken);
 }
-.fz-preview__cell img {
-  position: absolute;
-  inset: 8%;
-  width: 84%;
-  height: 84%;
-  object-fit: contain;
+.fz-preview__row img {
+  flex: none;
+  height: var(--fz-preview-h);
+  width: auto;
+  border-radius: 0.375rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 6%, transparent);
 }
-.fz-preview__more {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-surface);
-  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+.fz-preview[data-overflow] .fz-preview__row {
+  justify-content: flex-start;
+  mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent);
 }
 .fz-preview__hint {
   padding: 0.6rem 0.2rem 0.05rem;

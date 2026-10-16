@@ -23,8 +23,8 @@ export const SWIPE_MS = 2750
 
 /** Hover-intent: sweeping the pointer across the grid shouldn't flash cards. */
 const PREVIEW_DELAY_MS = 140
-/** The preview shows at most this many pictures, the last one marked "+N". */
-const PREVIEW_MAX = 8
+/** The preview shows at most this many pictures; the count says how many there are. */
+const PREVIEW_MAX = 6
 
 /**
  * A tile on the Funzies bento: the maroon title bar from the comp over a
@@ -202,30 +202,37 @@ const clamp = (value, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(Math.max(va
 
 function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
   const cardRef = useRef(null)
-  const [height, setHeight] = useState(0)
+  const [size, setSize] = useState({ w: 0, h: 0, overflow: false })
   const shown = images.slice(0, PREVIEW_MAX)
-  const more = images.length - shown.length
-  const cols = Math.min(shown.length, 4)
-  // ~7.5rem a picture, at least a little wider than the tile so it covers
-  // it, and never wider than the viewport allows.
-  const natural = cols * 120 + (cols - 1) * 8 + 24
-  const width = Math.min(Math.max(natural, anchor.width + 32), window.innerWidth - 2 * GUTTER)
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const left = clamp(anchor.left + anchor.width / 2, GUTTER + width / 2, vw - GUTTER - width / 2)
-  const top = clamp(anchor.top + anchor.height / 2, GUTTER + height / 2, vh - GUTTER - height / 2)
+  const left = clamp(anchor.left + anchor.width / 2, GUTTER + size.w / 2, vw - GUTTER - size.w / 2)
+  const top = clamp(anchor.top + anchor.height / 2, GUTTER + size.h / 2, vh - GUTTER - size.h / 2)
 
-  // Its height depends on its contents, so it is measured before it shows.
+  // The card is as wide as its row of pictures, which only settles as they
+  // load, so it is re-measured (and re-centred) whenever its size changes.
   useLayoutEffect(() => {
-    setHeight(cardRef.current?.offsetHeight ?? 0)
-  }, [anchor, width])
+    const el = cardRef.current
+    if (!el) return undefined
+    const measure = () => {
+      const row = el.querySelector('.fz-preview__row')
+      setSize({ w: el.offsetWidth, h: el.offsetHeight, overflow: !!row && row.scrollWidth > row.clientWidth + 1 })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   return createPortal(
     <div
       ref={cardRef}
       className="fz-preview"
       data-open={open || undefined}
-      style={{ left, top, width, '--fz-preview-cols': cols }}
+      data-overflow={size.overflow || undefined}
+      // At least a little wider than the tile so it covers it; never wider
+      // than the viewport, where the row is cut off with a fade instead.
+      style={{ left, top, minWidth: Math.min(anchor.width + 32, vw - 2 * GUTTER), maxWidth: vw - 2 * GUTTER }}
       aria-hidden="true"
       onClick={onOpen}
       onPointerEnter={onEnter}
@@ -237,12 +244,9 @@ function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
           {images.length} {images.length === 1 ? 'piece' : 'pieces'}
         </span>
       </div>
-      <div className="fz-preview__grid">
-        {shown.map((m, i) => (
-          <span key={m.src} className="fz-preview__cell">
-            <img src={m.src} alt="" decoding="async" />
-            {more > 0 && i === shown.length - 1 && <span className="fz-preview__more">+{more + 1}</span>}
-          </span>
+      <div className="fz-preview__row">
+        {shown.map((m) => (
+          <img key={m.src} src={m.src} alt="" decoding="async" />
         ))}
       </div>
       <div className="fz-preview__hint">click to open</div>
