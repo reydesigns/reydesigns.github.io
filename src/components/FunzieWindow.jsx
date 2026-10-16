@@ -202,22 +202,19 @@ const clamp = (value, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(Math.max(va
 
 function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
   const cardRef = useRef(null)
-  const [size, setSize] = useState({ w: 0, h: 0, overflow: false })
+  const [size, setSize] = useState({ w: 0, h: 0 })
   const shown = images.slice(0, PREVIEW_MAX)
   const vw = window.innerWidth
   const vh = window.innerHeight
   const left = clamp(anchor.left + anchor.width / 2, GUTTER + size.w / 2, vw - GUTTER - size.w / 2)
   const top = clamp(anchor.top + anchor.height / 2, GUTTER + size.h / 2, vh - GUTTER - size.h / 2)
 
-  // The card is as wide as its row of pictures, which only settles as they
+  // The card is as wide as its stack of pictures, which only settles as they
   // load, so it is re-measured (and re-centred) whenever its size changes.
   useLayoutEffect(() => {
     const el = cardRef.current
     if (!el) return undefined
-    const measure = () => {
-      const row = el.querySelector('.fz-preview__row')
-      setSize({ w: el.offsetWidth, h: el.offsetHeight, overflow: !!row && row.scrollWidth > row.clientWidth + 1 })
-    }
+    const measure = () => setSize({ w: el.offsetWidth, h: el.offsetHeight })
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
@@ -229,9 +226,8 @@ function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
       ref={cardRef}
       className="fz-preview"
       data-open={open || undefined}
-      data-overflow={size.overflow || undefined}
       // At least a little wider than the tile so it covers it; never wider
-      // than the viewport, where the row is cut off with a fade instead.
+      // than the viewport.
       style={{ left, top, minWidth: Math.min(anchor.width + 32, vw - 2 * GUTTER), maxWidth: vw - 2 * GUTTER }}
       aria-hidden="true"
       onClick={onOpen}
@@ -244,9 +240,9 @@ function PreviewCard({ item, images, anchor, open, onOpen, onEnter, onLeave }) {
           {images.length} {images.length === 1 ? 'piece' : 'pieces'}
         </span>
       </div>
-      <div className="fz-preview__row">
-        {shown.map((m) => (
-          <img key={m.src} src={m.src} alt="" decoding="async" />
+      <div className="fz-preview__stack" style={{ '--fz-stack-n': shown.length }}>
+        {shown.map((m, i) => (
+          <img key={m.src} src={m.src} alt="" decoding="async" style={{ '--i': i }} />
         ))}
       </div>
       <div className="fz-preview__hint">click to open</div>

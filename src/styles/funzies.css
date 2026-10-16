@@ -403,26 +403,36 @@
 .fz-preview__count {
   color: var(--color-ink-muted);
 }
-/* One row of pictures at a common height, each at its own shape, with a
-   little space between them. A row too long for the viewport fades out at
-   its right edge rather than wrapping. */
-.fz-preview__row {
-  --fz-preview-h: clamp(7rem, 11vw, 9.5rem);
-  display: flex;
+/* The pictures as one stack: all in the same grid cell, the first in front
+   and each one after it tucked behind, offset right by --fz-peek so a strip
+   of it still shows. The ones further back are a touch smaller, so the
+   stack reads as depth rather than a row. Every card is the same size, the
+   artwork fitted whole inside it — otherwise a narrow picture behind a wide
+   one would vanish behind it entirely. */
+.fz-preview__stack {
+  --fz-preview-h: clamp(7.5rem, 12vw, 10rem);
+  --fz-peek: 1.6rem;
+  display: grid;
   justify-content: center;
-  gap: 0.625rem;
-  overflow: hidden;
+  align-items: center;
+  padding-right: 0.25rem;
 }
-.fz-preview__row img {
-  flex: none;
+.fz-preview__stack img {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
   height: var(--fz-preview-h);
-  width: auto;
+  width: calc(var(--fz-preview-h) * 0.8);
+  padding: 0.4rem;
+  object-fit: contain;
+  margin-left: calc(var(--i) * var(--fz-peek));
+  z-index: calc(var(--fz-stack-n) - var(--i));
+  transform: scale(calc(1 - var(--i) * 0.035));
+  transform-origin: 0 50%;
   border-radius: 0.375rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 6%, transparent);
-}
-.fz-preview[data-overflow] .fz-preview__row {
-  justify-content: flex-start;
-  mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent);
+  background: var(--color-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-ink) 8%, transparent),
+    6px 0 14px -6px color-mix(in srgb, var(--color-ink) 30%, transparent);
 }
 .fz-preview__hint {
   padding: 0.6rem 0.2rem 0.05rem;
