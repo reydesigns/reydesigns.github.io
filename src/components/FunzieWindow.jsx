@@ -8,18 +8,21 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
 export const CYCLE_MS = 2000
 
 /**
- * How the tiles show their pictures. Change this one word to switch.
+ * How the tiles show their pictures. The two are independent switches.
  *
- *   'hover'  the tile rests on its thumbnail; hovering it floats a preview
- *            card of every picture in the window over the page. Clicking
- *            still opens the popup. (current, client)
- *   'swipe'  the tile slides through its pictures on its own, one every
- *            SWIPE_MS, while it is on screen. Kept as the alternative.
+ *   TILE_SWIPE     the tile slides through its pictures on its own, one every
+ *                  SWIPE_MS, while it is on screen. Off, it rests on its
+ *                  thumbnail.
+ *   HOVER_PREVIEW  hovering a tile floats a stacked preview card of every
+ *                  picture in the window over it (pointer devices only).
+ *
+ * Clicking the tile, or the card, opens the popup either way.
  */
-export const TILE_MOTION = 'hover'
+export const TILE_SWIPE = true
+export const HOVER_PREVIEW = true
 
-/** How long each picture holds on a tile in 'swipe' mode. */
-export const SWIPE_MS = 2750
+/** How long each picture holds on a swiping tile. */
+export const SWIPE_MS = 2700
 
 /** Hover-intent: sweeping the pointer across the grid shouldn't flash cards. */
 const PREVIEW_DELAY_MS = 140
@@ -36,8 +39,7 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
   const images = item.media.filter((m) => m.type === 'image')
   const [ref, inView] = useInView({ threshold: 0 })
   const canHover = useMediaQuery(HOVER, true)
-  const swipe = TILE_MOTION === 'swipe'
-  const preview = usePreview(ref, !swipe && canHover)
+  const preview = usePreview(ref, HOVER_PREVIEW && canHover)
   const bodyClass = `fz-window__body ${tile === 'icon' ? 'fz-window__body--icon' : ''}`
   // The card covers the tile, so clicking it has to do what clicking the tile
   // does; the popup still opens from (and returns focus to) the tile.
@@ -59,8 +61,9 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
         aria-label={`Open ${item.title}`}
       >
         <WindowBar label={label} />
-        {swipe ? (
-          <SwipeBody className={bodyClass} images={images} delay={delay} paused={!inView} />
+        {TILE_SWIPE ? (
+          // Held while the preview card covers it, so it picks up where it was.
+          <SwipeBody className={bodyClass} images={images} delay={delay} paused={!inView || preview.open} />
         ) : (
           <span className={bodyClass}>
             <img src={(item.thumb ?? images[0]).src} alt="" decoding="async" data-shown />
@@ -72,7 +75,7 @@ export function FunzieWindow({ item, className = '', delay = 0, onOpen }) {
   )
 }
 
-/* --- 'swipe' ------------------------------------------------------------- */
+/* --- swipe --------------------------------------------------------------- */
 
 /**
  * The pictures side by side on a track that slides one window-width every
@@ -133,7 +136,7 @@ function SwipeBody({ className, images, delay, paused }) {
   )
 }
 
-/* --- 'hover' ------------------------------------------------------------- */
+/* --- hover --------------------------------------------------------------- */
 
 /**
  * Where the preview card goes and whether it is showing. The card is placed

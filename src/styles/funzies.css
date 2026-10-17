@@ -343,7 +343,7 @@
   height: 72%;
 }
 
-/* 'swipe' tiles (TILE_MOTION in FunzieWindow.jsx): the pictures sit side by
+/* Swiping tiles (TILE_SWIPE in FunzieWindow.jsx): the pictures sit side by
    side, one window wide each, on a track that slides left. */
 .fz-swipe {
   position: absolute;
@@ -359,7 +359,7 @@
   flex: 0 0 100%;
 }
 
-/* 'hover' tiles: the preview card. Fixed to the viewport and centred over
+/* The hover preview card (HOVER_PREVIEW). Fixed to the viewport and centred over
    the tile it previews; once open it takes the pointer, and a click on it
    opens the popup like a click on the tile. */
 .fz-preview {
