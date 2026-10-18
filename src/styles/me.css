@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------
    Me page: the headline (set to match Funzies' .fz-headline), the terminal and
-   the fridge door side by side, the pixel cat under both.
+   the right column (the pixel cat over the fridge door) side by side.
 --------------------------------------------------------------------------- */
 .me-page {
   display: flex;
@@ -8,7 +8,9 @@
   gap: clamp(1.5rem, 3vw, 3rem);
   width: min(68rem, 100% - 2 * var(--page-gutter));
   margin-inline: auto;
-  padding-block: clamp(2rem, 5vw, 5rem) clamp(2.5rem, 5vw, 4rem);
+  padding-top: clamp(2rem, 5vw, 5rem);
+  /* Clear the fixed nav pill (NavDock publishes --dock-clear). */
+  padding-bottom: max(clamp(2.5rem, 5vw, 4rem), var(--dock-clear, 7rem));
 }
 
 .me-grid {
@@ -20,6 +22,13 @@
   .me-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* The cat's lane above the fridge door; the gap is what drops the prints. */
+.me-side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.5vw, 2rem);
 }
 
 /* Same face, size and leading as the Funzies headline (.fz-headline). */

@@ -1,4 +1,5 @@
 import { Layout } from '@/components/Layout'
+import { NavDock } from '@/components/NavDock'
 import { Terminal, Cmd, Out, K, F, S } from '@/components/Terminal'
 import { FridgeDoor } from '@/components/FridgeDoor'
 import { PixelCat } from '@/components/PixelCat'
@@ -6,8 +7,9 @@ import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import '@/styles/me.css'
 
 /** The headline, set like the Funzies one; under it, the Python terminal on
-    the left and the fridge door of photos on the right (stacked on phones),
-    then the pixel cat doing its rounds in front of its night window. */
+    the left and, on the right, the pixel cat doing its rounds in front of its
+    night window above the fridge door of photos (stacked on phones). The nav
+    pill sits at the bottom, as on Works and Funzies. */
 export function Me() {
   useDocumentMeta({ title: 'About', description: 'About Shreya Rudrapatna, an experience designer.' })
   return (
@@ -67,10 +69,14 @@ export function Me() {
               </p>
             </Out>
           </Terminal>
-          <FridgeDoor />
+          {/* The cat's lane sits over the fridge door, nudging the prints down. */}
+          <div className="me-side">
+            <PixelCat className="h-[10.5rem] w-full md:h-[12rem]" />
+            <FridgeDoor />
+          </div>
         </div>
-        <PixelCat className="h-[10.5rem] w-full md:h-[14rem]" />
       </div>
+      <NavDock placement="bottom" activePath="/me" />
     </Layout>
   )
 }
