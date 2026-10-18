@@ -38,3 +38,102 @@
   color: var(--color-ink);
   margin: 0;
 }
+
+/* --- experience timeline (ExperienceTimeline.jsx) -------------------------
+   Phones: a vertical rule down the left, each stop's logo and text beside its
+   dot. From 48rem: one row, the rule running through the dots, logos above
+   and text below. */
+.me-tl {
+  --tl-logo-h: 1.75rem;
+  --tl-dot: 0.5rem;
+  position: relative;
+  display: grid;
+  gap: 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-brand);
+}
+.me-tl::before {
+  content: '';
+  position: absolute;
+  top: calc(var(--tl-logo-h) / 2);
+  bottom: calc(var(--tl-logo-h) / 2);
+  left: calc(var(--tl-dot) / 2 - 0.5px);
+  width: 1px;
+  background: var(--tl-line);
+}
+.me-tl__stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--tl-dot) 3.25rem 1fr;
+  grid-template-areas:
+    'dot logo name'
+    'dot logo when';
+  column-gap: 0.875rem;
+  align-items: center;
+}
+.me-tl__logo {
+  grid-area: logo;
+  justify-self: center;
+  height: var(--tl-logo-h);
+  max-width: 100%;
+  background-color: var(--color-maroon);
+  opacity: var(--tl-logo-opacity);
+  -webkit-mask: var(--logo) center / contain no-repeat;
+  mask: var(--logo) center / contain no-repeat;
+}
+.me-tl__dot {
+  grid-area: dot;
+  width: var(--tl-dot);
+  height: var(--tl-dot);
+  border-radius: 50%;
+  background: var(--tl-line);
+  /* A ring of page colour so the rule stops short of each dot. */
+  box-shadow: 0 0 0 3px var(--color-bg);
+}
+.me-tl__name {
+  grid-area: name;
+  align-self: end;
+  font-size: var(--text-works-meta);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+.me-tl__when {
+  grid-area: when;
+  align-self: start;
+  font-size: var(--text-eyebrow);
+  line-height: 1.4;
+  color: var(--color-ink-muted);
+}
+
+@media (min-width: 48rem) {
+  .me-tl {
+    --tl-logo-h: 2rem;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+  }
+  /* Horizontal now, from the first dot's centre to the last's. */
+  .me-tl::before {
+    top: calc(var(--tl-logo-h) + 0.875rem + var(--tl-dot) / 2 - 0.5px);
+    bottom: auto;
+    left: 10%;
+    right: 10%;
+    width: auto;
+    height: 1px;
+  }
+  .me-tl__stop {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'logo' 'dot' 'name' 'when';
+    row-gap: 0.875rem;
+    justify-items: center;
+    text-align: center;
+  }
+  .me-tl__name {
+    margin-top: -0.25rem;
+  }
+  .me-tl__when {
+    margin-top: -0.75rem;
+  }
+}

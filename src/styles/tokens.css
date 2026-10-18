@@ -137,6 +137,11 @@
   --term-dot-yellow: #febc2e;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
+  /* --- Experience timeline (Me page) ------------------------------------- */
+  /* A grey rule and dots; the logos are maroon, knocked back. */
+  --tl-line: #c9c3bf;
+  --tl-logo-opacity: 0.6;
+
   /* --- GIF content boxes -------------------------------------------------- */
   /* Each GIF canvas carries transparent padding around the artwork. These are
      the measured content bounds, used to crop the mark to its ink. */

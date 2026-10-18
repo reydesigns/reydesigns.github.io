@@ -3,10 +3,12 @@ import { NavDock } from '@/components/NavDock'
 import { Terminal, Cmd, Out, K, F, S } from '@/components/Terminal'
 import { FridgeDoor } from '@/components/FridgeDoor'
 import { PixelCat } from '@/components/PixelCat'
+import { ExperienceTimeline } from '@/components/ExperienceTimeline'
 import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import '@/styles/me.css'
 
-/** The headline, set like the Funzies one; under it, the Python terminal on
+/** The headline, set like the Funzies one, then the experience timeline;
+    under that, the Python terminal on
     the left and, on the right, the pixel cat doing its rounds in front of its
     night window above the fridge door of photos (stacked on phones). The nav
     pill sits at the bottom, as on Works and Funzies. */
@@ -16,6 +18,7 @@ export function Me() {
     <Layout>
       <div className="me-page">
         <h1 className="me-headline font-display">heyo, i’m Shreya</h1>
+        <ExperienceTimeline />
         <div className="me-grid">
           {/* Each call reads as plain English: shreya.how_i_design(), … */}
           <Terminal className="term--tall">
