@@ -8,7 +8,7 @@ import reyDesigns from '@assets/brand/icons/experience/rey-designs.png'
    two-colour mark keeps its shape), painted maroon by the CSS. */
 const STOPS = [
   { name: 'Science Discovery Zone', when: '2023', logo: sdz, ratio: 1 },
-  { name: 'Toronto Metropolitan University', when: '2023 – 2024', logo: tmu, ratio: 236 / 128 },
+  { name: 'TMU', when: '2023 – 2024', logo: tmu, ratio: 236 / 128 },
   { name: 'Minoh', when: '2024 · 6 months', logo: minoh, ratio: 1 },
   { name: 'Avison Young', when: '2024 – 2026', logo: avisonYoung, ratio: 211 / 128 },
   { name: 'Rey Designs', when: 'Freelance', logo: reyDesigns, ratio: 136 / 128 },
