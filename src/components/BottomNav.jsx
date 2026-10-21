@@ -63,11 +63,12 @@ function Glyph({ item }) {
             squashed the ring into an oval when it was stretched to fill a
             square box.
 
-            The photo fills the frame's whole opening rather than a circle
-            inside it: nav-me-frame-mask.png is that opening, flood-filled from
-            the centre of the frame and grown a few pixels so the photo tucks
-            under the ring's inner edge. Same 782x782 canvas, so it lines up at
-            any size. */}
+            The photo runs under the whole frame, so it shows through the
+            spirals' see-through holes too rather than the pill behind:
+            nav-me-frame-mask.png is the frame's outer silhouette (everything
+            not flood-filled from the canvas edge), pulled in 2px so no photo
+            peeks past the ring's outer edge. Same 782x782 canvas, so it lines
+            up at any size. */}
         <img
           src={avatar}
           alt=""

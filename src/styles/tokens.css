@@ -124,11 +124,12 @@
   /* The popup's header is Pixelta at 40px. */
   --fz-pop-title: 2.5rem;
 
-  /* --- Terminal (Me page): a Python REPL in Python's blue and yellow ----- */
-  --term-bg: #14202f;
-  --term-bar: #1e2e42;
-  --term-text: #e4e9f0;
-  --term-muted: #8394aa;
+  /* --- Terminal (Me page): a Python REPL, burgundy like the Funzies windows:
+     the title bar is their maroon, the screen a step darker. ------------- */
+  --term-bg: #2a0306;
+  --term-bar: var(--color-maroon);
+  --term-text: #f3e7e4;
+  --term-muted: #b8928d;
   --term-prompt: #ffd43b;
   --term-kw: #79b0e6;
   --term-fn: #9fd88b;
