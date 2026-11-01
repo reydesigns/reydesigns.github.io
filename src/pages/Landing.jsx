@@ -179,11 +179,9 @@ export function Landing() {
             </h1>
           </div>
 
-          {/* The green dot pulses to say "online"; it is decoration, so the
-              pill reads the same to a screen reader. */}
-          <p className="mx-auto mt-[clamp(3rem,10vh,8rem)] flex items-center gap-[0.65em] rounded-[var(--radius-pill)] bg-[var(--color-surface)] px-[1.6em] py-[0.7em] text-[length:var(--text-body)] font-medium text-[var(--color-ink-muted)] shadow-sm">
-            <span className="status-dot shrink-0" aria-hidden="true" />
-            currently: masters of information @uoft
+          {/* Plain, bold, muted line: the copy carries the status, no pill or dot. */}
+          <p className="mx-auto mt-[clamp(3rem,10vh,8rem)] text-center font-bold text-[length:var(--text-body)] text-[var(--color-ink-muted)] opacity-[var(--hero-status-opacity)]">
+            Master of Information @ UofT
           </p>
         </section>
 
