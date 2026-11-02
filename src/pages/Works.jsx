@@ -5,16 +5,14 @@ import { useDocumentMeta } from '@/lib/useDocumentMeta'
 
 /**
  * `/works` as a direct route: the grid, immediately, with the nav at the
- * bottom centre exactly as it is on the landing page. No hero and no loader —
- * someone who arrives here from a bookmark, a shared link or the browser's back
- * button has not asked to sit through an intro.
+ * bottom centre exactly as it is on the landing page. No hero — someone who
+ * arrives here from a bookmark, a shared link or the browser's back button has
+ * not asked to sit through an intro.
  *
  * The landing page reaches the same grid by scrolling instead, and renders the
  * very same WorksGrid, so the two can never drift apart.
  *
- * Below 64rem the grid is a single column, which is also the whole of the
- * mobile "tap works, read the case studies" path — there is no scroll sequence
- * on a phone at all.
+ * Below 64rem the grid is a single column, on both routes.
  */
 export function Works() {
   useDocumentMeta({

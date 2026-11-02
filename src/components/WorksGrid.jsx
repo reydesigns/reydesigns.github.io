@@ -8,9 +8,10 @@ import { morphCardToCaseStudy } from '@/lib/cardMorph'
 /* ---------------------------------------------------------------------------
    The 2x2 card grid on its own — no Layout, no nav, no page chrome.
 
-   It is rendered twice: as the third screen of the landing page's scroll
-   sequence, and as the whole of the `/works` route. Both have to be the same
-   pixels, which is why the grid geometry lives here and not in either page.
+   It is rendered twice: as the second screen of the landing page (under the
+   hero, on every width), and as the whole of the `/works` route. Both have to
+   be the same pixels, which is why the grid geometry lives here and not in
+   either page.
 
    Grid geometry from Assets/site-design/images/works-page.png at 1728px:
    two 619px columns, 75px apart, 26px between rows — i.e. a 1313px block,
@@ -26,9 +27,10 @@ import { morphCardToCaseStudy } from '@/lib/cardMorph'
    nav pill at the end of the scroll. The pill is fixed bottom-centre on every
    width, and NavDock publishes `--dock-clear` (pill's distance from the
    viewport bottom + a 16px gap). The footer always comes after this section
-   and already fills part of that distance — on /works it is in flow below, on
-   the landing works screen its height is reserved below this section (see
-   Layout) — so only the remainder is padded here. On phones the footer pads
+   and already fills part of that distance — in flow below it on /works and on
+   the landing page below 64rem, its height reserved below this section on the
+   wide landing works screen (see Layout) — so only the remainder is padded
+   here. On phones the footer pads
    itself past the pill (see Footer), the remainder goes negative, and the
    2rem floor is all that is left: one clearance, not two stacked. */
 const SECTION =

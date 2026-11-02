@@ -19,6 +19,16 @@ export const BASE = process.env.BASE_URL ?? 'http://localhost:5173'
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
+/* A failed request that is not a fault: a <video> download the browser itself
+   cut short. A card video with `preload="metadata"` (WorkCard, whenever the
+   grid is near the viewport but not on it — `/` on load) fetches until it can
+   start, then Chrome's media loader suspends and cancels the rest; a reload or
+   tab close cuts a playing video's stream the same way. Puppeteer reports both
+   as net::ERR_ABORTED. A missing or broken file fails differently (an error
+   response, or another error text), so it is still caught. */
+export const isMediaAbort = (r) =>
+  r.resourceType() === 'media' && r.failure()?.errorText === 'net::ERR_ABORTED'
+
 export function launch() {
   return puppeteer.launch({
     executablePath: CHROME,
@@ -57,9 +67,9 @@ export async function openPage(browser, path, { w = 1728, h = 1117, reduced = fa
     if (m.type() === 'error') errors.push(`console: ${m.text()}`)
   })
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
-  page.on('requestfailed', (r) =>
-    errors.push(`requestfailed: ${r.url().slice(-60)} ${r.failure()?.errorText}`),
-  )
+  page.on('requestfailed', (r) => {
+    if (!isMediaAbort(r)) errors.push(`requestfailed: ${r.url().slice(-60)} ${r.failure()?.errorText}`)
+  })
   await page.goto(`${BASE}${path}`, {
     waitUntil: wait ? 'networkidle2' : 'domcontentloaded',
     timeout: 30000,

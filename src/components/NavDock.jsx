@@ -7,9 +7,11 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
    The nav pill's home.
 
    There is exactly ONE nav pill on the site and this is the element that holds
-   it. Nothing cross-fades: when the landing page reaches the works screen the
-   dock's placement prop flips from 'bottom' to 'left', and the pill physically
-   travels across the viewport, reflowing from a row into a column on the way.
+   it. Nothing cross-fades: if a page flips the dock's placement prop (from
+   'bottom' to 'left', say), the pill physically travels across the viewport,
+   reflowing from a row into a column on the way. Every page currently keeps
+   it at the bottom — the landing page included, on both of its screens — but
+   the move is kept working for when one doesn't.
 
    HOW THE TWEEN STAYS HONEST
    --------------------------
@@ -44,10 +46,10 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
    `position: fixed` host, so a scroll in flight cannot shift any of it — which
    is the other half of the jitter the client was seeing.
 
-   Why `fixed` even on the landing page: the pill has to stay put through three
-   screens of scrolling. The landing page reserves the pill's old in-flow box
-   with an invisible spacer, so the hero lays out exactly as it did when the
-   pill lived in the document.
+   Why `fixed` even on the landing page: the pill has to stay put while the
+   page scrolls from the hero down to the works grid. The landing page
+   reserves the pill's old in-flow box with an invisible spacer, so the hero
+   lays out exactly as it did when the pill lived in the document.
 --------------------------------------------------------------------------- */
 
 const PLACEMENT = {

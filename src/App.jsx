@@ -42,10 +42,11 @@ function PrefetchCaseStudy() {
  * Every route starts at the top, and any shared-element transition that is
  * still running when the destination changes gets torn down.
  *
- * This matters more than it used to: `/` is now three screens tall, so without
- * it a visitor who scrolled to the works grid and opened a case study would
- * land two screens down a brand new page. Lenis keeps its own scroll position,
- * so it has to be told as well as the window.
+ * This matters more than it used to: `/` is two screens tall, so without it a
+ * visitor who scrolled to the works grid and opened a case study would land a
+ * screen down a brand new page. It is also half of "reload lands on the hero"
+ * — main.jsx turns the browser's own scroll restoration off. Lenis keeps its
+ * own scroll position, so it has to be told as well as the window.
  */
 function RouteEffects() {
   const { pathname } = useLocation()

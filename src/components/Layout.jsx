@@ -63,9 +63,9 @@ function SkipLink() {
  * so the numbers cannot be written down anywhere. They are measured, and
  * re-measured on resize.
  *
- * `stickyHeader` is set by pages that scroll as one long document — in practice
- * the landing page, which scrolls two screens past the hero with the bar still
- * on screen. Three things follow from the bar floating over content:
+ * `stickyHeader` is set by the landing page on wide viewports, where `/` is
+ * two exact screens — hero, then works grid — and the bar stays on screen over
+ * the grid. Three things follow from the bar floating over content:
  *
  *   * it is painted on --color-bg rather than left transparent, so cards pass
  *     behind it instead of showing through it;
@@ -73,14 +73,18 @@ function SkipLink() {
  *     at the bottom, so its cards are centred in the space those two leave
  *     rather than running underneath either. Padding inside a
  *     `min-height: 100dvh` screen does not make the screen any taller, so the
- *     landing page stays exactly three viewports;
+ *     landing page stays exactly two viewports;
  *   * the footer comes out of flow and pins to the bottom of the document. On
  *     `/` that is the bottom of the works screen, which is where it belongs —
- *     and being absolute it cannot add a fourth screen to the sequence or shift
- *     the works screen off its 2x viewport offset.
+ *     and being absolute it cannot add a third screen or shift the works screen
+ *     off its 1x viewport offset, which is where the glide lands.
  *
- * Every other page is an ordinary document and gets the footer in flow at the
- * end of it.
+ * Below 64rem the landing page leaves it off. There the grid is one column,
+ * several screens long, so nothing is centred in a viewport: the bar scrolls
+ * away with the hero, the works section takes no inset, and the footer is in
+ * flow after the last card, padding itself past the fixed nav pill (Footer,
+ * `--dock-clear`) so the cards and its row both come to rest above the pill.
+ * That is the same document every other page is: footer in flow at the end.
  */
 export function Layout({ children, className = '', stickyHeader = false }) {
   const headerRef = useRef(null)

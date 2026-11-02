@@ -83,8 +83,8 @@ function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
 
       {/* The still every mode shows at rest. Eager on purpose: it is what the
           visitor sees on landing, and it is tiny. The grid is the first thing
-          on /works, and the third screen of the landing sequence on desktop,
-          where a lazy image would wait on an observer that fires late. */}
+          on /works, and the second screen of the landing page, where a lazy
+          image would wait on an observer that fires late. */}
       {study.videoPoster && (
         <img
           src={study.videoPoster}

@@ -10,9 +10,9 @@ html {
   /* Lenis drives scrolling; this is the no-JS / reduced-motion fallback. */
   scroll-behavior: smooth;
   background: var(--color-bg);
-  /* The scroll lock during the loader sets `overflow: hidden` on <html>. On a
-     platform with classic (space-taking) scrollbars that would reflow the page
-     mid-animation, so reserve the gutter up front. No-op where scrollbars
+  /* Anything that sets `overflow: hidden` on <html> (a scroll lock) would, on
+     a platform with classic (space-taking) scrollbars, reflow the page as the
+     bar disappears, so reserve the gutter up front. No-op where scrollbars
      overlay, which is every platform the comps were designed on. */
   scrollbar-gutter: stable;
 }
@@ -106,8 +106,9 @@ html.lenis body {
 }
 
 /* ---------------------------------------------------------------------------
-   Loader wordmark: hidden on the hero, eases in as the take-over glide brings
-   its screen up (see LoaderStage). The delay lets the glide get going first.
+   Loader wordmark for LoaderStage, which is no longer mounted: the loader has
+   left the landing scroll. Goes with that component when the first-load
+   overlay replaces it.
 --------------------------------------------------------------------------- */
 .loader-mark {
   opacity: 0;
@@ -259,8 +260,8 @@ html.lenis body {
 }
 
 /* ---------------------------------------------------------------------------
-   The landing page is one continuous document: hero, loader, works. Nothing
-   inside it may widen the page, and the three screens are measured in dvh.
+   The landing page is one continuous document: hero, then works. Nothing
+   inside it may widen the page, and the two screens are measured in dvh.
 --------------------------------------------------------------------------- */
 .screen {
   min-height: 100dvh;

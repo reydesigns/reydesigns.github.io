@@ -3,12 +3,11 @@ import { Layout } from '@/components/Layout'
 import { WordCycle } from '@/components/WordCycle'
 import { BottomNav } from '@/components/BottomNav'
 import { NavDock } from '@/components/NavDock'
-import { LoaderStage } from '@/components/LoaderStage'
 import { WorksGrid } from '@/components/WorksGrid'
 import { Drawing3DLazy } from '@/components/Drawing3DLazy'
 import { SpeechBubble, useSpeech } from '@/components/SpeechBubble'
 import { STRAWBERRY_CAT, SELF_PORTRAIT } from '@/data/drawings'
-import { useMediaQuery, WIDE, SM } from '@/lib/useMediaQuery'
+import { useMediaQuery, WIDE, SM, FINE } from '@/lib/useMediaQuery'
 import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { useScrollSequence } from '@/lib/useScrollSequence'
@@ -16,13 +15,16 @@ import { useScrollSequence } from '@/lib/useScrollSequence'
 /**
  * Landing — the first ten seconds.
  *
- * On a wide viewport `/` is one continuous document, three screens tall:
- * hero, loader, works grid. useScrollSequence drives the hand-offs; this file
- * only lays the screens out and says where the nav pill belongs.
+ * `/` is one continuous document, two screens tall: the hero, then the works
+ * grid, on every width. On a desktop (wide, fine pointer, motion allowed) a
+ * small scroll down from the hero glides the rest of the way to the grid; on a
+ * phone, a touch tablet or with reduced motion the page simply scrolls.
+ * useScrollSequence owns that; this file only lays the screens out and says
+ * where the nav pill belongs. The loader no longer lives in the scroll — it
+ * was a whole screen the reader had to sit through on every visit.
  *
- * On a phone there is no sequence and no loader at all (explicit client call):
- * the page is the hero, and "works" in the nav is an ordinary link to /works,
- * which is a single-column scroll of the same cards.
+ * "works" in the nav never leaves `/`: it glides (or, on a phone, smooth-
+ * scrolls) down to the grid, and the URL stays put.
  *
  * The tagline and status pill come from Assets/site-design/images/1st-page.png;
  * the headline copy was revised by the client after the comp, and the tagline
@@ -65,34 +67,32 @@ export function Landing() {
   const reduced = useReducedMotion()
   const self = useSpeech(SELF_LINES)
   const cat = useSpeech(CAT_LINES)
-  const loaderRef = useRef(null)
+  const fine = useMediaQuery(FINE, true)
   const worksRef = useRef(null)
 
-  // The whole three-screen document only exists on wide viewports.
-  const sequence = wide
+  // The glide is for a mouse or trackpad on a big screen. A thumb flicking a
+  // phone expects the page to go exactly as far as it was flicked.
+  const glide = wide && fine && !reduced
 
-  const { stage, runId, toWorks } = useScrollSequence({
-    enabled: sequence,
-    reduced,
-    loaderRef,
-    worksRef,
-  })
+  const { stage, toWorks } = useScrollSequence({ glide, worksRef })
 
-  // "works" in the nav jumps to the works screen and skips the loader. On a
-  // phone there is no works screen here, so the link navigates for real.
+  // "works" in the nav scrolls down to the grid rather than routing to /works:
+  // the grid is right here, on every width.
   const onNavigate = useCallback(
     (to, event) => {
-      if (!sequence || to !== '/works') return
+      if (to !== '/works') return
       event.preventDefault()
       toWorks()
     },
-    [sequence, toWorks],
+    [toWorks],
   )
 
-  const onSkip = useCallback(() => toWorks(), [toWorks])
-
+  // The top bar floats over the grid only where the grid is one screen: on a
+  // phone the cards run several screens long and the bar would just eat a
+  // slice of every one, so there it scrolls away like any other page (see
+  // Layout).
   return (
-    <Layout stickyHeader={sequence}>
+    <Layout stickyHeader={wide}>
       {/* ---- screen 1: the hero ------------------------------------------ */}
       <div className="screen-first flex shrink-0 flex-col">
         <section className="relative flex flex-1 flex-col justify-center overflow-x-clip px-[var(--page-gutter)] pb-[clamp(1rem,5vh,4rem)]">
@@ -185,37 +185,24 @@ export function Landing() {
           </p>
         </section>
 
-        {/* The real pill is fixed (NavDock) so it can survive three screens of
-            scrolling and be measured by Flip. This reserves the box it used to
+        {/* The real pill is fixed (NavDock) so it stays put while the page
+            scrolls on to the grid. This reserves the box it used to
             occupy, so the hero still centres exactly where it did. */}
         <div className="flex justify-center pb-[clamp(1.5rem,3.5vh,3rem)]">
           <BottomNav className="invisible" decorative />
         </div>
       </div>
 
-      {/* ---- screen 2: the loader ---------------------------------------- */}
-      {sequence && (
-        <LoaderStage
-          ref={loaderRef}
-          playing={stage === 'loader'}
-          shown={stage !== 'hero' || reduced}
-          runId={runId}
-          onSkip={onSkip}
-        />
-      )}
+      {/* ---- screen 2: the works grid ------------------------------------ */}
+      <section ref={worksRef} className="screen flex shrink-0 flex-col" data-stage="works">
+        <h2 className="sr-only">Works</h2>
+        <WorksGrid />
+      </section>
 
-      {/* ---- screen 3: the works grid ------------------------------------ */}
-      {sequence && (
-        <section ref={worksRef} className="screen flex shrink-0 flex-col" data-stage="works">
-          <h2 className="sr-only">Works</h2>
-          <WorksGrid />
-        </section>
-      )}
-
-      {/* The pill stays bottom-centre on every screen, works included. */}
+      {/* The pill stays bottom-centre on both screens, works included. */}
       <NavDock
         placement="bottom"
-        activePath={sequence && stage === 'works' ? '/works' : undefined}
+        activePath={stage === 'works' ? '/works' : undefined}
         onNavigate={onNavigate}
       />
     </Layout>
