@@ -2,25 +2,33 @@ import { Scene, clamp, mix, smooth } from './geometry'
 import { speciesByKey } from './species'
 
 /* ---------------------------------------------------------------------------
-   Paints a plant from species.js onto a 2D canvas as a hairline drawing seen
-   from above, with ASCII pollen drifting up off its petals.
+   Paints a plant from species.js onto a 2D canvas as a hairline drawing, with
+   ASCII numbers set into it on a grid.
 
    Each frame:
      1. every flower's bloom moves towards where it should be: open while the
         pointer is on it (and for a moment after), or while it has been tapped
         open; otherwise back to its resting bud;
      2. the plant is rebuilt for those blooms (Scene pools its parts);
-     3. every point is projected through a perspective camera that looks down
-        on the plant and sways a little (and leans after the pointer);
+     3. every point is projected through a perspective camera that sways a
+        little (and leans after the pointer);
      4. every quad of every surface, every stamen segment and every anther
         goes into one list, sorted far to near, and is painted in that order:
         the quad filled with the background, so it hides whatever is behind it
-        without showing a fill of its own, then its outline (the petal's free
-        edges, and a silhouette wherever the surface folds away from the eye)
-        and its veins, all in the one thin line of the chosen colour;
-     5. the pollen goes on top: ASCII codes (the decimal numbers of the
-        letters of the flower's name) that start on a petal, follow it as it
-        opens, and drift up and away.
+        without showing a fill of its own, then its outline (the free edges,
+        and a silhouette wherever the surface folds away from the eye) and its
+        veins, all in the one hairline of the chosen colour;
+     5. the numbers go on top, on two grids fixed to the canvas:
+          line      one number to a cell, born in a cell the drawing's line
+                    runs through. It cuts its gap in the line and fills it,
+                    holds there a moment, then climbs a cell at a time and
+                    fades, and the line closes up behind it;
+          shadow    a second grid, offset half a cell each way, of fainter
+                    numbers in the cells where the plant turns from the light.
+                    They overlap the line numbers like a shadow cast down and
+                    to the right, and still keep to their own grid.
+        The numbers are the flower's name in decimal ASCII: "Tulip" is 84,
+        117, 108, 105, 112.
 
    No WebGL: it is a few thousand small paths a frame, which a 2D canvas
    paints in a few milliseconds.
@@ -30,10 +38,20 @@ const OPEN_S = 1.5 // seconds for a bud to open fully
 const CLOSE_S = 1.1 // and to close again
 const LINGER_S = 1.4 // a flower stays open this long after the pointer leaves it
 const STAGGER_S = 0.16 // between flowers when they open or close together
-const LINE = 0.25 // the drawing's line, in CSS pixels
-const MAX_POLLEN = 110
-const ROOM_X = 22 // a new number starts at least this far from the others, across
-const ROOM_Y = 12 // and down (CSS pixels): numbers are wide, and pile up into smudges
+const LINE = 0.35 // the drawing's line, in CSS pixels
+
+const LINE_ALPHA = 0.55 // the numbers in the line, at their strongest
+const SHADOW_ALPHA = 0.22 // the shadow numbers, in the deepest shade
+const MAX_LINE = 110
+const MAX_SHADOW = 140
+const SHADE_FROM = 0.56 // how turned from the light a cell must be to take a shadow number
+
+/** Light from the upper left, a little in front. */
+const LIGHT = (() => {
+  const l = [-0.45, 0.8, 0.4]
+  const n = Math.hypot(...l)
+  return l.map((x) => x / n)
+})()
 
 /** '#rgb', '#rrggbb' or 'rgb(a)(r, g, b…)' → [r, g, b]. */
 export function parseColor(str, fallback = [255, 255, 255]) {
@@ -107,7 +125,7 @@ export function createFlowerView(canvas, opts = {}) {
   resetFlowers()
 
   // camera, recomputed each frame
-  const cam = { yaw: 0, pitch: 1, dist: 12, cy: 0, sy: 0, cp: 0, sp: 0, F: 1, ox: 0, oy: 0, ex: 0, ey: 0, ez: 0 }
+  const cam = { F: 1, ox: 0, oy: 0, dist: 12, cy: 1, sy: 0, cp: 1, sp: 0, ex: 0, ey: 0, ez: 0 }
   const setCamera = (yaw, pitch) => {
     cam.cy = Math.cos(yaw)
     cam.sy = Math.sin(yaw)
@@ -154,6 +172,8 @@ export function createFlowerView(canvas, opts = {}) {
       y0 = Math.min(y0, y)
       y1 = Math.max(y1, y)
     }
+    // with `focus`, only the flowers count: the stem and leaves may run out
+    const counts = (part) => !c.focus || part.group >= 0
     for (const o of [0, 1]) {
       scene.begin()
       species.build(scene, new Float32Array(species.count).fill(o))
@@ -162,6 +182,7 @@ export function createFlowerView(canvas, opts = {}) {
         setCamera(yaw, c.pitch)
         for (let n = 0; n < scene.ns; n += 1) {
           const s = scene.surfaces[n]
+          if (!counts(s)) continue
           const P = s.P
           for (let k = 0; k < s.nu * s.nv; k += 1) {
             project(P[k * 3], P[k * 3 + 1], P[k * 3 + 2], s, k)
@@ -169,7 +190,9 @@ export function createFlowerView(canvas, opts = {}) {
           }
         }
         for (let n = 0; n < scene.nl; n += 1) {
-          for (const p of scene.lines[n].points) {
+          const l = scene.lines[n]
+          if (!counts(l)) continue
+          for (const p of l.points) {
             const q = projectPoint(p)
             grow(q[0], q[1])
           }
@@ -180,7 +203,7 @@ export function createFlowerView(canvas, opts = {}) {
     fit = {
       F,
       ox: w / 2 - ((x0 + x1) / 2) * F,
-      // a little low in the box: the pollen drifts up into the space above
+      // a little low in the box: the numbers climb into the space above
       oy: h / 2 - ((y0 + y1) / 2) * F + h * (1 - framing) * 0.12,
     }
   }
@@ -201,6 +224,62 @@ export function createFlowerView(canvas, opts = {}) {
     return best
   }
 
+  /* --- the grids ---------------------------------------------------------- */
+
+  let font = 9 // the numbers' size, CSS pixels
+  let cw = 18 // a cell, across and down
+  let ch = 12
+  let cols = 0
+  let rows = 0
+  let occ = new Int32Array(0) // line grid: which number holds each cell (index + 1)
+  let lineCell = new Int32Array(0) // line grid: the frame the drawing last crossed each cell
+  let lineGroup = new Int8Array(0) // and which flower it was
+  const lineCells = [] // the cells crossed this frame
+  let shadeZ = new Float32Array(0) // shadow grid: nearest surface's depth
+  let shadeD = new Float32Array(0) // and how turned from the light it is
+  let shadeOcc = new Uint8Array(0)
+  const darkCells = [] // shadow cells deep enough for a number
+  let frameNo = 1
+  const widths = new Map() // number → its width at `font`
+
+  const nums = [] // line grid: { i, age, life, hold, step, next, v }
+  const shades = [] // shadow grid: { i, age, life, next, v, depth }
+
+  function layoutGrid() {
+    font = clamp(Math.min(w, h) / 72, 7.5, 10)
+    // three digits wide, with a little air, and a line high
+    cw = Math.round(font * 2.1)
+    ch = Math.round(font * 1.35)
+    cols = Math.ceil(w / cw) + 1
+    rows = Math.ceil(h / ch) + 1
+    occ = new Int32Array(cols * rows)
+    lineCell = new Int32Array(cols * rows)
+    lineGroup = new Int8Array(cols * rows)
+    shadeZ = new Float32Array(cols * rows)
+    shadeD = new Float32Array(cols * rows)
+    shadeOcc = new Uint8Array(cols * rows)
+    widths.clear()
+    nums.length = 0
+    shades.length = 0
+  }
+
+  /** Marks the line-grid cells that the segment (x0, y0)–(x1, y1) runs through. */
+  function crossCells(x0, y0, x1, y1, group) {
+    const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (cw * 0.5)))
+    for (let k = 0; k <= steps; k += 1) {
+      const t = (k + 0.5) / (steps + 1)
+      const c = Math.floor(mix(x0, x1, t) / cw)
+      const r = Math.floor(mix(y0, y1, t) / ch)
+      if (c < 0 || r < 0 || c >= cols || r >= rows) continue
+      const i = r * cols + c
+      if (lineCell[i] !== frameNo) {
+        lineCell[i] = frameNo
+        lineGroup[i] = group
+        lineCells.push(i)
+      }
+    }
+  }
+
   /* --- one frame --------------------------------------------------------- */
 
   const items = []
@@ -213,6 +292,7 @@ export function createFlowerView(canvas, opts = {}) {
   }
   const order = []
   const byDepth = (a, b) => b.d - a.d
+  let reseed = true // reduced motion: lay the still numbers out again
 
   function bloomStep(elapsed) {
     let open = 0
@@ -225,8 +305,10 @@ export function createFlowerView(canvas, opts = {}) {
       if (want === 1) open += 1
       const p = prog[k]
       // by the clock, not by frames: a slow frame still finds the bloom where it should be
-      if (reduced) prog[k] = want
-      else if (p < want) prog[k] = Math.min(want, p + elapsed / OPEN_S)
+      if (reduced) {
+        if (p !== want) reseed = true
+        prog[k] = want
+      } else if (p < want) prog[k] = Math.min(want, p + elapsed / OPEN_S)
       else if (p > want) prog[k] = Math.max(want, p - elapsed / CLOSE_S)
       blooms[k] = smooth(prog[k])
     }
@@ -241,6 +323,10 @@ export function createFlowerView(canvas, opts = {}) {
     if (!fit) return
     const c = species.camera
     bloomStep(elapsed)
+    frameNo += 1
+    lineCells.length = 0
+    darkCells.length = 0
+    shadeZ.fill(Infinity)
 
     // camera: a slow sway, and a lean after the pointer
     if (!reduced) {
@@ -282,36 +368,51 @@ export function createFlowerView(canvas, opts = {}) {
       const s = scene.surfaces[n]
       const { nu, nv, P } = s
       for (let k = 0; k < nu * nv; k += 1) project(P[k * 3], P[k * 3 + 1], P[k * 3 + 2], s, k)
-      const cols = s.closed ? nv : nv - 1
+      const qc = s.closed ? nv : nv - 1
       for (let i = 0; i < nu - 1; i += 1) {
-        for (let j = 0; j < cols; j += 1) {
+        for (let j = 0; j < qc; j += 1) {
           const j1 = (j + 1) % nv
-          const a = (i * nv + j) * 3
-          const b = ((i + 1) * nv + j) * 3
-          const cc = ((i + 1) * nv + j1) * 3
-          const d = (i * nv + j1) * 3
+          const a = i * nv + j
+          const b = (i + 1) * nv + j
+          const cc = (i + 1) * nv + j1
+          const d = i * nv + j1
           // which side of the quad faces the eye (the normal, from the diagonals)
-          const ux = P[cc] - P[a]
-          const uy = P[cc + 1] - P[a + 1]
-          const uz = P[cc + 2] - P[a + 2]
-          const vx = P[d] - P[b]
-          const vy = P[d + 1] - P[b + 1]
-          const vz = P[d + 2] - P[b + 2]
+          const ux = P[cc * 3] - P[a * 3]
+          const uy = P[cc * 3 + 1] - P[a * 3 + 1]
+          const uz = P[cc * 3 + 2] - P[a * 3 + 2]
+          const vx = P[d * 3] - P[b * 3]
+          const vy = P[d * 3 + 1] - P[b * 3 + 1]
+          const vz = P[d * 3 + 2] - P[b * 3 + 2]
           const nx = uy * vz - uz * vy
           const ny = uz * vx - ux * vz
           const nz = ux * vy - uy * vx
-          const mx = (P[a] + P[cc]) / 2
-          const my = (P[a + 1] + P[cc + 1]) / 2
-          const mz = (P[a + 2] + P[cc + 2]) / 2
-          const q = i * cols + j
-          s.face[q] = nx * (cam.ex - mx) + ny * (cam.ey - my) + nz * (cam.ez - mz) >= 0 ? 1 : -1
+          const mx = (P[a * 3] + P[cc * 3]) / 2
+          const my = (P[a * 3 + 1] + P[cc * 3 + 1]) / 2
+          const mz = (P[a * 3 + 2] + P[cc * 3 + 2]) / 2
+          const facing = nx * (cam.ex - mx) + ny * (cam.ey - my) + nz * (cam.ez - mz) >= 0 ? 1 : -1
+          const q = i * qc + j
+          s.face[q] = facing
+          const depth = (s.sd[a] + s.sd[b] + s.sd[cc] + s.sd[d]) / 4
           const it = item()
           it.kind = 0
           it.s = s
           it.q = q
           it.i = i
           it.j = j
-          it.d = (s.sd[a / 3] + s.sd[b / 3] + s.sd[cc / 3] + s.sd[d / 3]) / 4
+          it.d = depth
+
+          // how turned from the light the nearest surface in this shadow cell is
+          const gc = Math.round((s.sx[a] + s.sx[b] + s.sx[cc] + s.sx[d]) / 4 / cw)
+          const gr = Math.round((s.sy[a] + s.sy[b] + s.sy[cc] + s.sy[d]) / 4 / ch)
+          if (gc >= 0 && gr >= 0 && gc < cols && gr < rows) {
+            const gi = gr * cols + gc
+            if (depth < shadeZ[gi]) {
+              const nl = Math.hypot(nx, ny, nz) || 1
+              const lit = clamp(((nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / nl) * facing)
+              shadeZ[gi] = depth
+              shadeD[gi] = clamp((1 - lit) * 0.85 + (facing < 0 ? 0.25 : 0))
+            }
+          }
         }
       }
     }
@@ -352,7 +453,10 @@ export function createFlowerView(canvas, opts = {}) {
       else paintDot(it)
     }
 
-    paintPollen(dt)
+    for (let i = 0; i < shadeZ.length; i += 1) {
+      if (shadeZ[i] < Infinity && shadeD[i] > SHADE_FROM) darkCells.push(i)
+    }
+    paintNumbers(dt)
   }
 
   function paintQuad(it) {
@@ -377,7 +481,7 @@ export function createFlowerView(canvas, opts = {}) {
 
     // outline: free edges, and silhouettes where the neighbour faces away
     const face = s.face[it.q]
-    const cols = s.closed ? nv : nv - 1
+    const qc = s.closed ? nv : nv - 1
     const last = s.nu - 2
     const E = s.edges
     ctx.beginPath()
@@ -385,20 +489,21 @@ export function createFlowerView(canvas, opts = {}) {
     const seg = (p, q) => {
       ctx.moveTo(sx[p], sy[p])
       ctx.lineTo(sx[q], sy[q])
+      crossCells(sx[p], sy[p], sx[q], sy[q], s.group)
       any = true
     }
     if (j === 0 && !s.closed) {
       if (E.left) seg(a, b)
-    } else if (s.face[i * cols + (j === 0 ? cols - 1 : j - 1)] !== face) seg(a, b)
+    } else if (s.face[i * qc + (j === 0 ? qc - 1 : j - 1)] !== face) seg(a, b)
     if (j === nv - 2 && !s.closed) {
       if (E.right) seg(d, c)
-    } else if (s.face[i * cols + ((j + 1) % cols)] !== face) seg(d, c)
+    } else if (s.face[i * qc + ((j + 1) % qc)] !== face) seg(d, c)
     if (i === 0) {
       if (E.base) seg(a, d)
-    } else if (s.face[(i - 1) * cols + j] !== face) seg(a, d)
+    } else if (s.face[(i - 1) * qc + j] !== face) seg(a, d)
     if (i === last) {
       if (E.tip) seg(b, c)
-    } else if (s.face[(i + 1) * cols + j] !== face) seg(b, c)
+    } else if (s.face[(i + 1) * qc + j] !== face) seg(b, c)
     if (any) {
       ctx.strokeStyle = inkCss
       ctx.lineWidth = LINE
@@ -455,6 +560,7 @@ export function createFlowerView(canvas, opts = {}) {
     } else {
       ctx.lineWidth = LINE
       ctx.stroke()
+      crossCells(it.a[0], it.a[1], it.b[0], it.b[1], l.group)
     }
   }
 
@@ -470,13 +576,13 @@ export function createFlowerView(canvas, opts = {}) {
     ctx.stroke()
   }
 
-  /* --- pollen ------------------------------------------------------------ */
+  /* --- the numbers ------------------------------------------------------- */
 
-  const pollen = []
-  let spawnDebt = 0
+  let lineDebt = 0
+  let shadeDebt = 0
   let seed = 1
   const rand = () => {
-    // a small LCG: the pollen does not need to be secure, only cheap
+    // a small LCG: the numbers do not need to be secure, only cheap
     seed = (seed * 16807) % 2147483647
     return (seed - 1) / 2147483646
   }
@@ -487,127 +593,152 @@ export function createFlowerView(canvas, opts = {}) {
   }
   setCodes()
   const code = () => codes[Math.floor(rand() * codes.length)]
-
-  /** Screen position of the point (fu, fv) on surface s, as last projected. */
-  function onSurface(s, fu, fv) {
-    const fi = fu * (s.nu - 1)
-    const i = Math.min(s.nu - 2, Math.floor(fi))
-    const ti = fi - i
-    const fj = fv * (s.nv - 1)
-    const j = Math.min(s.nv - 2, Math.floor(fj))
-    const tj = fj - j
-    const a = i * s.nv + j
-    const b = (i + 1) * s.nv + j
-    return [
-      mix(mix(s.sx[a], s.sx[a + 1], tj), mix(s.sx[b], s.sx[b + 1], tj), ti),
-      mix(mix(s.sy[a], s.sy[a + 1], tj), mix(s.sy[b], s.sy[b + 1], tj), ti),
-    ]
+  const widthOf = (v) => {
+    let x = widths.get(v)
+    if (x == null) {
+      x = ctx.measureText(v).width
+      widths.set(v, x)
+    }
+    return x
   }
 
-  function spawn() {
-    // pick a petal, weighted by how open its flower is (leaves give none)
-    let total = 0
-    const weight = (s) => (s.group >= 0 ? s.pollen * (0.12 + blooms[s.group]) : 0)
-    for (let n = 0; n < scene.ns; n += 1) total += weight(scene.surfaces[n])
-    if (total <= 0) return
-    // a few tries for a spot clear of the numbers already drifting
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      let r = rand() * total
-      let n = 0
-      for (; n < scene.ns - 1; n += 1) {
-        r -= weight(scene.surfaces[n])
-        if (r <= 0) break
-      }
-      const s = scene.surfaces[n]
-      // the outer part of the petal, where it has opened
-      const fu = 0.25 + 0.75 * Math.sqrt(rand())
-      const fv = rand()
-      const [x, y] = onSurface(s, fu, fv)
-      if (pollen.some((p) => Math.abs(p.x - x) < ROOM_X && Math.abs(p.y - y) < ROOM_Y)) continue
-      pollen.push(particle(n, s, fu, fv, x, y))
+  /** A number into a cell the drawing runs through, if one is free. */
+  function spawnLine() {
+    for (let attempt = 0; attempt < 6 && lineCells.length; attempt += 1) {
+      const i = lineCells[Math.floor(rand() * lineCells.length)]
+      if (occ[i]) continue
+      const g = lineGroup[i]
+      // most come from the open flowers; stems and leaves give the odd one
+      if (rand() > (g >= 0 ? 0.2 + 0.8 * blooms[g] : 0.08)) continue
+      nums.push({ i, age: 0, life: 2.6 + rand() * 2.8, hold: 0.5 + rand() * 1.1, step: 0, next: 0.3 + rand() * 0.6, v: code() })
+      occ[i] = nums.length
       return
     }
   }
 
-  function particle(n, s, fu, fv, x, y) {
-    return {
-      n,
-      fu,
-      fv,
-      x,
-      y,
-      age: 0,
-      life: 2.2 + rand() * 2.6,
-      vy: 10 + rand() * 22,
-      wob: rand() * Math.PI * 2,
-      wobA: 3 + rand() * 7,
-      g: code(),
-      next: 0.25 + rand() * 0.6,
-      size: 0.85 + rand() * 0.4,
-      dx: 0,
-      dy: 0,
-      nu: s.nu,
-      nv: s.nv,
+  /** A faint number into a shadow cell, as deep as the shade there. */
+  function spawnShade() {
+    for (let attempt = 0; attempt < 6 && darkCells.length; attempt += 1) {
+      const i = darkCells[Math.floor(rand() * darkCells.length)]
+      if (shadeOcc[i]) continue
+      const depth = (shadeD[i] - SHADE_FROM) / (1 - SHADE_FROM)
+      if (rand() > 0.08 + 0.8 * depth) continue
+      shades.push({ i, age: 0, life: 1.4 + rand() * 2.2, next: 0.3 + rand() * 0.7, v: code(), depth })
+      shadeOcc[i] = 1
+      return
     }
   }
 
-  function paintPollen(dt) {
+  /** Re-points occ at the numbers after some have gone. */
+  function reindex() {
+    occ.fill(0)
+    for (let k = 0; k < nums.length; k += 1) occ[nums[k].i] = k + 1
+  }
+
+  function paintNumbers(dt) {
+    if (!cols) return
     let mean = 0
     for (let k = 0; k < species.count; k += 1) mean += blooms[k] / species.count
-    if (!reduced) {
-      spawnDebt += (2 + 18 * mean) * dt
-      while (spawnDebt >= 1 && pollen.length < MAX_POLLEN) {
-        spawn()
-        spawnDebt -= 1
+
+    if (reduced) {
+      // still numbers, laid out afresh whenever the drawing changes
+      if (reseed) {
+        reseed = false
+        nums.length = 0
+        shades.length = 0
+        occ.fill(0)
+        shadeOcc.fill(0)
+        for (let k = 0; k < 24 + 50 * mean; k += 1) spawnLine()
+        for (let k = 0; k < 60; k += 1) spawnShade()
+        for (const n of nums) n.age = n.life * 0.3
+        for (const s of shades) s.age = s.life * 0.4
       }
-      if (spawnDebt > 1) spawnDebt = 0
-    } else if (pollen.length === 0) {
-      // a still scatter, so reduced motion still shows the ASCII
-      for (let k = 0; k < 40; k += 1) {
-        const before = pollen.length
-        spawn()
-        if (pollen.length === before) continue
-        const p = pollen[pollen.length - 1]
-        p.age = p.life * (0.2 + rand() * 0.4)
-        p.dy = -p.vy * p.age
+    } else {
+      lineDebt += (2 + 16 * mean) * dt
+      while (lineDebt >= 1) {
+        if (nums.length < MAX_LINE) spawnLine()
+        lineDebt -= 1
+      }
+      shadeDebt += 32 * dt
+      while (shadeDebt >= 1) {
+        if (shades.length < MAX_SHADOW) spawnShade()
+        shadeDebt -= 1
       }
     }
-    const base = Math.max(8, Math.min(11, Math.min(w, h) / 62))
+
+    ctx.font = `500 ${font}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    for (let k = pollen.length - 1; k >= 0; k -= 1) {
-      const p = pollen[k]
-      const s = scene.surfaces[p.n]
-      if (!s || s.nu !== p.nu || s.nv !== p.nv) {
-        pollen.splice(k, 1)
-        continue
-      }
+
+    // shadows first, so the line numbers sit on top of them
+    for (let k = shades.length - 1; k >= 0; k -= 1) {
+      const s = shades[k]
       if (!reduced) {
-        p.age += dt
-        if (p.age >= p.life) {
-          pollen.splice(k, 1)
+        s.age += dt
+        // the shade moved on (a petal opened, the plant swayed): let it go
+        if (shadeZ[s.i] === Infinity || shadeD[s.i] < SHADE_FROM - 0.08) s.age = Math.max(s.age, s.life * 0.7)
+        if (s.age >= s.life) {
+          shadeOcc[s.i] = 0
+          shades.splice(k, 1)
           continue
         }
-        p.dy -= p.vy * dt
-        p.dx = Math.sin(p.wob + p.age * 1.6) * p.wobA
-        p.next -= dt
-        if (p.next <= 0) {
-          p.g = code()
-          p.next = 0.3 + rand() * 0.7
+        s.next -= dt
+        if (s.next <= 0) {
+          s.v = code()
+          s.next = 0.4 + rand() * 0.8
         }
       }
-      // where its spot on the petal is now, plus how far it has drifted
-      const [sx, sy] = onSurface(s, p.fu, p.fv)
-      const x = sx + p.dx
-      const y = sy + p.dy
-      p.x = x
-      p.y = y
-      const t = p.age / p.life
-      const alpha = reduced ? 0.85 : Math.min(1, t / 0.12) * (1 - smooth((t - 0.6) / 0.4))
-      ctx.font = `500 ${Math.round(base * p.size)}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`
-      ctx.fillStyle = inkA(alpha)
-      ctx.fillText(p.g, x, y)
+      const t = s.age / s.life
+      const env = Math.min(1, t / 0.2) * (1 - smooth((t - 0.7) / 0.3))
+      ctx.fillStyle = inkA(SHADOW_ALPHA * (0.35 + 0.65 * s.depth) * env)
+      ctx.fillText(s.v, (s.i % cols) * cw, Math.floor(s.i / cols) * ch)
     }
+
+    let gone = false
+    for (let k = nums.length - 1; k >= 0; k -= 1) {
+      const n = nums[k]
+      if (!reduced) {
+        n.age += dt
+        if (n.age >= n.life) {
+          nums.splice(k, 1)
+          gone = true
+          continue
+        }
+        n.next -= dt
+        if (n.next <= 0) {
+          n.v = code()
+          n.next = 0.3 + rand() * 0.6
+        }
+        // after holding its place in the line, climb a cell at a time
+        if (n.age > n.hold) {
+          n.step -= dt
+          if (n.step <= 0) {
+            n.step = 0.32 + rand() * 0.4
+            const up = n.i - cols
+            if (up < 0) {
+              n.life = Math.min(n.life, n.age + 0.25)
+            } else if (!occ[up]) {
+              occ[n.i] = 0
+              n.i = up
+              occ[up] = 1
+            }
+          }
+        }
+      }
+      const t = n.age / n.life
+      const env = Math.min(1, t / 0.12) * (1 - smooth((t - 0.65) / 0.35))
+      const x = ((n.i % cols) + 0.5) * cw
+      const y = (Math.floor(n.i / cols) + 0.5) * ch
+      // cut the gap: clear the line under the number, then set the number in it
+      const tw = widthOf(n.v) + 3
+      ctx.globalAlpha = env
+      ctx.fillStyle = paperCss
+      ctx.fillRect(x - tw / 2, y - font * 0.58, tw, font * 1.16)
+      ctx.globalAlpha = 1
+      ctx.fillStyle = inkA(LINE_ALPHA * env)
+      ctx.fillText(n.v, x, y)
+    }
+    if (gone) reindex()
   }
 
   /* --- loop and controls ------------------------------------------------- */
@@ -616,7 +747,7 @@ export function createFlowerView(canvas, opts = {}) {
     raf = 0
     if (!running) return
     const elapsed = last ? Math.min(0.5, (now - last) / 1000) : 0
-    // motion steps stay small, so a stalled tab does not fling the pollen
+    // motion steps stay small, so a stalled tab does not jump the numbers
     const dt = Math.min(0.05, elapsed)
     last = now
     time += elapsed
@@ -637,7 +768,17 @@ export function createFlowerView(canvas, opts = {}) {
     canvas.width = Math.max(1, Math.round(w * dpr))
     canvas.height = Math.max(1, Math.round(h * dpr))
     fit = null
+    layoutGrid()
+    reseed = true
     still()
+  }
+
+  const clearNumbers = () => {
+    nums.length = 0
+    shades.length = 0
+    occ.fill(0)
+    shadeOcc.fill(0)
+    reseed = true
   }
 
   return {
@@ -661,10 +802,10 @@ export function createFlowerView(canvas, opts = {}) {
       scene.lines.length = 0
       scene.dots.length = 0
       scene.heads.length = 0
-      pollen.length = 0
       fit = null
       resetFlowers()
       setCodes()
+      clearNumbers()
       still()
     },
     /** How open the flowers rest when nothing asks them to bloom (0 a bud). */
@@ -718,7 +859,7 @@ export function createFlowerView(canvas, opts = {}) {
     },
     setReduced(on) {
       reduced = Boolean(on)
-      pollen.length = 0
+      clearNumbers()
       still()
     },
     destroy() {

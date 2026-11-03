@@ -161,10 +161,10 @@ const browser = await launch({ gpu: true })
   // one hairline colour, which the swatches change
   const maroon = await palette(page, '#440000')
   check('drawn in the one colour, no shading or fill', maroon.drawn > 500 && maroon.off / maroon.drawn < 0.02, JSON.stringify(maroon))
-  await page.click('.fl-swatch:nth-child(5) input')
+  await page.click('.fl-swatch:nth-child(8) input')
   await sleep(300)
-  const rose = await palette(page, '#b4566a')
-  check('a swatch recolours the drawing and the pollen', rose.drawn > 500 && rose.off / rose.drawn < 0.02, JSON.stringify(rose))
+  const brown = await palette(page, '#6b5048')
+  check('a swatch recolours the drawing and the numbers', brown.drawn > 500 && brown.off / brown.drawn < 0.02, JSON.stringify(brown))
 
   await page.keyboard.press('Enter') // close them again before switching
   for (const [k, key] of ['tulip', 'orchid', 'lily-of-the-valley'].entries()) {

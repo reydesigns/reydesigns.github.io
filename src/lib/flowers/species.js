@@ -169,7 +169,7 @@ function spiderLily(scene, b) {
   for (let k = 0; k < FLORETS; k += 1) {
     const f = b[k]
     const phi = (k * TAU) / FLORETS + 0.3 + (jitter(k) - 0.5) * 0.35
-    const tilt = 1.2 + (jitter(k + 9) - 0.5) * 0.3
+    const tilt = 1.02 + (jitter(k + 9) - 0.5) * 0.3
     const out = [Math.cos(phi), 0, Math.sin(phi)]
     const A = norm(comb(out, Math.sin(tilt), UP, Math.cos(tilt)))
     const base = add(head, comb(out, 0.6, UP, 0.1))
@@ -204,7 +204,7 @@ function spiderLily(scene, b) {
       const j = jitter(k * 11 + m)
       const style = m === 6
       const len = mix(0.3, (style ? 1.95 : 1.62) + j * 0.2, f)
-      const pts = spine(base, A, around(A, style ? psi + 0.4 : psi, frame), len, (u) => mix(1.5, 0.42 + j * 0.2 + 1.05 * u * u, f), 9)
+      const pts = spine(base, A, around(A, style ? psi + 0.4 : psi, frame), len, (u) => mix(1.5, 0.32 + j * 0.2 + 1.35 * u * u, f), 9)
       scene.line(pts)
       if (!style) scene.dot(pts[pts.length - 1], 0.022)
     }
@@ -415,7 +415,8 @@ const BELL_RIBS = [0, 4, 8, 12, 16, 20].map((j) => ({ j: j + 0.5, from: 0.3, to:
  * `count`: how many flowers bloom one by one. `camera`: `pitch` is how far
  * above the horizon the eye is (radians, π/2 is straight down), `yaw` turns
  * the plant, `dist` is in world units. The view is framed to the plant in
- * full bloom, so it never outgrows its box.
+ * full bloom, so it never outgrows its box; with `focus` it is framed to the
+ * flowers alone, and the stem and leaves run out of the picture.
  */
 export const SPECIES = [
   {
@@ -424,7 +425,8 @@ export const SPECIES = [
     latin: 'Lycoris radiata',
     count: FLORETS,
     build: spiderLily,
-    camera: { pitch: 1.1, yaw: 0.2, dist: 12 },
+    // from the side, close in on the umbel: the stamens arch up like a crown
+    camera: { pitch: 0.4, yaw: 0.2, dist: 12, focus: true },
   },
   {
     key: 'tulip',
@@ -448,7 +450,8 @@ export const SPECIES = [
     latin: 'Convallaria majalis',
     count: BELLS,
     build: lilyOfTheValley,
-    camera: { pitch: 0.86, yaw: 0.05, dist: 12 },
+    // from the side, along the arch, so the bells hang in a row
+    camera: { pitch: 0.3, yaw: 0.05, dist: 12, focus: true },
   },
 ]
 

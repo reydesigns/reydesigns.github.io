@@ -34,17 +34,17 @@ const CLOSE_MS = 180
 const DEFAULT_SPECIES = 'spider-lily'
 const DEFAULT_SWATCH = 2 // maroon
 
-/** The palette, in reading order: three rows of three (tokens.css, --fl-swatch-n). */
+/** The palette, in reading order: burgundy, grey and brown, three of each (tokens.css, --fl-swatch-n). */
 const SWATCHES = [
   'Ink',
   'Maroon',
   'Wine',
-  'Muted ink',
-  'Rose',
-  'Blush',
   'Warm grey',
   'Grey',
   'Light grey',
+  'Dark brown',
+  'Brown',
+  'Light brown',
 ].map((name, k) => ({ n: k + 1, name, token: `--fl-swatch-${k + 1}` }))
 
 function cssVar(name, fallback) {
