@@ -1,7 +1,6 @@
 import {
   UP,
   VEINS_FINE,
-  VEINS_LEAF,
   VEINS_PETAL,
   add,
   arc,
@@ -134,7 +133,7 @@ function tulip(scene, b) {
       cup: 0.6,
       twist: [-0.3, 0.35, 0.2][k],
       nu: 16,
-      veins: VEINS_LEAF,
+      veins: [],
       pollen: 0,
     })
   }
@@ -302,7 +301,7 @@ function orchid(scene, b) {
       cup: 0.32,
       twist: k ? 0.2 : -0.2,
       nu: 14,
-      veins: VEINS_LEAF,
+      veins: [],
       pollen: 0,
     })
   }
@@ -364,7 +363,7 @@ function lilyOfTheValley(scene, b) {
       cup: 0.72,
       twist: k ? -0.25 : 0.3,
       nu: 16,
-      veins: VEINS_LEAF,
+      veins: [],
       pollen: 0,
     })
   }

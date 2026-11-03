@@ -2,49 +2,58 @@ import { Scene, clamp, mix, smooth } from './geometry'
 import { speciesByKey } from './species'
 
 /* ---------------------------------------------------------------------------
-   Paints a plant from species.js onto a 2D canvas as a hairline drawing, with
-   ASCII numbers set into it on a grid.
+   Paints a plant from species.js onto a 2D canvas as a faint bitmap line
+   drawing on a dark ground, covered in glitching binary digits, glowing where
+   it blooms.
 
    Each frame:
      1. every flower's bloom moves towards where it should be: open while the
         pointer is on it (and for a moment after), or while it has been tapped
         open; otherwise back to its resting bud;
-     2. the plant is rebuilt for those blooms (Scene pools its parts);
-     3. every point is projected through a perspective camera that sways a
-        little (and leans after the pointer);
-     4. every quad of every surface, every stamen segment and every anther
-        goes into one list, sorted far to near, and is painted in that order:
-        the quad filled with the background, so it hides whatever is behind it
-        without showing a fill of its own, then its outline (the free edges,
-        and a silhouette wherever the surface folds away from the eye) and its
-        veins, all in the one hairline of the chosen colour;
-     5. the numbers go on top, on two grids fixed to the canvas:
-          line      one number to a cell, born in a cell the drawing's line
-                    runs through. It cuts its gap in the line and fills it,
-                    holds there a moment, then climbs a cell at a time and
-                    fades, and the line closes up behind it;
-          shadow    a second grid, offset half a cell each way, of fainter
-                    numbers in the cells where the plant turns from the light.
-                    They overlap the line numbers like a shadow cast down and
-                    to the right, and still keep to their own grid.
-        The numbers are the flower's name in decimal ASCII: "Tulip" is 84,
-        117, 108, 105, 112.
+     2. the plant is rebuilt for those blooms (Scene pools its parts) and
+        projected through a perspective camera that sways a little and leans
+        after the pointer;
+     3. the drawing: every quad, stamen segment and anther goes into one list,
+        sorted far to near, and is painted in that order onto a small bitmap
+        (one pixel to every two or three of the screen's): the quad filled
+        with the ground, to hide what is behind it, then its outline (free
+        edges, and a silhouette wherever the surface folds away from the eye)
+        and its veins. Every other pixel of the bitmap is knocked back, a
+        checker dither, and it is scaled up without smoothing: a faint
+        pixel-textured line;
+     4. the digits, on a grid fixed to the canvas: every cell the plant covers
+        (petals, stem, leaves) can hold a 0 or a 1, and at an uneven beat the
+        grid glitches: runs of digits are written in along a row, others are
+        deleted, some flip, and now and then a row slips a cell sideways. An
+        open flower holds more digits, brighter. Each digit clears its own
+        gap in the line beneath. A second grid, offset half a cell, holds
+        fainter digits where the plant turns from the light, overlapping the
+        first like a shadow;
+     5. the glow: the outlines and digits of the flowers that are opening are
+        drawn again onto two small canvases, scaled up soft, and added on
+        top, so a bloom lights up.
 
-   No WebGL: it is a few thousand small paths a frame, which a 2D canvas
-   paints in a few milliseconds.
+   No WebGL: a few thousand small paths a frame on a small bitmap, a thousand
+   or so glyphs, and three scaled copies.
 --------------------------------------------------------------------------- */
 
 const OPEN_S = 1.5 // seconds for a bud to open fully
 const CLOSE_S = 1.1 // and to close again
 const LINGER_S = 1.4 // a flower stays open this long after the pointer leaves it
 const STAGGER_S = 0.16 // between flowers when they open or close together
-const LINE = 0.35 // the drawing's line, in CSS pixels
 
-const LINE_ALPHA = 0.55 // the numbers in the line, at their strongest
-const SHADOW_ALPHA = 0.22 // the shadow numbers, in the deepest shade
-const MAX_LINE = 110
-const MAX_SHADOW = 140
-const SHADE_FROM = 0.56 // how turned from the light a cell must be to take a shadow number
+const LINE_BITS = 0.9 // the outline, in bitmap pixels
+const LINE_A = 0.8 // and its strength, before the dither
+const DITHER = 0.5 // how far every other bitmap pixel is knocked back
+
+const BEAT = [0.05, 0.12] // seconds between glitches, at random within
+const DENSITY = 0.4 // share of the plant's cells holding a digit, in bud
+const DENSITY_BLOOM = 0.3 // more, in full bloom
+const DIGIT_A = 0.38 // a digit's strength, in bud
+const DIGIT_A_BLOOM = 0.45 // more, in full bloom
+const SHADOW_A = 0.2 // the shadow digits, in the deepest shade
+const SHADE_FROM = 0.56 // how turned from the light a cell must be to take a shadow digit
+const GLOW = 0.55 // the glow's strength at full bloom
 
 /** Light from the upper left, a little in front. */
 const LIGHT = (() => {
@@ -69,12 +78,33 @@ export function parseColor(str, fallback = [255, 255, 255]) {
   return [r, g, b]
 }
 
+const offscreen = () => document.createElement('canvas')
+
 export function createFlowerView(canvas, opts = {}) {
   const ctx = canvas.getContext('2d')
+  // the bitmap the drawing is made on, and the two soft layers of glow
+  const bits = offscreen()
+  const bctx = bits.getContext('2d')
+  const glow1 = offscreen()
+  const g1 = glow1.getContext('2d')
+  const glow2 = offscreen()
+  const g2 = glow2.getContext('2d')
+  // the dither: a 2 x 2 checker, one pixel of it solid
+  const checker = (() => {
+    const c = offscreen()
+    c.width = 2
+    c.height = 2
+    const x = c.getContext('2d')
+    x.fillStyle = '#000'
+    x.fillRect(0, 0, 1, 1)
+    x.fillRect(1, 1, 1, 1)
+    return bctx.createPattern(c, 'repeat')
+  })()
+
   const scene = new Scene()
   let species = speciesByKey(opts.species)
-  let ink = parseColor(opts.color, [68, 0, 0])
-  let paper = parseColor(opts.paper)
+  let ink = parseColor(opts.color, [180, 86, 106])
+  let paper = parseColor(opts.paper, [28, 20, 17])
   let inkCss = ''
   let paperCss = ''
   const setInk = () => {
@@ -88,6 +118,8 @@ export function createFlowerView(canvas, opts = {}) {
   let w = 0
   let h = 0
   let dpr = 1
+  let pxd = 2 // screen pixels to a bitmap pixel
+  let px = 1 // CSS pixels to a bitmap pixel
   let fit = null // { F, ox, oy } for the current species and size
   let reduced = Boolean(opts.reduced)
   let rest = opts.rest ?? 0 // how open a flower is when nothing is asking it to bloom
@@ -200,12 +232,7 @@ export function createFlowerView(canvas, opts = {}) {
       }
     }
     const F = Math.min((w * framing) / (x1 - x0), (h * framing) / (y1 - y0))
-    fit = {
-      F,
-      ox: w / 2 - ((x0 + x1) / 2) * F,
-      // a little low in the box: the numbers climb into the space above
-      oy: h / 2 - ((y0 + y1) / 2) * F + h * (1 - framing) * 0.12,
-    }
+    fit = { F, ox: w / 2 - ((x0 + x1) / 2) * F, oy: h / 2 - ((y0 + y1) / 2) * F }
   }
 
   /** The flower whose head is nearest (x, y), if (x, y) is on it; else -1. */
@@ -224,59 +251,68 @@ export function createFlowerView(canvas, opts = {}) {
     return best
   }
 
-  /* --- the grids ---------------------------------------------------------- */
+  /* --- the grid ----------------------------------------------------------- */
 
-  let font = 9 // the numbers' size, CSS pixels
-  let cw = 18 // a cell, across and down
-  let ch = 12
+  let font = 9 // the digits' size, CSS pixels
+  let cw = 8 // a cell, across and down
+  let ch = 11
   let cols = 0
   let rows = 0
-  let occ = new Int32Array(0) // line grid: which number holds each cell (index + 1)
-  let lineCell = new Int32Array(0) // line grid: the frame the drawing last crossed each cell
-  let lineGroup = new Int8Array(0) // and which flower it was
-  const lineCells = [] // the cells crossed this frame
-  let shadeZ = new Float32Array(0) // shadow grid: nearest surface's depth
-  let shadeD = new Float32Array(0) // and how turned from the light it is
-  let shadeOcc = new Uint8Array(0)
-  const darkCells = [] // shadow cells deep enough for a number
+  let cover = new Int32Array(0) // the frame the plant last covered each cell
+  let cellZ = new Float32Array(0) // the nearest surface there: its depth,
+  let cellG = new Int8Array(0) // which flower it belongs to (-1: stem or leaf),
+  let cellD = new Float32Array(0) // and how turned from the light it is
+  let digit = new Int8Array(0) // -1, or the 0 / 1 in the cell
+  let born = new Float32Array(0) // when it was written, for its flash
+  let shade = new Int8Array(0) // the shadow digit, offset half a cell
+  const covered = [] // the cells the plant covers this frame
   let frameNo = 1
-  const widths = new Map() // number → its width at `font`
+  let nextBeat = 0
+  let slipRow = -1 // a row slipped sideways for a moment
+  let slipBy = 0
+  let slipUntil = 0
 
-  const nums = [] // line grid: { i, age, life, hold, step, next, v }
-  const shades = [] // shadow grid: { i, age, life, next, v, depth }
+  function layout() {
+    dpr = Math.min(2, window.devicePixelRatio || 1)
+    pxd = dpr >= 2 ? 3 : 2
+    px = pxd / dpr
+    bits.width = Math.max(1, Math.ceil(canvas.width / pxd))
+    bits.height = Math.max(1, Math.ceil(canvas.height / pxd))
+    glow1.width = Math.max(1, Math.ceil(w / 3))
+    glow1.height = Math.max(1, Math.ceil(h / 3))
+    glow2.width = Math.max(1, Math.ceil(w / 8))
+    glow2.height = Math.max(1, Math.ceil(h / 8))
 
-  function layoutGrid() {
-    font = clamp(Math.min(w, h) / 72, 7.5, 10)
-    // three digits wide, with a little air, and a line high
-    cw = Math.round(font * 2.1)
-    ch = Math.round(font * 1.35)
+    font = clamp(Math.min(w, h) / 62, 7, 10.5)
+    cw = Math.round(font * 0.92)
+    ch = Math.round(font * 1.2)
     cols = Math.ceil(w / cw) + 1
     rows = Math.ceil(h / ch) + 1
-    occ = new Int32Array(cols * rows)
-    lineCell = new Int32Array(cols * rows)
-    lineGroup = new Int8Array(cols * rows)
-    shadeZ = new Float32Array(cols * rows)
-    shadeD = new Float32Array(cols * rows)
-    shadeOcc = new Uint8Array(cols * rows)
-    widths.clear()
-    nums.length = 0
-    shades.length = 0
+    const n = cols * rows
+    cover = new Int32Array(n)
+    cellZ = new Float32Array(n)
+    cellG = new Int8Array(n)
+    cellD = new Float32Array(n)
+    digit = new Int8Array(n).fill(-1)
+    born = new Float32Array(n)
+    shade = new Int8Array(n).fill(-1)
   }
 
-  /** Marks the line-grid cells that the segment (x0, y0)–(x1, y1) runs through. */
-  function crossCells(x0, y0, x1, y1, group) {
-    const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (cw * 0.5)))
-    for (let k = 0; k <= steps; k += 1) {
-      const t = (k + 0.5) / (steps + 1)
-      const c = Math.floor(mix(x0, x1, t) / cw)
-      const r = Math.floor(mix(y0, y1, t) / ch)
-      if (c < 0 || r < 0 || c >= cols || r >= rows) continue
-      const i = r * cols + c
-      if (lineCell[i] !== frameNo) {
-        lineCell[i] = frameNo
-        lineGroup[i] = group
-        lineCells.push(i)
-      }
+  /** The plant covers the point (x, y): mark its cell, keeping the nearest surface. */
+  function touch(x, y, depth, group, dark) {
+    const c = Math.floor(x / cw)
+    const r = Math.floor(y / ch)
+    if (c < 0 || r < 0 || c >= cols || r >= rows) return
+    const i = r * cols + c
+    if (cover[i] !== frameNo) {
+      cover[i] = frameNo
+      covered.push(i)
+      cellZ[i] = Infinity
+    }
+    if (depth < cellZ[i]) {
+      cellZ[i] = depth
+      cellG[i] = group
+      cellD[i] = dark
     }
   }
 
@@ -292,7 +328,24 @@ export function createFlowerView(canvas, opts = {}) {
   }
   const order = []
   const byDepth = (a, b) => b.d - a.d
-  let reseed = true // reduced motion: lay the still numbers out again
+  // the outlines of opening flowers, to glow: x0, y0, x1, y1, strength
+  let glowSegs = new Float32Array(4096 * 5)
+  let glowCount = 0
+  const glowSeg = (x0, y0, x1, y1, a) => {
+    if (glowCount * 5 + 5 > glowSegs.length) {
+      const more = new Float32Array(glowSegs.length * 2)
+      more.set(glowSegs)
+      glowSegs = more
+    }
+    const k = glowCount * 5
+    glowSegs[k] = x0
+    glowSegs[k + 1] = y0
+    glowSegs[k + 2] = x1
+    glowSegs[k + 3] = y1
+    glowSegs[k + 4] = a
+    glowCount += 1
+  }
+  let reseed = true // reduced motion: lay the still digits out again
 
   function bloomStep(elapsed) {
     let open = 0
@@ -324,9 +377,8 @@ export function createFlowerView(canvas, opts = {}) {
     const c = species.camera
     bloomStep(elapsed)
     frameNo += 1
-    lineCells.length = 0
-    darkCells.length = 0
-    shadeZ.fill(Infinity)
+    covered.length = 0
+    glowCount = 0
 
     // camera: a slow sway, and a lean after the pointer
     if (!reduced) {
@@ -357,13 +409,8 @@ export function createFlowerView(canvas, opts = {}) {
       if (k >= 0) hoverUntil[k] = time + LINGER_S
     }
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.clearRect(0, 0, w, h)
-    ctx.lineJoin = 'round'
-    ctx.lineCap = 'round'
-
     itemCount = 0
-    // surfaces: project, then one item per quad
+    // surfaces: project, then one item per quad, and mark the cells it covers
     for (let n = 0; n < scene.ns; n += 1) {
       const s = scene.surfaces[n]
       const { nu, nv, P } = s
@@ -401,17 +448,16 @@ export function createFlowerView(canvas, opts = {}) {
           it.j = j
           it.d = depth
 
-          // how turned from the light the nearest surface in this shadow cell is
-          const gc = Math.round((s.sx[a] + s.sx[b] + s.sx[cc] + s.sx[d]) / 4 / cw)
-          const gr = Math.round((s.sy[a] + s.sy[b] + s.sy[cc] + s.sy[d]) / 4 / ch)
-          if (gc >= 0 && gr >= 0 && gc < cols && gr < rows) {
-            const gi = gr * cols + gc
-            if (depth < shadeZ[gi]) {
-              const nl = Math.hypot(nx, ny, nz) || 1
-              const lit = clamp(((nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / nl) * facing)
-              shadeZ[gi] = depth
-              shadeD[gi] = clamp((1 - lit) * 0.85 + (facing < 0 ? 0.25 : 0))
-            }
+          // the cells under the quad, sampled on a 3 x 3 grid across it
+          const nl = Math.hypot(nx, ny, nz) || 1
+          const lit = clamp(((nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / nl) * facing)
+          const dark = clamp((1 - lit) * 0.85 + (facing < 0 ? 0.25 : 0))
+          for (const fu of SAMPLES) {
+            const lx = mix(s.sx[a], s.sx[b], fu)
+            const ly = mix(s.sy[a], s.sy[b], fu)
+            const rx = mix(s.sx[d], s.sx[cc], fu)
+            const ry = mix(s.sy[d], s.sy[cc], fu)
+            for (const fv of SAMPLES) touch(mix(lx, rx, fv), mix(ly, ry, fv), depth, s.group, dark)
           }
         }
       }
@@ -429,6 +475,13 @@ export function createFlowerView(canvas, opts = {}) {
         it.b = cur
         it.l = l
         it.d = (prev[2] + cur[2]) / 2
+        if (!l.ww) {
+          // the cells along a stamen
+          const steps = Math.max(1, Math.ceil(Math.hypot(cur[0] - prev[0], cur[1] - prev[1]) / (cw * 0.6)))
+          for (let t = 0; t <= steps; t += 1) {
+            touch(mix(prev[0], cur[0], t / steps), mix(prev[1], cur[1], t / steps), it.d, l.group, 0.3)
+          }
+        }
         prev = cur
       }
     }
@@ -446,20 +499,41 @@ export function createFlowerView(canvas, opts = {}) {
     for (let k = 0; k < itemCount; k += 1) order.push(items[k])
     order.sort(byDepth)
 
+    // the drawing, onto the bitmap
+    bctx.setTransform(1, 0, 0, 1, 0, 0)
+    bctx.globalCompositeOperation = 'source-over'
+    bctx.clearRect(0, 0, bits.width, bits.height)
+    bctx.setTransform(dpr / pxd, 0, 0, dpr / pxd, 0, 0)
+    bctx.lineJoin = 'round'
+    bctx.lineCap = 'round'
     for (let k = 0; k < order.length; k += 1) {
       const it = order[k]
       if (it.kind === 0) paintQuad(it)
       else if (it.kind === 1) paintSegment(it)
       else paintDot(it)
     }
+    // the dither: every other pixel knocked back
+    bctx.setTransform(1, 0, 0, 1, 0, 0)
+    bctx.globalCompositeOperation = 'destination-out'
+    bctx.globalAlpha = DITHER
+    bctx.fillStyle = checker
+    bctx.fillRect(0, 0, bits.width, bits.height)
+    bctx.globalAlpha = 1
+    bctx.globalCompositeOperation = 'source-over'
 
-    for (let i = 0; i < shadeZ.length; i += 1) {
-      if (shadeZ[i] < Infinity && shadeD[i] > SHADE_FROM) darkCells.push(i)
-    }
-    paintNumbers(dt)
+    // onto the canvas, scaled up hard
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(bits, 0, 0, bits.width * pxd, bits.height * pxd)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+    paintDigits(dt)
+    paintGlow()
   }
 
   function paintQuad(it) {
+    const g = bctx
     const s = it.s
     const { nv, sx, sy } = s
     const i = it.i
@@ -469,27 +543,28 @@ export function createFlowerView(canvas, opts = {}) {
     const b = (i + 1) * nv + j
     const c = (i + 1) * nv + j1
     const d = i * nv + j1
-    // the background, to hide what is behind: no fill of its own
-    ctx.beginPath()
-    ctx.moveTo(sx[a], sy[a])
-    ctx.lineTo(sx[b], sy[b])
-    ctx.lineTo(sx[c], sy[c])
-    ctx.lineTo(sx[d], sy[d])
-    ctx.closePath()
-    ctx.fillStyle = paperCss
-    ctx.fill()
+    // the ground, to hide what is behind: no fill of its own
+    g.beginPath()
+    g.moveTo(sx[a], sy[a])
+    g.lineTo(sx[b], sy[b])
+    g.lineTo(sx[c], sy[c])
+    g.lineTo(sx[d], sy[d])
+    g.closePath()
+    g.fillStyle = paperCss
+    g.fill()
 
     // outline: free edges, and silhouettes where the neighbour faces away
     const face = s.face[it.q]
     const qc = s.closed ? nv : nv - 1
     const last = s.nu - 2
     const E = s.edges
-    ctx.beginPath()
+    const glowA = s.group >= 0 ? blooms[s.group] : 0
+    g.beginPath()
     let any = false
     const seg = (p, q) => {
-      ctx.moveTo(sx[p], sy[p])
-      ctx.lineTo(sx[q], sy[q])
-      crossCells(sx[p], sy[p], sx[q], sy[q], s.group)
+      g.moveTo(sx[p], sy[p])
+      g.lineTo(sx[q], sy[q])
+      if (glowA > 0.04) glowSeg(sx[p], sy[p], sx[q], sy[q], glowA)
       any = true
     }
     if (j === 0 && !s.closed) {
@@ -505,9 +580,9 @@ export function createFlowerView(canvas, opts = {}) {
       if (E.tip) seg(b, c)
     } else if (s.face[(i + 1) * qc + j] !== face) seg(b, c)
     if (any) {
-      ctx.strokeStyle = inkCss
-      ctx.lineWidth = LINE
-      ctx.stroke()
+      g.strokeStyle = inkA(LINE_A)
+      g.lineWidth = LINE_BITS * px
+      g.stroke()
     }
 
     // veins through this quad, fading in from the base and out towards the tip
@@ -519,12 +594,12 @@ export function createFlowerView(canvas, opts = {}) {
         if (Math.floor(v.j) !== j || u1 <= v.from || u0 >= v.to) continue
         const t = v.j - j
         const fade = Math.min(clamp((u0 - v.from) / 0.12) + 0.3, clamp((v.to - u1) / 0.18) + 0.3, 1)
-        ctx.beginPath()
-        ctx.moveTo(mix(sx[a], sx[d], t), mix(sy[a], sy[d], t))
-        ctx.lineTo(mix(sx[b], sx[c], t), mix(sy[b], sy[c], t))
-        ctx.strokeStyle = inkA(Math.min(0.8, v.alpha * 1.6) * Math.max(0.15, fade))
-        ctx.lineWidth = LINE
-        ctx.stroke()
+        g.beginPath()
+        g.moveTo(mix(sx[a], sx[d], t), mix(sy[a], sy[d], t))
+        g.lineTo(mix(sx[b], sx[c], t), mix(sy[b], sy[c], t))
+        g.strokeStyle = inkA(LINE_A * Math.min(0.8, v.alpha * 1.4) * Math.max(0.15, fade))
+        g.lineWidth = LINE_BITS * px
+        g.stroke()
       }
     }
     // freckles, as tiny rings
@@ -533,212 +608,243 @@ export function createFlowerView(canvas, opts = {}) {
         if (sp.i !== i || sp.j !== j) continue
         const x = mix(mix(sx[a], sx[d], sp.fv), mix(sx[b], sx[c], sp.fv), sp.fu)
         const y = mix(mix(sy[a], sy[d], sp.fv), mix(sy[b], sy[c], sp.fv), sp.fu)
-        ctx.beginPath()
-        ctx.arc(x, y, Math.max(0.7, (sp.r * cam.F) / s.sd[a]), 0, Math.PI * 2)
-        ctx.strokeStyle = inkCss
-        ctx.lineWidth = LINE
-        ctx.stroke()
+        g.beginPath()
+        g.arc(x, y, Math.max(px, (sp.r * cam.F) / s.sd[a]), 0, Math.PI * 2)
+        g.strokeStyle = inkA(LINE_A)
+        g.lineWidth = LINE_BITS * px
+        g.stroke()
       }
     }
   }
 
   function paintSegment(it) {
+    const g = bctx
     const l = it.l
-    ctx.beginPath()
-    ctx.moveTo(it.a[0], it.a[1])
-    ctx.lineTo(it.b[0], it.b[1])
-    ctx.strokeStyle = inkCss
+    g.beginPath()
+    g.moveTo(it.a[0], it.a[1])
+    g.lineTo(it.b[0], it.b[1])
     if (l.ww) {
       // a bar with some body (a tulip's anther): drawn as an outline, a line
-      // of ink with the background laid down its middle
-      const width = Math.max(LINE * 6, (l.ww * cam.F) / it.d)
-      ctx.lineWidth = width
-      ctx.stroke()
-      ctx.strokeStyle = paperCss
-      ctx.lineWidth = width - LINE * 2
-      ctx.stroke()
+      // of ink with the ground laid down its middle
+      const width = Math.max(px * 3, (l.ww * cam.F) / it.d)
+      g.strokeStyle = inkA(LINE_A)
+      g.lineWidth = width
+      g.stroke()
+      g.strokeStyle = paperCss
+      g.lineWidth = width - LINE_BITS * px * 2
+      g.stroke()
     } else {
-      ctx.lineWidth = LINE
-      ctx.stroke()
-      crossCells(it.a[0], it.a[1], it.b[0], it.b[1], l.group)
+      g.strokeStyle = inkA(LINE_A)
+      g.lineWidth = LINE_BITS * px
+      g.stroke()
+      const glowA = l.group >= 0 ? blooms[l.group] : 0
+      if (glowA > 0.04) glowSeg(it.a[0], it.a[1], it.b[0], it.b[1], glowA)
     }
   }
 
   function paintDot(it) {
+    const g = bctx
     const d = it.l
-    const r = Math.max(0.9, (d.r * cam.F) / it.d)
-    ctx.beginPath()
-    ctx.arc(it.a[0], it.a[1], r, 0, Math.PI * 2)
-    ctx.fillStyle = paperCss
-    ctx.fill()
-    ctx.strokeStyle = inkCss
-    ctx.lineWidth = LINE
-    ctx.stroke()
+    const r = Math.max(px, (d.r * cam.F) / it.d)
+    g.beginPath()
+    g.arc(it.a[0], it.a[1], r, 0, Math.PI * 2)
+    g.fillStyle = paperCss
+    g.fill()
+    g.strokeStyle = inkA(LINE_A)
+    g.lineWidth = LINE_BITS * px
+    g.stroke()
   }
 
-  /* --- the numbers ------------------------------------------------------- */
+  /* --- the digits ---------------------------------------------------------- */
 
-  let lineDebt = 0
-  let shadeDebt = 0
   let seed = 1
   const rand = () => {
-    // a small LCG: the numbers do not need to be secure, only cheap
+    // a small LCG: the digits do not need to be secure, only cheap
     seed = (seed * 16807) % 2147483647
     return (seed - 1) / 2147483646
   }
-  // the flower's name in ASCII: "Tulip" sheds 84, 117, 108, 105, 112
-  let codes = []
-  const setCodes = () => {
-    codes = [...species.name.replace(/\s+/g, '')].map((ch) => String(ch.charCodeAt(0)))
-  }
-  setCodes()
-  const code = () => codes[Math.floor(rand() * codes.length)]
-  const widthOf = (v) => {
-    let x = widths.get(v)
-    if (x == null) {
-      x = ctx.measureText(v).width
-      widths.set(v, x)
+  const bloomAt = (i) => (cellG[i] >= 0 ? blooms[cellG[i]] : 0)
+  const density = (i) => DENSITY + DENSITY_BLOOM * bloomAt(i)
+  const shadeDepth = (i) => (cellD[i] - SHADE_FROM) / (1 - SHADE_FROM)
+
+  /** One glitch: digits deleted, runs written in, some flipped, perhaps a row slipped. */
+  function glitch() {
+    let count = 0
+    let target = 0
+    let shadows = 0
+    let shadowTarget = 0
+    // the plant moved off these: they go
+    for (let i = 0; i < digit.length; i += 1) {
+      if (cover[i] !== frameNo) {
+        digit[i] = -1
+        shade[i] = -1
+      } else if (shade[i] >= 0 && cellD[i] < SHADE_FROM - 0.06) shade[i] = -1
     }
-    return x
-  }
+    for (const i of covered) {
+      target += density(i)
+      if (digit[i] >= 0) count += 1
+      if (cellD[i] > SHADE_FROM) shadowTarget += 0.1 + 0.7 * shadeDepth(i)
+      if (shade[i] >= 0) shadows += 1
+    }
+    if (!covered.length) return
 
-  /** A number into a cell the drawing runs through, if one is free. */
-  function spawnLine() {
-    for (let attempt = 0; attempt < 6 && lineCells.length; attempt += 1) {
-      const i = lineCells[Math.floor(rand() * lineCells.length)]
-      if (occ[i]) continue
-      const g = lineGroup[i]
-      // most come from the open flowers; stems and leaves give the odd one
-      if (rand() > (g >= 0 ? 0.2 + 0.8 * blooms[g] : 0.08)) continue
-      nums.push({ i, age: 0, life: 2.6 + rand() * 2.8, hold: 0.5 + rand() * 1.1, step: 0, next: 0.3 + rand() * 0.6, v: code() })
-      occ[i] = nums.length
-      return
+    // delete some, a few at a time along a row
+    let cut = Math.round(count * (0.04 + rand() * 0.08))
+    for (let tries = 0; cut > 0 && tries < 400; tries += 1) {
+      const i = covered[Math.floor(rand() * covered.length)]
+      if (digit[i] < 0) continue
+      const run = 1 + Math.floor(rand() * rand() * 5)
+      for (let k = 0; k < run && (i % cols) + k < cols; k += 1) {
+        if (digit[i + k] >= 0) {
+          digit[i + k] = -1
+          count -= 1
+          cut -= 1
+        }
+      }
+    }
+    // write some in, in runs along a row, until the plant is as full as it should be
+    let budget = Math.ceil(Math.max(6, count * 0.14))
+    for (let tries = 0; count < target && budget > 0 && tries < 400; tries += 1) {
+      const i = covered[Math.floor(rand() * covered.length)]
+      if (rand() > density(i) * 1.6) continue
+      const run = 1 + Math.floor(rand() * rand() * 7)
+      for (let k = 0; k < run && (i % cols) + k < cols; k += 1) {
+        const c = i + k
+        if (cover[c] === frameNo && digit[c] < 0) {
+          digit[c] = rand() < 0.5 ? 0 : 1
+          born[c] = time
+          count += 1
+          budget -= 1
+        }
+      }
+    }
+    // flip a few
+    for (let k = Math.round(count * 0.05); k > 0; k -= 1) {
+      const i = covered[Math.floor(rand() * covered.length)]
+      if (digit[i] >= 0) digit[i] = 1 - digit[i]
+    }
+    // the shadow grid: fewer, slower
+    for (let k = Math.round(shadows * 0.06); k > 0; k -= 1) {
+      const i = covered[Math.floor(rand() * covered.length)]
+      if (shade[i] >= 0) shade[i] = -1
+    }
+    for (let tries = 0; shadows < shadowTarget && tries < 120; tries += 1) {
+      const i = covered[Math.floor(rand() * covered.length)]
+      if (shade[i] >= 0 || cellD[i] <= SHADE_FROM || rand() > shadeDepth(i)) continue
+      shade[i] = rand() < 0.5 ? 0 : 1
+      shadows += 1
+    }
+    // and now and then a row slips a cell sideways
+    if (rand() < 0.14) {
+      slipRow = Math.floor(covered[Math.floor(rand() * covered.length)] / cols)
+      slipBy = rand() < 0.5 ? -1 : 1
+      slipUntil = time + 0.06 + rand() * 0.1
     }
   }
 
-  /** A faint number into a shadow cell, as deep as the shade there. */
-  function spawnShade() {
-    for (let attempt = 0; attempt < 6 && darkCells.length; attempt += 1) {
-      const i = darkCells[Math.floor(rand() * darkCells.length)]
-      if (shadeOcc[i]) continue
-      const depth = (shadeD[i] - SHADE_FROM) / (1 - SHADE_FROM)
-      if (rand() > 0.08 + 0.8 * depth) continue
-      shades.push({ i, age: 0, life: 1.4 + rand() * 2.2, next: 0.3 + rand() * 0.7, v: code(), depth })
-      shadeOcc[i] = 1
-      return
+  /** Reduced motion: the digits laid out once, still. */
+  function settle() {
+    digit.fill(-1)
+    shade.fill(-1)
+    for (const i of covered) {
+      if (rand() < density(i)) digit[i] = rand() < 0.5 ? 0 : 1
+      if (cellD[i] > SHADE_FROM && rand() < 0.1 + 0.7 * shadeDepth(i)) shade[i] = rand() < 0.5 ? 0 : 1
     }
   }
 
-  /** Re-points occ at the numbers after some have gone. */
-  function reindex() {
-    occ.fill(0)
-    for (let k = 0; k < nums.length; k += 1) occ[nums[k].i] = k + 1
-  }
-
-  function paintNumbers(dt) {
+  function paintDigits() {
     if (!cols) return
-    let mean = 0
-    for (let k = 0; k < species.count; k += 1) mean += blooms[k] / species.count
-
     if (reduced) {
-      // still numbers, laid out afresh whenever the drawing changes
       if (reseed) {
         reseed = false
-        nums.length = 0
-        shades.length = 0
-        occ.fill(0)
-        shadeOcc.fill(0)
-        for (let k = 0; k < 24 + 50 * mean; k += 1) spawnLine()
-        for (let k = 0; k < 60; k += 1) spawnShade()
-        for (const n of nums) n.age = n.life * 0.3
-        for (const s of shades) s.age = s.life * 0.4
+        settle()
       }
-    } else {
-      lineDebt += (2 + 16 * mean) * dt
-      while (lineDebt >= 1) {
-        if (nums.length < MAX_LINE) spawnLine()
-        lineDebt -= 1
-      }
-      shadeDebt += 32 * dt
-      while (shadeDebt >= 1) {
-        if (shades.length < MAX_SHADOW) spawnShade()
-        shadeDebt -= 1
-      }
+    } else if (time >= nextBeat) {
+      nextBeat = time + mix(BEAT[0], BEAT[1], rand())
+      glitch()
     }
 
     ctx.font = `500 ${font}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
+    const slipping = time < slipUntil
+    const xOf = (i) => ((i % cols) + 0.5 + (slipping && Math.floor(i / cols) === slipRow ? slipBy : 0)) * cw
+    const yOf = (i) => (Math.floor(i / cols) + 0.5) * ch
 
-    // shadows first, so the line numbers sit on top of them
-    for (let k = shades.length - 1; k >= 0; k -= 1) {
-      const s = shades[k]
-      if (!reduced) {
-        s.age += dt
-        // the shade moved on (a petal opened, the plant swayed): let it go
-        if (shadeZ[s.i] === Infinity || shadeD[s.i] < SHADE_FROM - 0.08) s.age = Math.max(s.age, s.life * 0.7)
-        if (s.age >= s.life) {
-          shadeOcc[s.i] = 0
-          shades.splice(k, 1)
-          continue
-        }
-        s.next -= dt
-        if (s.next <= 0) {
-          s.v = code()
-          s.next = 0.4 + rand() * 0.8
-        }
-      }
-      const t = s.age / s.life
-      const env = Math.min(1, t / 0.2) * (1 - smooth((t - 0.7) / 0.3))
-      ctx.fillStyle = inkA(SHADOW_ALPHA * (0.35 + 0.65 * s.depth) * env)
-      ctx.fillText(s.v, (s.i % cols) * cw, Math.floor(s.i / cols) * ch)
+    // shadows first, half a cell down and to the right, under the rest
+    ctx.fillStyle = inkCss
+    for (const i of covered) {
+      if (shade[i] < 0) continue
+      ctx.globalAlpha = SHADOW_A * (0.35 + 0.65 * clamp(shadeDepth(i)))
+      ctx.fillText(shade[i] ? '1' : '0', xOf(i) + cw / 2, yOf(i) + ch / 2)
     }
 
-    let gone = false
-    for (let k = nums.length - 1; k >= 0; k -= 1) {
-      const n = nums[k]
-      if (!reduced) {
-        n.age += dt
-        if (n.age >= n.life) {
-          nums.splice(k, 1)
-          gone = true
-          continue
-        }
-        n.next -= dt
-        if (n.next <= 0) {
-          n.v = code()
-          n.next = 0.3 + rand() * 0.6
-        }
-        // after holding its place in the line, climb a cell at a time
-        if (n.age > n.hold) {
-          n.step -= dt
-          if (n.step <= 0) {
-            n.step = 0.32 + rand() * 0.4
-            const up = n.i - cols
-            if (up < 0) {
-              n.life = Math.min(n.life, n.age + 0.25)
-            } else if (!occ[up]) {
-              occ[n.i] = 0
-              n.i = up
-              occ[up] = 1
-            }
-          }
-        }
-      }
-      const t = n.age / n.life
-      const env = Math.min(1, t / 0.12) * (1 - smooth((t - 0.65) / 0.35))
-      const x = ((n.i % cols) + 0.5) * cw
-      const y = (Math.floor(n.i / cols) + 0.5) * ch
-      // cut the gap: clear the line under the number, then set the number in it
-      const tw = widthOf(n.v) + 3
-      ctx.globalAlpha = env
-      ctx.fillStyle = paperCss
-      ctx.fillRect(x - tw / 2, y - font * 0.58, tw, font * 1.16)
-      ctx.globalAlpha = 1
-      ctx.fillStyle = inkA(LINE_ALPHA * env)
-      ctx.fillText(n.v, x, y)
+    // each digit clears its gap in the line, then sits in it
+    ctx.globalAlpha = 1
+    ctx.beginPath()
+    const gw = font * 0.62
+    const gh = font * 0.92
+    for (const i of covered) {
+      if (digit[i] >= 0) ctx.rect(xOf(i) - gw / 2, yOf(i) - gh / 2, gw, gh)
     }
-    if (gone) reindex()
+    ctx.fillStyle = paperCss
+    ctx.fill()
+
+    ctx.fillStyle = inkCss
+    for (const i of covered) {
+      if (digit[i] < 0) continue
+      // a digit flashes as it is written
+      const fresh = !reduced && time - born[i] < 0.06
+      ctx.globalAlpha = fresh ? 1 : DIGIT_A + DIGIT_A_BLOOM * bloomAt(i)
+      ctx.fillText(digit[i] ? '1' : '0', xOf(i), yOf(i))
+    }
+    ctx.globalAlpha = 1
+  }
+
+  /* --- the glow ------------------------------------------------------------ */
+
+  function paintGlow() {
+    let any = glowCount > 0
+    for (let k = 0; k < species.count && !any; k += 1) any = blooms[k] > 0.04
+    if (!any) return
+
+    // the opening flowers' outlines and digits, a third of the size
+    g1.setTransform(1, 0, 0, 1, 0, 0)
+    g1.clearRect(0, 0, glow1.width, glow1.height)
+    g1.setTransform(1 / 3, 0, 0, 1 / 3, 0, 0)
+    g1.lineCap = 'round'
+    g1.lineWidth = 1.8
+    for (const level of [0.25, 0.5, 0.75, 1]) {
+      g1.beginPath()
+      for (let k = 0; k < glowCount; k += 1) {
+        const a = glowSegs[k * 5 + 4]
+        if (a > level || a <= level - 0.25) continue
+        g1.moveTo(glowSegs[k * 5], glowSegs[k * 5 + 1])
+        g1.lineTo(glowSegs[k * 5 + 2], glowSegs[k * 5 + 3])
+      }
+      g1.strokeStyle = inkA(level)
+      g1.stroke()
+    }
+    for (const i of covered) {
+      const b = bloomAt(i)
+      if (digit[i] < 0 || b < 0.05) continue
+      g1.fillStyle = inkA(b * 0.3)
+      g1.fillRect((i % cols) * cw + cw * 0.2, Math.floor(i / cols) * ch + ch * 0.15, cw * 0.6, ch * 0.7)
+    }
+    // and again, smaller still, for the wide soft halo
+    g2.setTransform(1, 0, 0, 1, 0, 0)
+    g2.clearRect(0, 0, glow2.width, glow2.height)
+    g2.imageSmoothingEnabled = true
+    g2.drawImage(glow1, 0, 0, glow2.width, glow2.height)
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.imageSmoothingEnabled = true
+    ctx.globalAlpha = GLOW * 0.6
+    ctx.drawImage(glow1, 0, 0, w, h)
+    ctx.globalAlpha = GLOW
+    ctx.drawImage(glow2, 0, 0, w, h)
+    ctx.restore()
   }
 
   /* --- loop and controls ------------------------------------------------- */
@@ -747,7 +853,7 @@ export function createFlowerView(canvas, opts = {}) {
     raf = 0
     if (!running) return
     const elapsed = last ? Math.min(0.5, (now - last) / 1000) : 0
-    // motion steps stay small, so a stalled tab does not jump the numbers
+    // motion steps stay small, so a stalled tab does not lurch
     const dt = Math.min(0.05, elapsed)
     last = now
     time += elapsed
@@ -762,22 +868,20 @@ export function createFlowerView(canvas, opts = {}) {
 
   function resize() {
     const r = canvas.getBoundingClientRect()
-    dpr = Math.min(2, window.devicePixelRatio || 1)
     w = r.width
     h = r.height
-    canvas.width = Math.max(1, Math.round(w * dpr))
-    canvas.height = Math.max(1, Math.round(h * dpr))
+    const ratio = Math.min(2, window.devicePixelRatio || 1)
+    canvas.width = Math.max(1, Math.round(w * ratio))
+    canvas.height = Math.max(1, Math.round(h * ratio))
     fit = null
-    layoutGrid()
+    layout()
     reseed = true
     still()
   }
 
-  const clearNumbers = () => {
-    nums.length = 0
-    shades.length = 0
-    occ.fill(0)
-    shadeOcc.fill(0)
+  const clearDigits = () => {
+    digit.fill(-1)
+    shade.fill(-1)
     reseed = true
   }
 
@@ -804,8 +908,7 @@ export function createFlowerView(canvas, opts = {}) {
       scene.heads.length = 0
       fit = null
       resetFlowers()
-      setCodes()
-      clearNumbers()
+      clearDigits()
       still()
     },
     /** How open the flowers rest when nothing asks them to bloom (0 a bud). */
@@ -859,7 +962,7 @@ export function createFlowerView(canvas, opts = {}) {
     },
     setReduced(on) {
       reduced = Boolean(on)
-      clearNumbers()
+      clearDigits()
       still()
     },
     destroy() {
@@ -867,3 +970,6 @@ export function createFlowerView(canvas, opts = {}) {
     },
   }
 }
+
+/** Where across a quad its covered cells are sampled, each way. */
+const SAMPLES = [1 / 6, 1 / 2, 5 / 6]

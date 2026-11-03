@@ -191,22 +191,17 @@
   --vp-led-on: #ff6a3d;
 
   /* --- ASCII Flowers (the second Works toy) ------------------------------- */
-  /* The palette for the drawing and its numbers (one colour for both), 3 x 3:
-     burgundy, grey and brown, a row each, dark to light. Burgundy is the
-     site's ink, maroon and the equaliser's wine; grey is the record's warm
-     sheen, a step between, and the window dot's grey; brown is the
-     turntable's unlit power light (#6b5048) with a step darker and lighter.
-     Each is dark enough to hold a hairline on white. Plain #rrggbb, because
-     a canvas reads them. */
-  --fl-swatch-1: #2d0510;
-  --fl-swatch-2: #440000;
-  --fl-swatch-3: #7a1a30;
-  --fl-swatch-4: #5a5358;
-  --fl-swatch-5: #858086;
-  --fl-swatch-6: #b7b5b8;
-  --fl-swatch-7: #3e2a24;
-  --fl-swatch-8: #6b5048;
-  --fl-swatch-9: #9c8479;
+  /* The square the flower is drawn on: a very dark brown, the turntable's
+     brown (#6b5048) taken nearly to black, so a bloom's glow shows. */
+  --fl-ground: #1c1411;
+  /* The three colours for the drawing, its digits and its glow: burgundy,
+     grey and brown, each taken light enough to read on the dark square.
+     Burgundy is the equaliser's middle step, grey the window dot's grey,
+     brown the turntable's brown lifted a step. Plain #rrggbb, because a
+     canvas reads them. */
+  --fl-swatch-1: #b4566a;
+  --fl-swatch-2: #b7b5b8;
+  --fl-swatch-3: #a48b7b;
 
   /* --- Experience timeline (Me page) ------------------------------------- */
   /* A grey rule and dots; the logos are maroon, knocked back. */

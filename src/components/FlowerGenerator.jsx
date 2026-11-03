@@ -10,12 +10,13 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
 /* ---------------------------------------------------------------------------
    ASCII Flowers: the Works card that opens a little flower generator.
 
-   A plant drawn from above in one hairline (a 3D model, painted as line art
-   by lib/flowers/render.js), with ASCII codes drifting up off its petals like
-   pollen. Its flowers bloom one at a time: each opens while the pointer is on
-   it, stays a moment after it leaves, then closes back into a bud. On the
-   left, a plain list of the four plants and a 3 x 3 palette, all in the
-   site's burgundies and greys, that colours both the drawing and the pollen.
+   A plant drawn in a faint bitmap line on a dark brown square (a 3D model,
+   painted by lib/flowers/render.js), covered in binary digits that glitch in
+   and out on a grid, and glowing where it blooms. Its flowers bloom one at a
+   time: each opens while the pointer is on it, stays a moment after it
+   leaves, then closes back into a bud. On the left, a plain list of the four
+   plants and three colours (burgundy, grey, brown) for the drawing, its
+   digits and its glow.
 
    Touch opens and closes a flower with a tap on it. The keyboard has the
    whole drawing as one button: Enter or Space opens every flower, one after
@@ -32,33 +33,24 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
 
 const CLOSE_MS = 180
 const DEFAULT_SPECIES = 'spider-lily'
-const DEFAULT_SWATCH = 2 // maroon
+const DEFAULT_SWATCH = 1 // burgundy
 
-/** The palette, in reading order: burgundy, grey and brown, three of each (tokens.css, --fl-swatch-n). */
-const SWATCHES = [
-  'Ink',
-  'Maroon',
-  'Wine',
-  'Warm grey',
-  'Grey',
-  'Light grey',
-  'Dark brown',
-  'Brown',
-  'Light brown',
-].map((name, k) => ({ n: k + 1, name, token: `--fl-swatch-${k + 1}` }))
+/** The three colours (tokens.css, --fl-swatch-n). */
+const SWATCHES = ['Burgundy', 'Grey', 'Brown'].map((name, k) => ({ n: k + 1, name, token: `--fl-swatch-${k + 1}` }))
 
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
   return v || fallback
 }
-const swatchHex = (n) => cssVar(`--fl-swatch-${n}`, '#440000')
+const swatchHex = (n) => cssVar(`--fl-swatch-${n}`, '#b4566a')
 
 /**
  * A FlowerView on a canvas for as long as the component is mounted, kept in
  * step with the props. `running` starts and stops its animation loop; `rest`
  * is how open the flowers sit when nothing asks them to bloom; `onOpen(n)`
  * hears how many flowers are open. The drawing hides what is behind each
- * petal by painting it in the background of the box the canvas sits in.
+ * petal by painting it in the background of the box the canvas sits in (the
+ * dark square).
  */
 function useFlowerView(canvasRef, { species, swatch, rest = 0, reduced, running, framing, sway, onOpen }) {
   const viewRef = useRef(null)
@@ -157,7 +149,9 @@ export function FlowerThumb({ paused = false }) {
 
   return (
     <div ref={boxRef} className="fl-card absolute inset-0">
-      <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
+      <div className="fl-square">
+        <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
+      </div>
     </div>
   )
 }
@@ -357,9 +351,11 @@ function FlowerGenerator({ onClose, reduced }) {
           if (type !== 'mouse') viewRef.current?.tap(...local(e))
         }}
       >
-        <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
-        <span className="fl-latin" aria-hidden="true">
-          {species.latin}
+        <span className="fl-square">
+          <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
+          <span className="fl-latin" aria-hidden="true">
+            {species.latin}
+          </span>
         </span>
       </button>
     </div>

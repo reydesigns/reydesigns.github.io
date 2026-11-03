@@ -247,13 +247,6 @@ export const VEINS_FINE = [
   { j: 0.5, from: 0.24, to: 0.56, alpha: 0.14 },
   { j: 6.5, from: 0.24, to: 0.56, alpha: 0.14 },
 ]
-export const VEINS_LEAF = [
-  { j: 3.5, from: 0.02, to: 0.92, alpha: 0.45 },
-  { j: 2.5, from: 0.06, to: 0.86, alpha: 0.16 },
-  { j: 4.5, from: 0.06, to: 0.86, alpha: 0.16 },
-  { j: 1.5, from: 0.1, to: 0.78, alpha: 0.14 },
-  { j: 5.5, from: 0.1, to: 0.78, alpha: 0.14 },
-]
 
 /* --- revolve: a closed shell turned about an axis --------------------------
 

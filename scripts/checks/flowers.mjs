@@ -5,12 +5,12 @@
  *   SHOTS=/some/dir node scripts/checks/flowers.mjs   also saves screenshots
  *
  * Desktop: the card sits beside Shore-Up and draws; a click opens the
- * pop-up; hovering one flower blooms that flower alone, and it closes again
- * after the pointer leaves; Enter opens them all, one after another; the
- * drawing is one hairline colour on the background (no shading), and picking
- * a swatch recolours it; every plant draws; Escape closes and focus goes back
- * to the card. Then a phone (a tap blooms the flower under it) and reduced
- * motion.
+ * pop-up, with the flower on a dark square; hovering one flower blooms that
+ * flower alone, and it closes again after the pointer leaves; Enter opens
+ * them all, one after another; the digits keep changing; picking one of the
+ * three swatches recolours the drawing; every plant draws; Escape closes and
+ * focus goes back to the card. Then a phone (a tap blooms the flower under
+ * it) and reduced motion (nothing moves).
  */
 import { launch, openPage, sleep, check, done } from '../lib/browser.mjs'
 
@@ -36,37 +36,39 @@ const ink = (page, sel) =>
     return n
   }, sel)
 
-/** Every drawn pixel should be a blend of the background and `hex`: no greys, no fills. */
-const palette = (page, hex) =>
-  page.evaluate((h) => {
+/** Which of the three swatches the drawing's strongest pixels are nearest, by hue. */
+const tint = (page) =>
+  page.evaluate(() => {
     const c = document.querySelector('.fl-stage canvas')
-    const want = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
-    const bg = [255, 255, 255]
+    const bg = getComputedStyle(c.parentElement).backgroundColor.match(/\d+/g).map(Number)
+    const swatches = [1, 2, 3].map((n) =>
+      getComputedStyle(document.documentElement).getPropertyValue(`--fl-swatch-${n}`).trim(),
+    )
     const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
-    let drawn = 0
-    let off = 0
-    let darkest = 1e9
-    let dark = null
-    for (let k = 0; k < d.length; k += 4) {
+    // the average colour the drawing adds to the ground, where it adds the most
+    const sum = [0, 0, 0]
+    let n = 0
+    for (let k = 0; k < d.length; k += 8) {
       const a = d[k + 3] / 255
-      if (a < 0.05) continue
-      // composite onto the white stage, then find how far along bg -> ink it is
-      const px = [0, 1, 2].map((i) => d[k + i] * a + 255 * (1 - a))
-      const t = [0, 1, 2].reduce((s, i) => s + (bg[i] - px[i]) * (bg[i] - want[i]), 0) /
-        Math.max(1, [0, 1, 2].reduce((s, i) => s + (bg[i] - want[i]) ** 2, 0))
-      if (t < 0.04) continue
-      drawn += 1
-      const tt = Math.min(1, Math.max(0, t))
-      const dist = Math.hypot(...[0, 1, 2].map((i) => px[i] - (bg[i] + (want[i] - bg[i]) * tt)))
-      if (dist > 30) off += 1
-      const lum = px[0] + px[1] + px[2]
-      if (lum < darkest) {
-        darkest = lum
-        dark = px.map(Math.round)
-      }
+      const px = [0, 1, 2].map((i) => d[k + i] * a + bg[i] * (1 - a))
+      const add = px.map((v, i) => v - bg[i])
+      if (add[0] + add[1] + add[2] < 120) continue
+      add.forEach((v, i) => (sum[i] += v))
+      n += 1
     }
-    return { drawn, off, dark }
-  }, hex)
+    const mean = sum.map((v) => v / Math.max(1, n))
+    const unit = (v) => {
+      const l = Math.hypot(...v) || 1
+      return v.map((x) => x / l)
+    }
+    const m = unit(mean)
+    const scores = swatches.map((hex) => {
+      const rgb = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+      const u = unit(rgb.map((v, i) => v - bg[i]))
+      return u[0] * m[0] + u[1] * m[1] + u[2] * m[2]
+    })
+    return { nearest: scores.indexOf(Math.max(...scores)) + 1, samples: n, mean: mean.map(Math.round) }
+  })
 
 /** Moves (or taps) across the drawing until a flower opens; returns where. */
 async function findFlower(page, how = 'move') {
@@ -120,13 +122,19 @@ const browser = await launch({ gpu: true })
     const cols = new Set(r.map((b) => Math.round(b.left))).size
     return { n: els.length, rows, cols, square: r.every((b) => Math.abs(b.width - b.height) < 1) }
   })
-  check('a 3 x 3 grid of square swatches', swatches.n === 9 && swatches.rows === 3 && swatches.cols === 3 && swatches.square, JSON.stringify(swatches))
+  check('three square swatches in a row', swatches.n === 3 && swatches.rows === 1 && swatches.square, JSON.stringify(swatches))
   const layout = await page.evaluate(() => {
     const side = document.querySelector('.fl-controls').getBoundingClientRect()
     const stage = document.querySelector('.fl-stage').getBoundingClientRect()
     return { controlsLeftOfStage: side.right <= stage.left + 1 }
   })
   check('controls on the left, drawing on the right', layout.controlsLeftOfStage)
+  const square = await page.evaluate(() => {
+    const r = document.querySelector('.fl-stage .fl-square').getBoundingClientRect()
+    const bg = getComputedStyle(document.querySelector('.fl-stage .fl-square')).backgroundColor
+    return { w: Math.round(r.width), h: Math.round(r.height), bg }
+  })
+  check('the flower sits on a dark square', square.w === square.h && square.w > 300 && /rgb\(2\d, 2\d, 1\d\)/.test(square.bg), JSON.stringify(square))
   await page.mouse.move(5, 5)
   await sleep(600)
   check('every flower starts in bud', (await opened(page)) === 0)
@@ -158,18 +166,24 @@ const browser = await launch({ gpu: true })
   await sleep(1200)
   await shot(page, 'all-open')
 
-  // one hairline colour, which the swatches change
-  const maroon = await palette(page, '#440000')
-  check('drawn in the one colour, no shading or fill', maroon.drawn > 500 && maroon.off / maroon.drawn < 0.02, JSON.stringify(maroon))
-  await page.click('.fl-swatch:nth-child(8) input')
+  // the digits glitch: the drawing never sits still for long
+  const g0 = await ink(page, '.fl-stage canvas')
+  await sleep(180)
+  const g1 = await ink(page, '.fl-stage canvas')
+  check('the digits keep changing', g0 !== g1, `${g0} -> ${g1}`)
+
+  // the colour, which the swatches change
+  const burgundy = await tint(page)
+  check('drawn in burgundy to begin with', burgundy.nearest === 1, JSON.stringify(burgundy))
+  await page.click('.fl-swatch:nth-child(3) input')
   await sleep(300)
-  const brown = await palette(page, '#6b5048')
-  check('a swatch recolours the drawing and the numbers', brown.drawn > 500 && brown.off / brown.drawn < 0.02, JSON.stringify(brown))
+  const brown = await tint(page)
+  check('a swatch recolours the drawing, digits and glow', brown.nearest === 3, JSON.stringify(brown))
 
   await page.keyboard.press('Enter') // close them again before switching
   for (const [k, key] of ['tulip', 'orchid', 'lily-of-the-valley'].entries()) {
     await page.click(`.fl-option input[value="${key}"]`)
-    await page.click(`.fl-swatch:nth-child(${[3, 1, 7][k]}) input`)
+    await page.click(`.fl-swatch:nth-child(${[2, 1, 3][k]}) input`)
     await sleep(400)
     check(`${key}: starts in bud`, (await opened(page)) === 0)
     const found = await findFlower(page)

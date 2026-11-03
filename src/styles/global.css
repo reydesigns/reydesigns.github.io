@@ -688,10 +688,25 @@ html.lenis body {
    The pop-up borrows the Vinyl Player's dialog (.vp-pop: size, backdrop,
    open and close) and its close button; the frame inside is its own. From
    40rem it is one 16:10 sheet: the title and the controls in a column on the
-   left, the flower filling the rest. On a phone it fills the screen and the
-   title, flower and controls stack. */
+   left, the flower on a dark square in the rest. On a phone it fills the
+   screen and the title, flower and controls stack. */
 .fl-card {
+  display: grid;
+  place-items: center;
   background: var(--color-surface-sunken);
+}
+/* The dark brown square the flower is drawn on (in the pop-up and on the
+   card), so a bloom's glow shows. Its corners are the swatches' radius. */
+.fl-square {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--fl-ground);
+}
+.fl-card .fl-square {
+  height: 84%;
 }
 .fl-canvas {
   position: absolute;
@@ -811,7 +826,7 @@ html.lenis body {
 .fl-option input:focus-visible {
   outline: none;
 }
-/* The palette: nine squares with softly rounded corners, three to a row. */
+/* The palette: three squares with softly rounded corners, in a row. */
 .fl-swatches {
   display: grid;
   grid-template-columns: repeat(3, clamp(2rem, 3.4cqi, 2.625rem));
@@ -844,16 +859,23 @@ html.lenis body {
   cursor: pointer;
 }
 /* The flower: a button the size of the right-hand side, so a tap or a key
-   can bloom it too. A hairline divides it from the controls. */
+   can bloom it too, with the square as large as fits in it. A hairline
+   divides it from the controls. */
 .fl-stage {
   grid-area: stage;
   position: relative;
-  display: block;
+  display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
+  container-type: size;
   border-left: 1px solid var(--fz-divider);
   background: var(--color-surface);
   cursor: pointer;
+}
+.fl-stage .fl-square {
+  --fl-pad: clamp(1rem, 2.4cqmin, 2rem);
+  width: min(100cqw - 2 * var(--fl-pad), 100cqh - 2 * var(--fl-pad));
 }
 .fl-stage:focus-visible {
   outline: 2px solid var(--color-ink);
@@ -861,11 +883,11 @@ html.lenis body {
 }
 .fl-latin {
   position: absolute;
-  right: clamp(1rem, 2.4cqi, 2rem);
-  bottom: clamp(0.875rem, 2cqi, 1.75rem);
-  font-size: clamp(0.75rem, 1.1cqi, 0.875rem);
+  right: 0.875rem;
+  bottom: 0.75rem;
+  font-size: 0.8125rem;
   font-style: italic;
-  color: var(--color-ink-muted);
+  color: rgb(255 255 255 / 0.42);
   pointer-events: none;
 }
 /* A phone: the title, then the flower, then the list and the palette side
