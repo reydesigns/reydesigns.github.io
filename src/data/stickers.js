@@ -9,7 +9,7 @@
 
    Each sticker has:
      sheet   where it sits on the sheet (top-left, on a SHEET_W x SHEET_H page;
-             on wide screens it's `side`, on the tall SIDE_W x SIDE_H page
+             on wide screens it's `side`, on the squarer SIDE_W x SIDE_H page
              under the room; `tall`, an older upright TALL_W x TALL_H page,
              is unused now)
      home    where it lands in the room if it's clicked or picked by keyboard
@@ -65,31 +65,32 @@ const TALL = {
   'wall-shelf': [94, 334],
 }
 
-/** On wide screens the sheet hangs under the room, beside the board, on a
-    tall SIDE_W x SIDE_H page sized to that space, so the stickers come out
-    big: each sticker at its SIDE spot (top-left), packed by height on a
-    skyline with 3 art px between neighbours. */
-export const SIDE_W = 180
-export const SIDE_H = 220
+/** On wide screens the sheet lies under the room, the width of the room's
+    column, on a squarer SIDE_W x SIDE_H page than the long strip: big
+    stickers, but a sheet well short of the room. Each sticker at its SIDE
+    spot (top-left), packed by height on a skyline with 3 art px between
+    neighbours. */
+export const SIDE_W = 289
+export const SIDE_H = 134
 const SIDE = {
   bookshelf: [0, 0],
   tree: [35, 0],
   'flower-rug': [73, 0],
   cabinet: [156, 0],
-  'lights-1': [73, 60],
-  'lights-2': [128, 60],
-  bed: [0, 86],
-  tv: [55, 111],
-  couch: [109, 111],
-  plant: [0, 137],
-  table: [109, 157],
-  'spider-rug': [39, 159],
-  lamps: [154, 157],
-  books: [0, 178],
-  'cat-bed': [29, 194],
-  'wall-shelf': [154, 190],
-  'cat-sitting': [72, 194],
-  'cat-standing': [93, 194],
+  'lights-1': [182, 0],
+  'lights-2': [237, 0],
+  bed: [182, 51],
+  tv: [237, 51],
+  couch: [73, 60],
+  plant: [133, 60],
+  table: [0, 86],
+  'spider-rug': [133, 102],
+  lamps: [45, 65],
+  books: [237, 99],
+  'cat-bed': [192, 102],
+  'wall-shelf': [45, 98],
+  'cat-sitting': [266, 99],
+  'cat-standing': [71, 106],
 }
 
 const sticker = (id, name, sheet, home, extra) => {

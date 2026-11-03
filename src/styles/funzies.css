@@ -4,10 +4,12 @@
 
    From 80rem the page is a grid of two columns using nearly the whole width:
    on the left the intro, the "Click on me" hint and the board; down the
-   right the room, centred on the intro (Funzies measures its height into
-   --fz-intro-h), and under it the sheet, as wide as the column. The room is
-   as large as the column allows, but never taller than the intro and the
-   space above it, so it never reaches up into the top bar.
+   right the room, as wide as the column (the room comes first: it is the
+   biggest thing on the right), and under it the sheet, shorter, at the same
+   width. The room is centred on the intro (Funzies measures its height into
+   --fz-intro-h) as nearly as it can be without reaching up into the top
+   bar: if centring would lift it past the page's top padding, it stops just
+   short and hangs a little lower instead.
 --------------------------------------------------------------------------- */
 
 .fz-page {
@@ -20,8 +22,8 @@
 }
 @media (min-width: 80rem) {
   .fz-page {
-    --fz-side-w: clamp(22rem, 34vw, 38rem);
-    --fz-room: min(var(--fz-side-w), var(--fz-intro-h, 20rem) + 2 * var(--fz-pad-top) - 1.5rem);
+    --fz-side-w: clamp(24rem, 36vw, 40rem);
+    --fz-room: var(--fz-side-w);
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--fz-side-w);
     grid-template-rows: auto auto 1fr;
@@ -402,14 +404,18 @@
     margin-top: 0;
   }
   /* The room, centred on the intro: pulled up by half of whatever it is
-     taller than the intro (or pushed down by half of what it is shorter). */
+     taller than the intro, but never by more than the page's top padding
+     (less 0.75rem), so it stays clear of the top bar. */
   .fz-room.fz-area-room {
     justify-self: center;
     width: var(--fz-room);
-    margin-top: calc((var(--fz-intro-h, 20rem) - var(--fz-room)) / 2);
+    margin-top: max(
+      calc((var(--fz-intro-h, 20rem) - var(--fz-room)) / 2),
+      calc(0.75rem - var(--fz-pad-top))
+    );
   }
-  /* The sheet under it, the column's full width, on its tall page, with a
-     little more foot so the hint clears the bottom row of stickers. */
+  /* The sheet under it, the column's full width, on its squarer page, with
+     a little more foot so the hint clears the bottom row of stickers. */
   .fz-sheet.fz-area-stk {
     width: 100%;
     height: calc((var(--sheet-h) + 36) * var(--u));
