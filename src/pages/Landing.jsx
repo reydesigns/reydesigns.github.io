@@ -30,11 +30,11 @@ import { useScrollSequence } from '@/lib/useScrollSequence'
  * the headline copy was revised by the client after the comp, and the tagline
  * moved from under the headline to above it, replacing "rey designs".
  *
- * The headline is Kumbh Sans throughout except its last word, which types and
+ * The headline is Nunito throughout except its last word, which types and
  * backspaces through who the solution should feel obvious to, in Pixelta. The
  * comp set "why", "how" and "obvious" in Pixelta as well; the client moved
  * the pixel face onto the changing word alone so the one thing that moves is
- * the one thing that looks different. The typed full stop stays in Kumbh Sans
+ * the one thing that looks different. The typed full stop stays in Nunito
  * to match the one after "how".
  *
  * The copy is all lowercase, written that way rather than transformed, so the

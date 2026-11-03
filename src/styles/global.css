@@ -48,9 +48,9 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Kumbh Sans has no italic cut. The comps are slanted because Figma
-   synthesised an oblique, so reproduce that rather than letting the browser
-   pick its own faux-italic angle. */
+/* Only the upright brand font is shipped. The comps are slanted because
+   Figma synthesised an oblique, so reproduce that rather than letting the
+   browser pick its own faux-italic angle. */
 .font-oblique {
   transform: skewX(-11deg);
   transform-origin: 0 100%;

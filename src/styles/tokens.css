@@ -39,8 +39,8 @@
   --hero-status-opacity: 0.55;
 
   /* --- type -------------------------------------------------------------- */
-  --font-brand: 'Kumbh Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Pixelta', 'Kumbh Sans', ui-serif, serif;
+  --font-brand: 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Pixelta', 'Nunito', ui-serif, serif;
 
   /* Fluid scale. Reference width is 1728px (the comps are 6912px = 4×).
      Verified side-by-side against the screenshots in QA. */
@@ -122,7 +122,7 @@
   --chart-grid: color-mix(in srgb, var(--color-ink) 10%, transparent);
   /* The chart's condensed display face: the club site's Bebas Neue (loaded in
      fonts.css), echoing the example's bold condensed bar labels. */
-  --font-tk-display: 'Bebas Neue', 'Kumbh Sans', sans-serif;
+  --font-tk-display: 'Bebas Neue', 'Nunito', sans-serif;
 
   /* --- Funzies ----------------------------------------------------------- */
   /* Window chrome on the tiles and the popup: the maroon title bar from

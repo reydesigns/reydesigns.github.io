@@ -1,32 +1,37 @@
 /* ---------------------------------------------------------------------------
    Fonts — all self-hosted from Assets/brand/fonts/, no external requests.
 
-   Kumbh Sans  : brand font for body + headings. Variable, weight 100–900.
-                 Ships UPRIGHT ONLY — there is no italic cut. The hero headline
-                 in the Figma comp is slanted because Figma synthesised an
-                 oblique, so `.font-oblique` below reproduces that with a skew.
+   Nunito      : brand font for every line of text on the site — body,
+                 headings, nav, labels, buttons. Chosen by the client for a
+                 cleaner, rounded, polished look (it replaced Kumbh Sans):
+                 rounded terminals, round bowls, a full weight range. Variable,
+                 weight 200–1000; only the upright is shipped.
    Pixelta     : display face for accent words, card titles and stat figures.
                  Has NO quote or dash glyphs (" ' “ ” ‘ ’ – — …), so any quote
-                 set in Pixelta silently falls back. Keep quotes in Kumbh Sans.
+                 set in Pixelta silently falls back. Keep quotes in Nunito.
+
+   Two deliberate exceptions keep their own faces: the Me page's terminal is
+   monospace (it is a Python REPL), and the TMU K-POP case study's live
+   mockups and chart use Bebas Neue (they recreate the club's own site).
 --------------------------------------------------------------------------- */
 
 @font-face {
-  font-family: 'Kumbh Sans';
+  font-family: 'Nunito';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 200 1000;
   font-display: swap;
-  src: url('../../Assets/brand/fonts/kumbh-sans/kumbh-sans-latin.woff2') format('woff2');
+  src: url('../../Assets/brand/fonts/nunito/nunito-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-  font-family: 'Kumbh Sans';
+  font-family: 'Nunito';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 200 1000;
   font-display: swap;
-  src: url('../../Assets/brand/fonts/kumbh-sans/kumbh-sans-latin-ext.woff2') format('woff2');
+  src: url('../../Assets/brand/fonts/nunito/nunito-latin-ext.woff2') format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
     U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
     U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;

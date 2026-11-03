@@ -304,7 +304,7 @@
 .tk-soon-card {
   background: var(--tk-card);
   padding: 0 8cqw;
-  font-family: 'Bebas Neue', 'Kumbh Sans', sans-serif;
+  font-family: var(--font-tk-display);
   line-height: 0.98;
   color: var(--color-surface);
 }

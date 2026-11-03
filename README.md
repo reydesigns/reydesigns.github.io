@@ -78,10 +78,11 @@ elsewhere.**
 
 Two things worth knowing before editing type:
 
-- **Kumbh Sans has no italic cut.** The slanted hero in the comp is a Figma
-  synthetic oblique; `.font-oblique` reproduces it with a skew.
+- **The brand font is Nunito, upright only.** No italic is shipped; the
+  slanted hero in the comp was a Figma synthetic oblique, and `.font-oblique`
+  reproduces one with a skew if it is ever needed.
 - **Pixelta has no quote or dash glyphs** (`" ' “ ” ‘ ’ – — …`). Quotes set in
-  Pixelta silently fall back to another font. Keep them in Kumbh Sans via
+  Pixelta silently fall back to another font. Keep them in Nunito via
   `.quote-mark`, and write ellipses as three periods.
 
 ## Adding a new case study

@@ -13,7 +13,7 @@ import { useCaseStudyHost } from '@/lib/caseStudyHost'
 --------------------------------------------------------------------------- */
 
 /* Every heading in a case study — section headings (h2) and the sub-headings
-   inside them (h3) alike — is one style: ~30px Kumbh Sans, extra bold. The
+   inside them (h3) alike — is one style: ~30px Nunito, extra bold. The
    level is carried by the markup, not by the size. */
 export const HEAD =
   'cs-head m-0 text-[length:var(--text-cs-head)] leading-[1.18] font-extrabold tracking-[-0.01em] text-[var(--color-ink)]'
@@ -47,7 +47,7 @@ export function P({ children, className = '' }) {
   )
 }
 
-/** Pixelta accent inside a Kumbh line. Never give it a quote — it has none. */
+/** Pixelta accent inside a Nunito line. Never give it a quote — it has none. */
 export function Accent({ children, className = '' }) {
   return <span className={`font-display ${className}`}>{children}</span>
 }
