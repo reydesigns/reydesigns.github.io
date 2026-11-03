@@ -17,14 +17,17 @@
      reading as wine. Every supporting grey below sits on this same neutral
      axis; the only warmth on the page is the burgundy family itself. */
   --color-bg: #f4f4f5;
-  /* The burgundy family — unchanged. On --color-bg: ink 16.8:1, maroon
-     15.3:1, muted ink 10.3:1 (all AAA). */
+  /* The burgundy family. One burgundy, the dark wine of the ink, for every
+     burgundy fill and line on the site (client request: the redder #440000
+     the title bars and chips used to carry read as a second, lighter
+     burgundy). On --color-bg: ink 16.8:1, muted ink 10.3:1 (both AAA). */
   /* Primary ink: logo, headline, body copy, top-bar links, case-study nav. */
   --color-ink: #2d0510;
   /* Secondary ink: hero eyebrow, tagline, status-pill copy. */
   --color-ink-muted: #523138;
-  /* The brand burgundy: card chips, window title bars, thumbnail backing. */
-  --color-maroon: #440000;
+  /* The brand burgundy: card chips, window title bars, thumbnail backing.
+     The same wine as the ink, kept as its own name for the fills. */
+  --color-maroon: #2d0510;
 
   /* Surfaces */
   --color-surface: #ffffff;        /* project cards, phone-mockup cards       */
@@ -39,8 +42,8 @@
   --hero-status-opacity: 0.55;
 
   /* --- type -------------------------------------------------------------- */
-  --font-brand: 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Pixelta', 'Nunito', ui-serif, serif;
+  --font-brand: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Pixelta', 'Inter', ui-serif, serif;
 
   /* Fluid scale. Reference width is 1728px (the comps are 6912px = 4×).
      Verified side-by-side against the screenshots in QA. */
@@ -63,10 +66,27 @@
   /* The frosted backing behind a card's name chip and hover description: the
      nav pill's recipe, light enough that the thumbnail still reads through. */
   --card-chip-bg: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  /* How strongly the film grain (.card-grain) lies over a card's picture. */
+  --card-grain-alpha: 0.32;
+  /* The caption that fades up under a card on hover: bare uppercase text, no
+     backing, in burgundy held back a little so it sits below the card's own
+     name. Still 7.4:1 on --color-bg (AAA). */
+  --card-blurb-ink: color-mix(in srgb, var(--color-maroon) 72%, transparent);
+  /* Its size. Always one line: the eyebrow size wherever the sentence fits the
+     card (the longest blurb is 59.4em at the caption's 0.04em tracking, so 61
+     leaves a little slack), shrinking with the card where it does not (under
+     ~1400px wide in two columns), never under 9px. Below that a too-long
+     sentence ends in an ellipsis. Must be used inside the card's container
+     (WorkCard's wrapper): cqi is the card's width. */
+  --card-blurb-size: max(0.5625rem, min(var(--text-eyebrow), calc(100cqi / 61)));
+  /* The room a hover-capable screen leaves between rows of cards for that
+     caption: its offset under the card (0.75rem), its one line, and clear
+     space before the next row. */
+  --card-blurb-room: calc(0.75rem + 1.6 * var(--text-eyebrow) + 1.25rem);
 
   /* --- layout ------------------------------------------------------------ */
   --page-gutter: clamp(1.25rem, 3.7vw, 4rem);
-  --radius-card: 1.5rem;
+  --radius-card: 10px;
   --radius-pill: 999px;
   /* The nav pill: a soft, iOS-style rounded rectangle. */
   --radius-nav: 22px;
@@ -122,7 +142,7 @@
   --chart-grid: color-mix(in srgb, var(--color-ink) 10%, transparent);
   /* The chart's condensed display face: the club site's Bebas Neue (loaded in
      fonts.css), echoing the example's bold condensed bar labels. */
-  --font-tk-display: 'Bebas Neue', 'Nunito', sans-serif;
+  --font-tk-display: 'Bebas Neue', 'Inter', sans-serif;
 
   /* --- Funzies ----------------------------------------------------------- */
   /* Window chrome on the tiles and the popup: the maroon title bar from
@@ -135,8 +155,9 @@
   --fz-pop-title: 2.5rem;
 
   /* --- Terminal (Me page): a Python REPL, burgundy like the Funzies windows:
-     the title bar is their maroon, the screen a step darker. ------------- */
-  --term-bg: #2a0306;
+     the title bar and the screen are both the one burgundy, split by a hairline
+     (terminal.css). ------------------------------------------------------ */
+  --term-bg: var(--color-maroon);
   --term-bar: var(--color-maroon);
   --term-text: #f3e7e4;
   --term-muted: #b8928d;
@@ -151,24 +172,61 @@
   /* --- Vinyl Player (the Works toy) -------------------------------------- */
   /* A low-poly diorama, flat shaded with the light up and to the left: every
      solid is three facets of one colour (lit, base, shaded) and casts a hard
-     shadow down and to the right. Solid fills only, never a gradient. The
-     body is sage; the base is the client's #9CAF88. */
-  --vp-sage: #9caf88;
-  --vp-sage-light: #b5c4a3;
-  --vp-sage-dark: #80946e;
-  /* The low-poly tabletop under the Works card's still. (In the pop-up the
-     table is plain white: --color-surface.) */
-  --vp-floor: #f0e8d8;
-  --vp-floor-light: #f3ecdf;
-  --vp-floor-dark: #ece3d2;
-  /* The equaliser behind a playing record: the maroon family in five flat
-     steps, palest (the bars' tips) to the site's maroon (their feet). Plain
-     #rrggbb, because a canvas reads them. */
-  --vp-eq-1: #f4dfe2;
-  --vp-eq-2: #dfa4ad;
-  --vp-eq-3: #b4566a;
-  --vp-eq-4: #7a1a30;
-  --vp-eq-5: #440000;
+     shadow down and to the right. Solid fills only, never a gradient.
+
+     The player is monochrome chrome: black, white and greys only, no hue. A
+     frosted, clear acrylic case in a brushed-metal bezel over a black floor,
+     its electronics showing through; chrome (SVG gradients, RecordPlayer's
+     MetalDefs) on the bezel, platter rim, tonearm and controls; white for
+     what glows. */
+  /* The case: the floor under everything, the solid gunmetal of the parts
+     mounted on top (slider slot, arm rest, cue plinth), and the frosted
+     shell, a pale veil laid over the floor. */
+  --vp-case-floor: #161616;
+  --vp-body: #3b3b3b;
+  --vp-body-light: #4b4b4b;
+  --vp-body-dark: #2a2a2a;
+  --vp-frost: #f1f1f1;
+  --vp-frost-alpha: 0.32;
+  /* What glows: the power light, the drop ring, the ring under the platter
+     and the traces on the board. */
+  --vp-glow: #ffffff;
+  /* Inside the case: the circuit board, its chips and capacitors, the
+     transformer's winding, and the wires (white, light and mid grey). */
+  --vp-pcb: #101010;
+  --vp-chip: #050505;
+  --vp-cap: #555555;
+  --vp-winding: #b8b8b8;
+  --vp-wire-light: #f4f4f4;
+  --vp-wire-mid: #a9a9a9;
+  --vp-wire-dark: #6f6f6f;
+  --vp-ribbon: #9c9c9c;
+  /* Chrome: the stops of the metallic gradients, brightest to darkest. */
+  --vp-chrome-1: #fbfbfb;
+  --vp-chrome-2: #d6d6d6;
+  --vp-chrome-3: #a8a8a8;
+  --vp-chrome-4: #767676;
+  --vp-chrome-5: #4a4a4a;
+  /* The stop key and the cartridge: black. */
+  --vp-key: #1c1c1c;
+  --vp-key-light: #333333;
+  --vp-key-dark: #0b0b0b;
+  /* The flat tabletop under the Works card's still: a light grey.
+     (In the pop-up the table is plain white: --color-surface.) */
+  --vp-floor: #e4e4e4;
+  /* The cream ring round a record's paper label. */
+  --vp-label-rim: #f3ecdf;
+  /* The equaliser behind a playing record: five flat greys, palest (the
+     bars' tips) to near-black (their feet), to match the monochrome player.
+     Plain #rrggbb, because a canvas reads them. */
+  --vp-eq-1: #ececec;
+  --vp-eq-2: #c4c4c4;
+  --vp-eq-3: #8c8c8c;
+  --vp-eq-4: #4d4d4d;
+  --vp-eq-5: #1c1c1c;
+  /* How strongly the equaliser shows while a record plays: faint, a texture
+     behind the scene rather than a picture of its own. */
+  --vp-eq-alpha: 0.28;
   /* One shadow colour for everything: ink, laid on at a fixed strength by
      the shapes that use it, so overlapping parts never double up. */
   --vp-shadow: #2d0510;
@@ -178,17 +236,18 @@
   --vp-vinyl-light: #2e292d;
   --vp-vinyl-dark: #141213;
   --vp-sheen: #5a5358;
-  /* The rubber mat, the platter's metal rim and the tonearm. */
-  --vp-mat: #3b4636;
-  --vp-mat-light: #434f3e;
-  --vp-metal-light: #f1eee7;
-  --vp-metal: #d6d2c8;
-  --vp-metal-dark: #b2ada2;
+  /* The rubber mat (charcoal), and the flat greys of the smaller metal
+     parts (dome facets, pins, screws). */
+  --vp-mat: #242424;
+  --vp-mat-light: #2e2e2e;
+  --vp-metal-light: #f0f0f0;
+  --vp-metal: #c6c6c6;
+  --vp-metal-dark: #8f8f8f;
   /* The drop-target ring round the platter while a record is carried. */
-  --vp-ring: #fffbf2;
-  /* The power light: off, and on while a record plays. */
-  --vp-led-off: #6b5048;
-  --vp-led-on: #ff6a3d;
+  --vp-ring: var(--vp-glow);
+  /* The power light: off, and on (glowing) while a record plays. */
+  --vp-led-off: #444444;
+  --vp-led-on: var(--vp-glow);
 
   /* --- Binary Bloom (the second Works toy) -------------------------------- */
   /* The square the flower is drawn on: a very dark, cool brown (almost as

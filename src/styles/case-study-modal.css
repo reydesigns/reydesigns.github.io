@@ -2,21 +2,25 @@
    The case-study pop-up (CaseStudyModal).
 
    Two sizes, on [data-size]:
-     window   a big window over the dimmed page: 92vw × (100dvh − 4rem),
-              centred, rounded. 92vw (no rem cap) keeps the study's own
-              layout maths true inside it — TMU's wide band is 77.5vw and
-              has to fit beside the section nav.
+     window   a window over the dimmed page, (100dvh − 4rem) tall and at most
+              1.4 times as wide as it is tall (client request: 92vw read as
+              too elongated), never under 64rem and never over 92vw. Centred,
+              rounded. The study's layout was drawn for a 92vw window (TMU's
+              wide band is 77.5vw and has to fit beside the section nav), so
+              inside this one --cs-vw stands in for 1vw: a 92nd of the window,
+              which keeps every proportion the same, only smaller.
      full     the whole screen, square corners. The green dot's maximize, and
               always below 64rem.
 
-   The title bar is the Funzies window's (burgundy, Nunito, macOS dots),
+   The title bar is the Funzies window's (burgundy, Inter, macOS dots),
    restated here so the two can change independently.
 --------------------------------------------------------------------------- */
 
 .cs-modal {
+  --cs-window-w: min(92vw, max(64rem, calc((100dvh - 4rem) * 1.4)));
   /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
   margin: auto;
-  width: 92vw;
+  width: var(--cs-window-w);
   height: calc(100dvh - 4rem);
   max-width: none;
   max-height: none;
@@ -25,6 +29,11 @@
   background: transparent;
   overflow: visible;
   color: var(--color-ink);
+}
+.cs-modal[data-size='window'] {
+  --cs-vw: calc(var(--cs-window-w) / 92);
+  --cs-wide-w: calc(77.5 * var(--cs-vw));
+  --cs-nav-gutter: clamp(9.5rem, calc(11.5 * var(--cs-vw)), 12.25rem);
 }
 .cs-modal[data-size='full'] {
   width: 100%;
@@ -65,12 +74,12 @@
 }
 
 /* --- title bar ------------------------------------------------------------ */
-/* Controls left, the study's name centred on the whole bar: the outer columns
-   are equal, so the middle one is centred and a long name ellipsises. */
+/* The dots alone, at the left: no title (client request; the study's name
+   is the dialog's label, for screen readers only). */
 .cs-modal__bar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
+  gap: 1rem;
   flex: none;
   min-height: 2.5rem;
   padding-inline: 1.1rem;
@@ -86,13 +95,6 @@
   align-items: center;
   gap: 0.55rem;
   justify-self: start;
-}
-.cs-modal__title {
-  grid-column: 2;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* The dots. Their glyphs (× and the corner arrows) show while the pointer is

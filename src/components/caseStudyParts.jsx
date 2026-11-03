@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { posterForVideo } from '@/data/caseStudies'
 import { useReducedMotion } from '@/lib/useReducedMotion'
@@ -13,7 +13,7 @@ import { useCaseStudyHost } from '@/lib/caseStudyHost'
 --------------------------------------------------------------------------- */
 
 /* Every heading in a case study — section headings (h2) and the sub-headings
-   inside them (h3) alike — is one style: ~30px Nunito, extra bold. The
+   inside them (h3) alike — is one style: ~30px Inter, extra bold. The
    level is carried by the markup, not by the size. */
 export const HEAD =
   'cs-head m-0 text-[length:var(--text-cs-head)] leading-[1.18] font-extrabold tracking-[-0.01em] text-[var(--color-ink)]'
@@ -47,7 +47,7 @@ export function P({ children, className = '' }) {
   )
 }
 
-/** Pixelta accent inside a Nunito line. Never give it a quote — it has none. */
+/** Pixelta accent inside a Inter line. Never give it a quote — it has none. */
 export function Accent({ children, className = '' }) {
   return <span className={`font-display ${className}`}>{children}</span>
 }
@@ -155,26 +155,52 @@ export function ClientLine({ logo, children }) {
   )
 }
 
-/** The role / duration / team / tools card. `cells` is [label, lines[]]. */
+/** The role / duration / team / tools facts, as a stack of drop-downs.
+ *  `cells` is [label, lines[]]. Each row is a button: the label on the left,
+ *  a + on the far right; clicking it opens the lines below in soft burgundy
+ *  and the + turns to a −. Rows open independently, thin rules between them.
+ *  A closed row's text is out of the accessibility tree (visibility, after
+ *  the collapse), and each button says whether its row is open. */
 export function RoleCard({ cells }) {
+  const [open, setOpen] = useState(() => new Set())
+  const baseId = useId()
+  const toggle = (i) =>
+    setOpen((was) => {
+      const next = new Set(was)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
   return (
-    <dl className="cs-figure cs-figure--inset cs-card m-0 grid grid-cols-2 gap-x-[var(--cs-5)] gap-y-[var(--cs-7)] px-[12%] py-[var(--cs-6)]">
-      {cells.map(([label, lines]) => (
-        <div key={label}>
-          <dt className="text-[length:var(--text-eyebrow)] font-extrabold tracking-[0.04em] text-[var(--color-ink-muted)] uppercase opacity-80">
-            {label}
-          </dt>
-          {lines.map((l) => (
-            <dd
-              key={l}
-              className="m-0 text-[length:calc(var(--text-body)*1.3)] leading-[1.2] text-[var(--color-ink)] first-of-type:mt-[var(--cs-2)]"
+    <div className="cs-figure cs-facts">
+      {cells.map(([label, lines], i) => {
+        const isOpen = open.has(i)
+        const panelId = `${baseId}-facts-${i}`
+        return (
+          <div key={label} className="cs-facts__item" data-open={isOpen || undefined}>
+            <button
+              type="button"
+              className="cs-facts__toggle"
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              onClick={() => toggle(i)}
             >
-              {l}
-            </dd>
-          ))}
-        </div>
-      ))}
-    </dl>
+              <span className="cs-facts__label">{label}</span>
+              <span className="cs-facts__sign" aria-hidden="true" />
+            </button>
+            <div id={panelId} className="cs-facts__panel">
+              <div className="cs-facts__body">
+                {lines.map((l) => (
+                  <p key={l} className="cs-facts__line">
+                    {l}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

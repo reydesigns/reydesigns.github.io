@@ -362,7 +362,9 @@ export function HeySoArticle({ next }) {
       </Section>
 
       {/* ------------------------------- problem -------------------------- */}
-      <Section id="problem">
+      {/* A short section: centred between the facts above and Research
+          below (case-study.css, .cs-section--centred). */}
+      <Section id="problem" className="cs-section--centred">
         <Eyebrow>Problem</Eyebrow>
         <h2 className={H2}>Struggles of scheduling plans as an adult</h2>
         <P>

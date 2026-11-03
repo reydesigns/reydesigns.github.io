@@ -1,5 +1,6 @@
 /* ---------------------------------------------------------------------------
-   Funzies — one entry per window on the page, in reading order.
+   Design (the page once called Funzies) — one entry per project on the
+   pinboard, in reading order.
 
    Media come from Assets/funzies/web/, made by scripts/prep-funzies-media.mjs.
    Never import the originals one folder up: several are HEIC (browsers can't
@@ -282,3 +283,37 @@ for (const f of FUNZIES) {
 }
 
 export const funzie = (id) => FUNZIES.find((f) => f.id === id)
+
+/**
+ * Every picture a project has, in order, for the window's thumbnail strip:
+ * a foldered project's folders one after another (each folder a `group`, so
+ * the strip can leave a little space between them), anything else its
+ * stacked pictures then its slides, each picture once. `text` is the copy
+ * shown beside a picture: its own `body` if it has one, else the project's,
+ * plus its folder's line.
+ */
+export function picturesOf(item) {
+  if (item.folders) {
+    return item.folders.flatMap((f, group) =>
+      f.media.map((m) => ({
+        ...m,
+        group,
+        icon: f.tile === 'icon',
+        text: m.body ?? (f.body ? `${item.body}\n\n${f.body}` : item.body),
+      })),
+    )
+  }
+  const seen = new Set()
+  return [...(item.stack ?? []), ...item.media]
+    .filter((m) => !seen.has(m.src) && seen.add(m.src))
+    .map((m) => ({ ...m, group: 0, text: m.body ?? item.body }))
+}
+
+/** The pinned photo on the board (the project's `thumb`, else its first
+    picture) and up to `under` more stills hanging behind it, which fan out
+    on hover. Videos stay out: they have no still to pin. */
+export function boardPicturesOf(item, under = 3) {
+  const front = item.thumb ?? item.media[0]
+  const rest = picturesOf(item).filter((m) => m.type === 'image' && m.src !== front.src && !m.icon)
+  return [front, ...rest.slice(0, under)]
+}

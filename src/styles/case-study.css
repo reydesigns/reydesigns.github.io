@@ -24,14 +24,23 @@
   --cs-8: clamp(2.75rem, 4.4vw, 4.5rem);
 
   /* Semantic aliases. The markup names the role, never the number, so the
-     whole page can be retuned from these six lines. */
-  --cs-gap-header: var(--cs-3); /* a header and the copy it introduces     */
-  --cs-gap-flow: var(--cs-4); /* consecutive blocks of body copy           */
-  --cs-gap-sub: var(--cs-6); /* before a new sub-heading                   */
-  --cs-gap-figure: var(--cs-5); /* around a figure or a card               */
-  --cs-gap-row: var(--cs-5); /* between the rows of a ruled list           */
-  --cs-gap-section: var(--cs-7); /* between the six sections               */
-  --cs-gap-outro: var(--cs-8); /* before the next-case-study link          */
+     whole page can be retuned from these lines. One scale for every study
+     (client: "spaced logically"), each step clearly bigger than the last:
+     a header sits on its copy exactly as paragraphs sit on each other, a
+     figure gets more air, a sub-heading opens a new beat, and a section a
+     bigger one still. */
+  --cs-gap-header: var(--cs-4); /* a header and the copy it introduces  16 */
+  --cs-gap-flow: var(--cs-4); /* consecutive blocks of body copy        16 */
+  --cs-gap-figure: var(--cs-6); /* around a figure or a card         24–32 */
+  --cs-gap-sub: var(--cs-8); /* before a new sub-heading             44–72 */
+  --cs-gap-row: var(--cs-5); /* between the rows of a ruled list        24 */
+  --cs-gap-section: calc(var(--cs-8) + var(--cs-6)); /* sections   68–104 */
+  --cs-gap-outro: var(--cs-8); /* before the next-case-study link   44–72 */
+  --cs-gap-facts: var(--cs-7); /* copy to the facts list           32–52 */
+  /* A lighter section break, halfway between the facts gap and a full one:
+     round the Objective section (which ends on the facts) and a short
+     section that follows it, so each sits centred between its neighbours. */
+  --cs-gap-section-near: calc((var(--cs-gap-facts) + var(--cs-gap-section)) / 2); /* 50–78 */
   --cs-card-pad: clamp(1.25rem, 2.4vw, 2rem);
 
   /* --- case-study sizing ------------------------------------------------ */
@@ -149,6 +158,118 @@
 }
 
 /* ---------------------------------------------------------------------------
+   The facts (RoleCard): role, duration, team and tools as drop-downs, the
+   column's full width. A thin rule above every row and under the last; the
+   label left, the sign far right; an open row's lines in soft burgundy under
+   its label. The panel opens by easing its grid row from 0fr to 1fr, so it
+   slides to its own height without being measured, and goes `hidden` from
+   assistive tech only once it has finished closing.
+--------------------------------------------------------------------------- */
+.cs-facts {
+  border-bottom: 1px solid var(--cs-rule);
+}
+/* The facts close the Objective section in every study. The Objective
+   section is centred between the title's tags and the next section (the
+   lighter break, --cs-gap-section-near, on both sides of it), and the list
+   sits a little closer to the copy above it (--cs-gap-facts). The break
+   after it is lighter than a full one because the list's own bottom rule
+   already marks it. */
+.cs-flow > * + .cs-facts {
+  margin-top: var(--cs-gap-facts);
+}
+.cs-section:has(> .cs-facts:last-child),
+.cs-section:has(> .cs-facts:last-child) + .cs-section {
+  padding-top: var(--cs-gap-section-near);
+}
+/* A short section right after it (HeySo's Problem) is centred the same way:
+   the lighter break below it too. */
+.cs-section--centred + .cs-section {
+  padding-top: var(--cs-gap-section-near);
+}
+.cs-facts__item {
+  border-top: 1px solid var(--cs-rule);
+}
+.cs-facts__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cs-4);
+  padding: var(--cs-4) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cs-facts__label {
+  font-size: var(--text-body);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+/* The sign: two bars; the upright one folds away as the row opens, so the +
+   becomes a −. */
+.cs-facts__sign {
+  position: relative;
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  transition: opacity 160ms;
+}
+.cs-facts__sign::before,
+.cs-facts__sign::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: currentColor;
+  transition: transform 320ms var(--ease-brand);
+}
+.cs-facts__sign::after {
+  transform: rotate(90deg);
+}
+.cs-facts__item[data-open] .cs-facts__sign::after {
+  transform: rotate(90deg) scaleX(0);
+}
+.cs-facts__toggle:hover .cs-facts__sign {
+  opacity: 0.55;
+}
+.cs-facts__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows 380ms var(--ease-brand),
+    visibility 0s linear 380ms;
+}
+.cs-facts__item[data-open] .cs-facts__panel {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition:
+    grid-template-rows 380ms var(--ease-brand),
+    visibility 0s;
+}
+.cs-facts__body {
+  min-height: 0;
+  overflow: hidden;
+}
+.cs-facts__line {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--color-maroon) 65%, transparent);
+}
+/* The space under an open row's text lives inside the clipped box, so a
+   closed row collapses to nothing. */
+.cs-facts__line:last-child {
+  padding-bottom: var(--cs-4);
+}
+
+/* ---------------------------------------------------------------------------
    Scroll-responsive quotes. The opacity is driven from JS by an
    IntersectionObserver, never a scroll handler; this is only the easing.
    Under reduced motion the component renders at full opacity from the first
@@ -210,12 +331,17 @@
    The page screens break out of the article column. The band is 77.5vw wide
    and centred on the article — which already sits right of the fixed nav — so
    it spans 13–91% of the frame, as in the comp. Below 64rem there is no side
-   nav and the band is simply the column.
+   nav and the band is simply the column. (In the pop-up's window size both
+   this and --cs-nav-gutter are restated against the window: see
+   case-study-modal.css.)
 --------------------------------------------------------------------------- */
 :root {
   --cs-wide-w: 77.5vw;
-  /* Between the page-screen rows, measured off the comp (~120pt at 1728). */
-  --tk-row-gap: clamp(3rem, 6.5vw, 7.5rem);
+  /* The article's left gutter beside the fixed section nav (CaseStudy.jsx). */
+  --cs-nav-gutter: clamp(9.5rem, 11.5vw, 12.25rem);
+  /* Between the page-screen rows: each opens on its own heading, so it is
+     the sub-heading gap, like every other sub-heading in the studies. */
+  --tk-row-gap: var(--cs-gap-sub);
 }
 .cs-wide {
   width: 100%;
@@ -224,7 +350,7 @@
   margin-top: var(--tk-row-gap);
 }
 .cs-flow > .tk-home {
-  margin-top: var(--cs-7);
+  margin-top: var(--cs-gap-figure);
 }
 .tk-home > * {
   width: 87.7%;
@@ -335,17 +461,6 @@
    everything below is derived from those — no per-frame JavaScript styling.
 --------------------------------------------------------------------------- */
 
-/* Lipton only: more room between each header and what it introduces, and
-   between the beats (client, round 2). The shared aliases are re-pointed one
-   or two steps up the same scale, so the rhythm stays proportional and the
-   other case studies are untouched. Sections get a step beyond the scale
-   so they still read as bigger breaks than the sub-headings inside them. */
-.lp-article {
-  --cs-gap-header: var(--cs-5);
-  --cs-gap-figure: var(--cs-6);
-  --cs-gap-sub: var(--cs-8);
-  --cs-gap-section: calc(var(--cs-8) + var(--cs-6));
-}
 /* Every sub-heading in the study sits the same --cs-gap-sub below what came
    before it (client, round 3: "very consistent"). Branding has no eyebrow, so
    its heading reads as one more sub-heading, not a section break — it opens on

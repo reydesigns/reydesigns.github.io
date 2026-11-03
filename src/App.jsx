@@ -73,7 +73,9 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/works" element={<Works />} />
             <Route path="/works/:slug" element={<CaseStudy />} />
-            <Route path="/funzies" element={<Funzies />} />
+            <Route path="/design" element={<Funzies />} />
+            {/* The page's old name and address. */}
+            <Route path="/funzies" element={<Navigate to="/design" replace />} />
             <Route path="/me" element={<Me />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

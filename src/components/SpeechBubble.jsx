@@ -52,7 +52,7 @@ export function useSpeech(lines) {
 }
 
 /**
- * A comic speech bubble pinned to one of the landing drawings. Nunito on
+ * A comic speech bubble pinned to one of the landing drawings. Inter on
  * the card surface, with a tail pointing back at whoever is talking:
  * `side="top"` sits above the speaker (tail down), `side="right"` beside it
  * (tail left). Where exactly is up to `className`, in the drawing's own box.

@@ -48,7 +48,9 @@ function Chevron() {
 }
 
 /** The green dot's glyph: corners pointing out (maximize) or in (minimize). */
-function SizeGlyph({ full }) {
+/** The green dot's glyph: arrows out to maximize, in to minimize. Shared
+    with the Vinyl Player's window. */
+export function SizeGlyph({ full }) {
   return (
     <svg viewBox="0 0 10 10" aria-hidden="true" fill="currentColor">
       {full ? <path d="M5.4 0.8v3.8h3.8zM4.6 9.2V5.4H0.8z" /> : <path d="M1.2 1.2h4.2L1.2 5.4zM8.8 8.8H4.6l4.2-4.2z" />}
@@ -257,7 +259,9 @@ export function CaseStudyModal() {
                 </button>
               )}
             </div>
-            <span className="cs-modal__title" id="cs-modal-title">
+            {/* The bar shows only the dots (client request): the study's
+                name stays for screen readers, as the dialog's label. */}
+            <span className="sr-only" id="cs-modal-title">
               {study.metaTitle}
             </span>
           </div>

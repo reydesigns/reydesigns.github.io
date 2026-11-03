@@ -187,7 +187,7 @@ export function LiptonArticle({ next }) {
           cells={[
             ['My role', ['UX/UI Designer']],
             ['Duration', ['2 Weeks', 'Report', 'Presentation']],
-            ['Team', ['Myself']],
+            ['Team', ['Lone Designer but collaborated effectively']],
             ['Tools', ['Figma', 'Illustrator', 'Photoshop']],
           ]}
         />

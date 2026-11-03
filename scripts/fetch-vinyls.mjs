@@ -38,7 +38,7 @@ const SONGS = [
   ['My Eyes', 'Travis Scott'],
   ['Let It Happen', 'Tame Impala'],
   ['Back Home', 'Yeat', 'Joji'],
-  ['Rendezvous', 'Don Toliver', 'Yeat'],
+  ['Latch', 'Disclosure', 'Sam Smith'],
   ['Rocketeer', 'Far East Movement'],
 ]
 

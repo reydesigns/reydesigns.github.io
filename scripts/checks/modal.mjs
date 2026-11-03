@@ -53,7 +53,9 @@ await part('cards', async (browser) => {
     els.map((el) => ({
       tag: el.tagName,
       ratio: el.getBoundingClientRect().width / el.getBoundingClientRect().height,
-      blurb: el.querySelector('[data-card-blurb]') ? Number(getComputedStyle(el.querySelector('[data-card-blurb]')).opacity) : null,
+      // The description is the card link's next sibling (the card clips its
+      // own contents), not inside it.
+      blurb: el.nextElementSibling?.matches('[data-card-blurb]') ? Number(getComputedStyle(el.nextElementSibling).opacity) : null,
     })))
   // Four studies and two toys, the Vinyl Player and Binary Bloom (each opens
   // its own pop-up, not a study).
@@ -62,8 +64,13 @@ await part('cards', async (browser) => {
   check('descriptions hidden by default', cards.filter((c) => c.tag === 'A').every((c) => c.blurb === 0))
   check('Shore-Up is not a link', !!(await page.$('article[data-card][aria-label^="Shore-Up"]')))
   await page.hover('a[data-card][href$="/heyso"]')
-  await sleep(500)
-  check('description on hover', (await page.$eval('a[data-card][href$="/heyso"] [data-card-blurb]', (b) => Number(getComputedStyle(b).opacity))) === 1)
+  // It fades up a beat after the card is reached (75ms delay + 450ms), but
+  // just after load the fade can start late, so wait for it rather than a
+  // fixed time.
+  const shown = await page
+    .waitForFunction(() => getComputedStyle(document.querySelector('a[data-card][href$="/heyso"] + [data-card-blurb]')).opacity === '1', { timeout: 2000 })
+    .then(() => true, () => false)
+  check('description on hover', shown)
   await shot(page, 'cards-hover')
   await page.click('article[data-card][aria-label^="Shore-Up"]')
   await sleep(400)

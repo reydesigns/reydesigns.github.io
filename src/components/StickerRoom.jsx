@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, TALL_W, TALL_H, STICKERS } from '@/data/stickers'
+import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, BLOCK_W, BLOCK_H, STICKERS } from '@/data/stickers'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 
 const BY_ID = Object.fromEntries(STICKERS.map((s) => [s.id, s]))
@@ -90,12 +90,14 @@ function Sticker({ s, x, y, className = '', style, onPointerDown, onClick, onKey
  * sticks one at its spot in the room; on a placed one, Enter/Space/Delete
  * peels it back off and the arrow keys nudge it.
  *
- * On wide screens the room moves to the left of its cell and the sheet stands
- * upright to its right, running past the grid's edge; otherwise the sheet
- * lies across under the room.
+ * The sheet always lies across, pinned to the wall: on wide screens in the
+ * board's free corner, left of the room (funzies.css); otherwise under it.
  *
- * Room and sheet share one scale, measured from the room's cell: an art pixel
- * is the cell's height / FRAME CSS px. Rugs stay under everything else;
+ * Room and sheet each have their own scale, measured from their own box: an
+ * art pixel is the room cell's side / FRAME CSS px, and the sheet's width /
+ * (its page's width + 2 * SHEET_PAD). Beside the room the page is the
+ * squarer block (BLOCK_W x BLOCK_H), so the stickers come out bigger. A sticker carried off the sheet takes on the
+ * room's scale as it lifts, held at the same point under the pointer. Rugs stay under everything else;
  * otherwise the last sticker down is on top. Every visit starts with them all
  * on the sheet; "Put them back" returns them without a reload.
  */
@@ -103,9 +105,13 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
   const roomRef = useRef(null)
   const spaceRef = useRef(null)
   const sheetRef = useRef(null)
-  // Wide enough for the sheet to stand beside the room (funzies.css, same query).
-  const tall = useMediaQuery('(min-width: 80rem)')
+  // Wide enough for the room to stand beside the board, right of the sheet
+  // (funzies.css, same query): the hint points that way.
+  const beside = useMediaQuery('(min-width: 80rem)')
+  // The sheet's page: the squarer block beside the room, the long strip under it.
+  const page = beside ? { w: BLOCK_W, h: BLOCK_H, at: 'block' } : { w: SHEET_W, h: SHEET_H, at: 'sheet' }
   const [scale, setScale] = useState(0)
+  const [sheetScale, setSheetScale] = useState(0)
   const [placed, setPlaced] = useState({})
   // The sticker being dragged: { id, from: 'sheet' | 'room' }.
   const [drag, setDrag] = useState(null)
@@ -119,6 +125,14 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  useLayoutEffect(() => {
+    const el = sheetRef.current
+    const measure = () => setSheetScale(el.clientWidth / (page.w + 2 * SHEET_PAD))
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [page.w])
 
   useEffect(() => {
     if (!justStuck) return undefined
@@ -166,14 +180,17 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
     }
     const id = el.dataset.id
     const r = el.getBoundingClientRect()
+    // Where it was gripped, in room-scale px: the ghost is drawn at the room's
+    // scale, so a sticker off the sheet keeps the same point under the pointer.
+    const k = from === 'sheet' && sheetScale ? scale / sheetScale : 1
     press.current = {
       id,
       from,
       el,
       x0: e.clientX,
       y0: e.clientY,
-      dx: e.clientX - r.left,
-      dy: e.clientY - r.top,
+      dx: (e.clientX - r.left) * k,
+      dy: (e.clientY - r.top) * k,
       lastX: e.clientX,
       lastY: e.clientY,
       tilt: 0,
@@ -214,7 +231,7 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
       setDrag(null)
       if (cancelled) return
       const over = (r) => ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom
-      // The upright sheet overlaps the room's cell, so it's checked first.
+      // A drop on the sheet is never a drop in the room.
       const onSheet = over(sheetRef.current.getBoundingClientRect())
       const room = spaceRef.current.getBoundingClientRect()
       if (!onSheet && over(roomRef.current.getBoundingClientRect())) {
@@ -301,18 +318,18 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
         className={`fz-sheet ${sheetClassName}`}
         aria-label="Sticker sheet"
         style={{
-          '--s': scale,
-          '--sheet-h': SHEET_H + 2 * SHEET_PAD,
-          '--sheet-w': TALL_W + 2 * SHEET_PAD,
-          '--room-w': ROOM.w,
+          '--s': sheetScale,
+          '--sheet-h': page.h + 2 * SHEET_PAD,
         }}
       >
-        {scale > 0 && (
-          <div className="fz-sheet__page" style={tall ? { '--w': TALL_W, '--h': TALL_H } : { '--w': SHEET_W, '--h': SHEET_H }}>
+        {/* Pinned to the wall, like the prints on the board. */}
+        <span className="fz-pin fz-pin--sheet" aria-hidden="true" />
+        {sheetScale > 0 && (
+          <div className="fz-sheet__page" style={{ '--w': page.w, '--h': page.h }}>
             {STICKERS.map((s) => {
               const gone = !!placed[s.id] || drag?.id === s.id
               return (
-                <div key={s.id} className="fz-sheet__slot" style={{ '--x': (tall ? s.tall : s.sheet)[0], '--y': (tall ? s.tall : s.sheet)[1], '--w': s.w, '--h': s.h }}>
+                <div key={s.id} className="fz-sheet__slot" style={{ '--x': s[page.at][0], '--y': s[page.at][1], '--w': s.w, '--h': s.h }}>
                   {/* The kiss-cut outline left on the backing paper. */}
                   <span className="fz-sheet__cut" style={{ '--src': `url(${s.src})` }} aria-hidden="true" />
                   {!placed[s.id] && (
@@ -339,7 +356,7 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
           </button>
         ) : (
           <p className="fz-sheet__hint" aria-hidden="true">
-            {tall ? '← Peel + stick' : 'Peel + stick ↑'}
+            {beside ? 'Peel + stick →' : 'Peel + stick ↑'}
           </p>
         )}
       </section>

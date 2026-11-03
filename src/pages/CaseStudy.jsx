@@ -67,7 +67,7 @@ export function CaseStudyBody({ slug }) {
           past the section nav; below 64rem its scroll margin keeps it clear of
           the sticky strip (0.5rem band + 47px pill + its 0.75rem fade), which
           would otherwise cover the top of the hero when focus lands here. */}
-      <div data-skip-target="" tabIndex={-1} className="mt-[1.5rem] scroll-mt-[calc(1.25rem+47px)] lg:mt-[2.5rem] lg:scroll-mt-0 lg:pl-[clamp(9.5rem,11.5vw,12.25rem)]">
+      <div data-skip-target="" tabIndex={-1} className="mt-[1.5rem] scroll-mt-[calc(1.25rem+47px)] lg:mt-[2.5rem] lg:scroll-mt-0 lg:pl-[var(--cs-nav-gutter)]">
         <entry.Article key={slug} next={nextAfter(slug)} />
       </div>
     </>

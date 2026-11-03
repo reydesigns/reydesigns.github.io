@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import vinyls from '@/data/vinyls.json'
 import {
   ARM_DRIFT,
@@ -6,6 +7,7 @@ import {
   ARM_REST,
   DISC,
   PLATTER,
+  PLINTH,
   RECORD_R,
   Record,
   RecordPlayer,
@@ -26,6 +28,7 @@ import {
   sleeveSlots,
 } from '@/components/VinylStack'
 import { setCursorHost } from '@/components/CustomCursor'
+import { SizeGlyph } from '@/components/CaseStudyModal'
 import { useMediaQuery, SM, HOVER } from '@/lib/useMediaQuery'
 import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
@@ -68,11 +71,15 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
 const CLIP = 10 // seconds played from the middle of each preview
 const FADE = 0.3 // seconds of fade at each end of the clip
 const CLOSE_MS = 180
+// Maximize / minimize: the frame's move between its two boxes (a FLIP), as
+// the case-study window does it.
+const RESIZE_MS = 320
+const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 // Movement before a press on a sleeve becomes a drag: more for a finger,
 // which wanders a little on a tap that is meant to play the record.
 const PICKUP_PX = { mouse: 5, pen: 8, touch: 10 }
 const LEAVE_MS = 150 // grace before a sleeve the pointer has left drops back
-const DROP_GIVE = 0.05 // the drop line's give either side, in sleeve sizes
+const DROP_GIVE = 0.05 // the drop zone's give at its edges, in sleeve sizes
 const SPIN = 0.2 // degrees per ms: 33 1/3 rpm
 
 /* --- audio ----------------------------------------------------------------- */
@@ -294,78 +301,11 @@ qa.audio = (id) => {
 
 /* --- layouts ----------------------------------------------------------------- */
 
-/* A low-poly tabletop: a jittered grid of points at slightly different
-   heights, split into triangles, each lit, base or shaded by its slope. The
-   three floor tones are close, so it reads as a surface, not a pattern.
-   `bleed` carries it past the scene's edges (a share of each side), for the
-   phone pop-up, where the scene is letterboxed and the table has to run on
-   under the title and the caption. */
-function floorFacets(w, h, bleed) {
-  let seed = 11
-  const rand = () => {
-    seed = (seed * 16807) % 2147483647
-    return seed / 2147483647
-  }
-  const x0 = -w * bleed
-  const y0 = -h * bleed
-  const fw = w * (1 + 2 * bleed)
-  const fh = h * (1 + 2 * bleed)
-  const cols = Math.round(6 * (1 + 2 * bleed))
-  const rows = Math.max(3, Math.round((cols * fh) / fw))
-  const cw = fw / cols
-  const ch = fh / rows
-  const pts = []
-  for (let r = 0; r <= rows; r += 1) {
-    const row = []
-    for (let c = 0; c <= cols; c += 1) {
-      const edgeX = c === 0 || c === cols
-      const edgeY = r === 0 || r === rows
-      row.push({
-        x: x0 + c * cw + (edgeX ? 0 : (rand() - 0.5) * cw * 0.6),
-        y: y0 + r * ch + (edgeY ? 0 : (rand() - 0.5) * ch * 0.6),
-        z: (rand() - 0.5) * cw * 0.3,
-      })
-    }
-    pts.push(row)
-  }
-  const tris = []
-  const add = (a, b, c) => {
-    // Slope towards the light (upper left) brightens; away from it darkens.
-    const ux = b.x - a.x
-    const uy = b.y - a.y
-    const uz = b.z - a.z
-    const vx = c.x - a.x
-    const vy = c.y - a.y
-    const vz = c.z - a.z
-    let nx = uy * vz - uz * vy
-    let ny = uz * vx - ux * vz
-    let nz = ux * vy - uy * vx
-    if (nz < 0) {
-      nx = -nx
-      ny = -ny
-      nz = -nz
-    }
-    const lit = -(0.62 * nx + 0.78 * ny) / nz
-    const tone = lit > 0.07 ? 'vpf-floor-light' : lit < -0.07 ? 'vpf-floor-dark' : 'vpf-floor'
-    const p = (q) => `${Math.round(q.x)},${Math.round(q.y)}`
-    tris.push({ points: `${p(a)} ${p(b)} ${p(c)}`, tone })
-  }
-  for (let r = 0; r < rows; r += 1) {
-    for (let c = 0; c < cols; c += 1) {
-      const a = pts[r][c]
-      const b = pts[r][c + 1]
-      const d = pts[r + 1][c]
-      const e = pts[r + 1][c + 1]
-      if ((r + c) % 2) {
-        add(a, b, e)
-        add(a, e, d)
-      } else {
-        add(a, b, d)
-        add(b, e, d)
-      }
-    }
-  }
-  return { x: x0, y: y0, w: fw, h: fh, tris }
+/* The tabletop: one flat rectangle. `bleed` carries it past the scene's
+   edges (a share of each side), for the phone pop-up, where the scene is
+   letterboxed and the table has to run on under the title and the caption. */
+function floorRect(w, h, bleed) {
+  return { x: -w * bleed, y: -h * bleed, w: w * (1 + 2 * bleed), h: h * (1 + 2 * bleed) }
 }
 
 function layoutOf({ w, h, size, stack, player, bleed = 0 }) {
@@ -375,7 +315,7 @@ function layoutOf({ w, h, size, stack, player, bleed = 0 }) {
     size,
     player,
     slots: sleeveSlots({ n: vinyls.length, size, ...stack }),
-    floor: floorFacets(w, h, bleed),
+    floor: floorRect(w, h, bleed),
   }
 }
 
@@ -389,16 +329,19 @@ const LAYOUTS = {
     w: 1600,
     h: 900,
     size: 262,
-    // The stack starts below the card's name chip, top left.
-    stack: { cx: 300, top: 112, bottom: 880 },
+    // The stack ends above the card's name chip, bottom left.
+    stack: { cx: 300, top: 24, bottom: 764 },
     player: { x: 690, y: 165, s: 0.84 },
   }),
+  // The title, the hint and the player are one group, centred top to bottom
+  // in the window (global.css places the text to match: .vp-head), and the
+  // sleeves sit well in from the left edge, towards the player.
   wide: layoutOf({
     w: 1600,
     h: 1000,
     size: 320,
-    stack: { cx: 258, top: 34, bottom: 966 },
-    player: { x: 672, y: 196, s: 0.86 },
+    stack: { cx: 352, top: 34, bottom: 966 },
+    player: { x: 660, y: 268, s: 0.86 },
     bleed: 0.04,
   }),
   tall: layoutOf({
@@ -471,14 +414,18 @@ function createDeck({ layout, reduced, parts, onOrder, onPlaying }) {
   const platterScale = (RECORD_R * P.s) / DISC
   const ms = (t) => (reduced ? 0 : t)
 
-  /* The drop line, upright, halfway between the stack's right edge (each
-     sleeve's, tilt included) and the turntable's left edge. A record let go
-     of anywhere to its right goes on the platter, anywhere to its left goes
-     back to its sleeve: one straight line is easy to judge, where a circle
-     round the platter was not. Crossing it is what lights the platter's ring
-     and sends the arm out, and the drop obeys that same state, so a lit ring
-     always means the record will play. A little give either side (DROP_GIVE)
-     keeps a record held right on the line from flickering in and out. */
+  /* Where a record let go of goes on the platter: anywhere it touches the
+     turntable, not just the platter's ring. It plays if the pointer is over
+     the turntable, or the record is at least half over it, or either is past
+     the drop line (upright, halfway between the stack's right edge, each
+     sleeve's tilt included, and the turntable's left edge), which covers the
+     gap between the two where there is one. Anywhere else, the record goes
+     back to its sleeve. Pointer and record are both asked because the record
+     trails the pointer on a quick flick, and either one being on the
+     turntable reads as "I put it there". Being in the zone is what lights the
+     platter's ring and sends the arm out, and the drop obeys that same state,
+     so a lit ring always means the record will play. A little give at the
+     edges (DROP_GIVE) keeps a record held right on one from flickering. */
   const stackRight = Math.max(
     ...slots.map((s) => {
       const a = (s.rot * Math.PI) / 180
@@ -488,6 +435,14 @@ function createDeck({ layout, reduced, parts, onOrder, onPlaying }) {
   const dropX = (stackRight + P.x) / 2
   const give = size * DROP_GIVE
   const overLine = (x, was) => (was ? x > dropX - give : x > dropX + give)
+  const table = { l: P.x, t: P.y, r: P.x + PLINTH.w * P.s, b: P.y + PLINTH.h * P.s }
+  const overTable = (x, y, m) => x > table.l - m && x < table.r + m && y > table.t - m && y < table.b + m
+  /** Would record `a` play if let go now, with the pointer at (px, py)? */
+  function inZone(px, py, a, was) {
+    const m = was ? give : 0
+    if (overLine(px, was) || overLine(a.x, was)) return true
+    return overTable(px, py, m) || overTable(a.x, a.y, (DISC * a.s) / 2 + m)
+  }
 
   const sleeves = vinyls.map(() => ({ p: new Tween(0), q: new Tween(0), home: true, receiving: false, held: false }))
   const air = vinyls.map(() => ({ shown: false, x: 0, y: 0, s: 1, rot: 0, h: 0, flight: null }))
@@ -593,10 +548,10 @@ function createDeck({ layout, reduced, parts, onOrder, onPlaying }) {
     const near = clamp01((plat.r * 3.2 - Math.hypot(a.x - plat.x, a.y - plat.y)) / (plat.r * 2.4))
     const grow = near * near * (3 - 2 * near)
     a.s = lerp(drag.s0, platterScale, grow) * 1.04
-    // The ring answers where the record is headed (under the pointer), not
-    // the lagging record: faint while it is carried on the stack's side of
-    // the drop line, fully lit once it is over the turntable's.
-    const zone = overLine(tx, ring.zone)
+    // The ring answers whether a drop now would play (inZone): faint while
+    // the record is carried over the stack, fully lit once it touches the
+    // turntable.
+    const zone = inZone(drag.tx, drag.ty, a, ring.zone)
     if (zone !== ring.zone) cue(zone)
     ring.zone = zone
     ring.target = zone ? 1 : 0.3
@@ -980,10 +935,10 @@ function createDeck({ layout, reduced, parts, onOrder, onPlaying }) {
       activate(d.i)
       return
     }
-    // Which side of the drop line the record is let go on, judged the way
-    // the ring has been showing it.
+    // Whether the record is let go of on the turntable, judged the way the
+    // ring has been showing it.
     const at = toScene(e) ?? { x: d.tx, y: d.ty }
-    if (overLine(at.x - d.ox, lit)) play(d.i, 'hand')
+    if (inZone(at.x, at.y, air[d.i], lit)) play(d.i, 'hand')
     else {
       cue(false)
       sendHome(d.i, settleIdle)
@@ -1145,15 +1100,17 @@ function Diorama({ layout, coverPx, still, layer, live, parts, order, tabStop, o
           <circle cx="0.5" cy="0.5" r="0.5" />
         </clipPath>
       </defs>
-      {/* The card's still sits on the low-poly tabletop. The pop-up's table is
+      {/* The card's still sits on a flat grey tabletop. The pop-up's table is
           the frame itself, plain white, so the Equaliser can show through. */}
       {!live && !onlyTop && (
-        <g pointerEvents="none">
-          <rect x={layout.floor.x} y={layout.floor.y} width={layout.floor.w} height={layout.floor.h} className="vpf-floor" />
-          {layout.floor.tris.map((f, i) => (
-            <polygon key={i} points={f.points} className={f.tone} />
-          ))}
-        </g>
+        <rect
+          x={layout.floor.x}
+          y={layout.floor.y}
+          width={layout.floor.w}
+          height={layout.floor.h}
+          className="vpf-floor"
+          pointerEvents="none"
+        />
       )}
       <g transform={`translate(${P.x} ${P.y}) scale(${P.s})`}>
         <RecordPlayer
@@ -1368,7 +1325,7 @@ function LiveScene({ layout, hintId, onPlaying, carry }) {
 
 /* --- the backdrop that listens --------------------------------------------- */
 
-const EQ_TONES = 5 // flat colour steps, --vp-eq-1 (palest) to --vp-eq-5 (maroon)
+const EQ_TONES = 5 // flat colour steps, --vp-eq-1 (palest) to --vp-eq-5 (darkest)
 const EQ_REACH = 0.72 // the tallest a bar grows, as a share of the frame: the title stays on white
 const EQ_LOW = 50 // Hz in the outermost columns
 const EQ_HIGH = 11000 // Hz in the middle ones
@@ -1378,21 +1335,21 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => 
 /** '#rrggbb' as [r, g, b], maroon if it is anything else. */
 function rgb(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
-  const n = m ? parseInt(m[1], 16) : 0x440000
+  const n = m ? parseInt(m[1], 16) : 0x2d0510
   return [n >> 16, (n >> 8) & 255, n & 255]
 }
 
 /**
- * While a record plays, the white table gives way to a burgundy equaliser in
- * small square pixels. It is a canvas with one pixel per cell, scaled up with
- * hard edges (global.css), under the scene.
+ * While a record plays, a faint grey equaliser in fine square pixels rises
+ * behind the scene. It is a canvas with one pixel per cell, scaled up with
+ * hard edges and laid on at --vp-eq-alpha (global.css), under the scene.
  *
- * One column per frequency band (about 110 bands across a desktop pop-up, 48
+ * One column per frequency band (about 220 bands across a desktop pop-up, 100
  * on a phone), mirrored: the bass at both outer edges and the treble meeting
  * in the middle, so the liveliest bars are the ones that show round the
  * stack and the player. Each rises from the foot of the frame,
  * fast on a beat and slowly back. The colour belongs to the frame, not the
- * bar: maroon at the foot, paler with height, in five flat steps dithered
+ * bar: darkest at the foot, paler with height, in five flat steps dithered
  * into each other. A loose pixel above each bar marks its recent peak.
  *
  * The analyser taps the mix after the clip's gain, so the bars fade in and
@@ -1408,10 +1365,9 @@ function Equaliser({ on, reduced }) {
 
   useEffect(() => {
     const canvas = ref.current
-    const frame = canvas?.parentElement
     const g = canvas?.getContext('2d')
-    if (!frame || !g) return undefined
-    const css = getComputedStyle(frame)
+    if (!canvas || !g) return undefined
+    const css = getComputedStyle(canvas)
     const tones = Array.from({ length: EQ_TONES }, (_, i) => rgb(css.getPropertyValue(`--vp-eq-${i + 1}`)))
     const analyser = engine?.analyser ?? null
     const bins = analyser ? new Uint8Array(analyser.frequencyBinCount) : null
@@ -1419,10 +1375,13 @@ function Equaliser({ on, reduced }) {
 
     const s = (grid.current ||= { cols: 0, rows: 0, img: null, levels: new Float32Array(0), peaks: new Float32Array(0) })
     const size = () => {
-      const w = frame.clientWidth
-      const h = frame.clientHeight
-      // Cells about 5.5px across on a desktop pop-up, 3.7px on a phone.
-      const cell = Math.max(3, w / (w < 640 ? 96 : 220))
+      // The canvas's own box (it fills the scene's canvas, or on a phone the
+      // whole frame), not its parent's: on a phone the parent is
+      // `display: contents` and has no box of its own.
+      const w = canvas.clientWidth
+      const h = canvas.clientHeight
+      // Fine cells: about 2.7px across on a desktop pop-up, 1.9px on a phone.
+      const cell = Math.max(1.5, w / (w < 640 ? 200 : 440))
       const c = Math.max(8, Math.round(w / cell))
       const r = Math.max(6, Math.round(h / cell))
       if (c === s.cols && r === s.rows) return
@@ -1530,7 +1489,7 @@ function Equaliser({ on, reduced }) {
     }
     raf = requestAnimationFrame(tick)
     const ro = new ResizeObserver(size)
-    ro.observe(frame)
+    ro.observe(canvas)
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
@@ -1559,12 +1518,36 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
   const hintId = useId()
   const titleId = useId()
   const carry = useRef(null)
+  const frameRef = useRef(null)
+  // 'window' or 'full': the green dot maximizes the window to the screen and
+  // back. Phones are always full screen and have no green dot.
+  const [size, setSize] = useState('window')
+
+  const toggle = useCallback(() => {
+    const frame = frameRef.current
+    const before = frame?.getBoundingClientRect()
+    flushSync(() => setSize((s) => (s === 'full' ? 'window' : 'full')))
+    if (!frame || !before || reduced) return
+    const after = frame.getBoundingClientRect()
+    if (!after.width || !after.height) return
+    frame.animate(
+      [
+        {
+          transformOrigin: '0 0',
+          transform: `translate(${before.left - after.left}px, ${before.top - after.top}px) scale(${before.width / after.width}, ${before.height / after.height})`,
+        },
+        { transformOrigin: '0 0', transform: 'translate(0px, 0px) scale(1, 1)' },
+      ],
+      { duration: RESIZE_MS, easing: RESIZE_EASE },
+    )
+  }, [reduced])
 
   useEffect(() => {
     const dialog = ref.current
     if (!open || !dialog) return undefined
     closingRef.current = false
     setClosing(false)
+    setSize('window')
     // Normally already done in the card's click; this covers any other way in.
     prepareVinylAudio()
     if (!dialog.open) dialog.showModal()
@@ -1621,6 +1604,7 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
     <dialog
       ref={ref}
       className="vp-pop"
+      data-size={phone ? undefined : size}
       data-closing={closing || undefined}
       data-lenis-prevent
       aria-labelledby={titleId}
@@ -1645,42 +1629,62 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
         if (e.target === e.currentTarget && downOnBackdrop.current) close()
       }}
     >
-      <div className="vp-frame">
-        <Equaliser on={Boolean(playing)} reduced={reduced} />
-        <button type="button" className="vp-close" onClick={close} aria-label="Close">
-          <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-            <path d="M5 5 15 15M15 5 5 15" />
-          </svg>
-        </button>
-        <div className="vp-head">
-          <h2 id={titleId} className="vp-title font-display">
-            Vinyl Player
-          </h2>
-          <p className="vp-hint">{hint}</p>
-          <p id={hintId} className="sr-only">
-            Press Enter to put this record on the turntable and play it, and Enter again to take it off. The arrow
-            keys move between records.
+      <div ref={frameRef} className="vp-frame">
+        {/* The title bar, as on the case-study and Funzies windows: red
+            closes, green maximizes the window to the screen and back. */}
+        <div className="vp-bar">
+          <div className="vp-bar__controls">
+            <button type="button" className="vp-dot vp-dot--close" onClick={close} aria-label="Close" title="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+            {!phone && (
+              <button
+                type="button"
+                data-vp-toggle=""
+                className="vp-dot vp-dot--size"
+                onClick={toggle}
+                aria-label={size === 'full' ? 'Minimize' : 'Maximize'}
+                title={size === 'full' ? 'Minimize' : 'Maximize'}
+              >
+                <SizeGlyph full={size === 'full'} />
+              </button>
+            )}
+          </div>
+        </div>
+        {/* The scene's 16:10 box. In a maximized window it is centred in the
+            screen, at the largest size that fits under the bar. */}
+        <div className="vp-canvas">
+          <Equaliser on={Boolean(playing)} reduced={reduced} />
+          <div className="vp-head">
+            <h2 id={titleId} className="vp-title font-display">
+              Vinyl Player
+            </h2>
+            <p className="vp-hint">{hint}</p>
+            <p id={hintId} className="sr-only">
+              Press Enter to put this record on the turntable and play it, and Enter again to take it off. The arrow
+              keys move between records.
+            </p>
+          </div>
+          <div className="vp-stage" style={{ '--vp-aspect': `${layout.w} / ${layout.h}` }}>
+            <LiveScene key={phone ? 'tall' : 'wide'} layout={layout} hintId={hintId} onPlaying={setNowPlaying} carry={carry} />
+          </div>
+          {/* In a small diorama there is no room for the hint over the player,
+              so it sits in the caption's place below it until a record plays
+              (global.css shows one or the other, never both). */}
+          <p className="vp-hint vp-hint--foot" hidden={Boolean(playing)}>
+            {hint}
+          </p>
+          <p className="vp-caption" aria-live="polite">
+            {playing && (
+              <span className="vp-caption__pill">
+                <span className="vp-caption__label">Now playing</span>{' '}
+                <span className="vp-caption__title">{playing.title}</span>{' '}
+                <span className="vp-caption__label">by</span>{' '}
+                <span className="vp-caption__artist">{playing.artist}</span>
+              </span>
+            )}
           </p>
         </div>
-        <div className="vp-stage" style={{ '--vp-aspect': `${layout.w} / ${layout.h}` }}>
-          <LiveScene key={phone ? 'tall' : 'wide'} layout={layout} hintId={hintId} onPlaying={setNowPlaying} carry={carry} />
-        </div>
-        {/* In a small diorama there is no room for the hint over the player,
-            so it sits in the caption's place below it until a record plays
-            (global.css shows one or the other, never both). */}
-        <p className="vp-hint vp-hint--foot" hidden={Boolean(playing)}>
-          {hint}
-        </p>
-        <p className="vp-caption" aria-live="polite">
-          {playing && (
-            <span className="vp-caption__pill">
-              <span className="vp-caption__label">Now playing</span>
-              <span className="vp-caption__title">{playing.title}</span>
-              <span className="sr-only"> by </span>
-              <span className="vp-caption__artist">{playing.artist}</span>
-            </span>
-          )}
-        </p>
       </div>
     </dialog>
   )

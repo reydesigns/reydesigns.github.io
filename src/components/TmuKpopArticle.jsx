@@ -119,7 +119,7 @@ export function TmuKpopArticle({ next }) {
           cells={[
             ['My role', ['Website Designer', 'Graphic Designer']],
             ['Duration', ['2 Weeks']],
-            ['Team', ['Myself']],
+            ['Team', ['Lone Designer but collaborated effectively']],
             ['Tools', ['WIX', 'Procreate']],
           ]}
         />
