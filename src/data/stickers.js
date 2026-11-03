@@ -9,7 +9,8 @@
 
    Each sticker has:
      sheet   where it sits on the sheet (top-left, on a SHEET_W x SHEET_H page;
-             on wide screens it's `tall`, on the upright TALL_W x TALL_H one)
+             on wide screens it's `block`, on the squarer BLOCK_W x BLOCK_H
+             one; `tall`, on an upright TALL_W x TALL_H page, is unused now)
      home    where it lands in the room if it's clicked or picked by keyboard
              rather than dragged (top-left, in the FRAME x FRAME room space)
      flat    rugs: always under everything else in the room
@@ -63,10 +64,37 @@ const TALL = {
   'wall-shelf': [94, 334],
 }
 
+/** On wide screens the sheet lies in the board's free corner, beside the
+    room, a squarer BLOCK_W x BLOCK_H page so the stickers come out bigger in
+    that space: each sticker at its BLOCK spot (top-left), packed by height
+    on a skyline with 3 art px between neighbours. */
+export const BLOCK_W = 289
+export const BLOCK_H = 134
+const BLOCK = {
+  bookshelf: [0, 0],
+  tree: [35, 0],
+  'flower-rug': [73, 0],
+  cabinet: [156, 0],
+  'lights-1': [182, 0],
+  'lights-2': [237, 0],
+  bed: [182, 51],
+  tv: [237, 51],
+  couch: [73, 60],
+  plant: [133, 60],
+  table: [0, 86],
+  'spider-rug': [133, 102],
+  lamps: [45, 65],
+  books: [237, 99],
+  'cat-bed': [192, 102],
+  'wall-shelf': [45, 98],
+  'cat-sitting': [266, 99],
+  'cat-standing': [71, 106],
+}
+
 const sticker = (id, name, sheet, home, extra) => {
   const src = files[`/Assets/funzies/web/room/stickers/${id}.png`]
   if (!src || !meta[id]) throw new Error(`stickers: missing ${id}`)
-  return { id, name, src, ...meta[id], sheet, tall: TALL[id], home, ...extra }
+  return { id, name, src, ...meta[id], sheet, tall: TALL[id], block: BLOCK[id], home, ...extra }
 }
 
 export const STICKERS = [

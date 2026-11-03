@@ -1,20 +1,22 @@
 /* ---------------------------------------------------------------------------
-   Funzies page: a compact bento, centred on the page. The headline, the intro
-   and the grid all share one column, so their left and right edges line up
-   exactly; every window sits on the same 4-column grid with one gap between
-   neighbours, so all the edges line up with each other too.
+   Design page (once Funzies): the headline and intro over the wall — the
+   pinboard of projects and, on wide screens, the sticker sheet and the room
+   beside it. One column holds them all, so the headline's left edge is the
+   board's; from 80rem it widens to fit the board and room in a row, using
+   nearly the whole width on large screens.
 --------------------------------------------------------------------------- */
 
 .fz-page {
-  --fz-gap: clamp(0.75rem, 1.1vw, 1.125rem);
-  /* The bento sizes its rows off this column's width (cqw), which, unlike
-     vw, is exact whether or not the browser shows a scrollbar. */
-  container-type: inline-size;
   width: min(60rem, 100% - 2 * var(--page-gutter));
   margin-inline: auto;
   padding-top: clamp(2rem, 5vw, 5rem);
   /* Clear the fixed nav pill (NavDock publishes --dock-clear). */
   padding-bottom: max(4rem, var(--dock-clear, 7rem));
+}
+@media (min-width: 80rem) {
+  .fz-page {
+    width: min(110rem, 100% - 2 * var(--page-gutter));
+  }
 }
 
 /* --- intro --------------------------------------------------------------- */
@@ -108,9 +110,9 @@
   54%, 80% { transform: rotate(-8deg) translateY(-0.06em); }
 }
 
-/* --- bento ---------------------------------------------------------------- */
-/* "Click on me" over the grid: the case studies' eyebrow (size, weight,
-   tracking, ink at 40%). It takes the space the grid's top margin had. */
+/* --- the wall: the board, the sticker sheet, the room -------------------- */
+/* "Click on me" over the board: the case studies' eyebrow (size, weight,
+   tracking, ink at 40%). */
 .fz-hint {
   margin: clamp(2rem, 3.5vw, 3.5rem) 0 0.6rem;
   font-size: var(--text-eyebrow);
@@ -121,330 +123,215 @@
   opacity: 0.4;
 }
 
-/* Rows are half a column tall, so windows come in three shapes: square (1x2
-   rows), 2:3 portrait (1x3) and 2:1 landscape (2x2) — no long skinny ones.
-   On desktop the foldered windows are square and the rest 2:3.
-   A span of n rows is n rows plus n-1 gaps, which is why a row is
-   (column - gap) / 2: then two rows and their gap make exactly one column. */
-.fz-bento {
-  --fz-col: calc((100cqw - var(--fz-gap)) / 2);
+/* Up to 80rem the board comes first and the room and its sheet follow it,
+   centred. From 80rem the wall is one tight grid: the board's four columns,
+   then the room in a fifth, as large as the page allows. The board shares
+   the wall's tracks (subgrid), so the sheet can lie across the free end of
+   its second row, columns 3 and 4, beside the last print.
+
+   The room is taller than the board's two rows, so it is taken out of the
+   flow (absolute, in its grid area) to keep from stretching them: the wall
+   is made at least as tall as the room, the board centred in it, and the
+   room centred on the board. */
+.fz-wall {
+  --fz-col-gap: clamp(1.25rem, 3vw, 2.25rem);
+  --fz-row-gap: clamp(2.5rem, 5vw, 4rem);
+  --fz-room-w: clamp(26rem, 44vw, 46rem);
   display: grid;
-  gap: var(--fz-gap);
+  gap: clamp(2.5rem, 5vw, 4rem);
+  justify-items: center;
+}
+.fz-board {
+  width: 100%;
+}
+@media (min-width: 80rem) {
+  .fz-wall {
+    --fz-col-gap: clamp(0.75rem, 1.1vw, 1.25rem);
+    --fz-row-gap: clamp(1.5rem, 2.2vw, 2.25rem);
+    position: relative;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) var(--fz-room-w);
+    grid-template-rows: auto auto;
+    align-content: center;
+    min-height: var(--fz-room-w);
+    column-gap: var(--fz-col-gap);
+    row-gap: var(--fz-row-gap);
+    align-items: center;
+    justify-items: stretch;
+    /* The room for the prints' nudges, which the list keeps below 80rem. */
+    padding: 0.75rem 0.5rem 1.75rem 0;
+  }
+  .fz-board,
+  .fz-board__list {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-template-rows: subgrid;
+  }
+  .fz-board {
+    grid-column: 1 / 5;
+    grid-row: 1 / 3;
+  }
+  .fz-board__list {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    padding: 0;
+  }
+}
+
+/* The board: a loose grid, four prints to a row (two on a phone). The cards
+   themselves are tipped and nudged (FunzieCard), so it reads as pinned up
+   by hand; the padding keeps their offsets inside the board. */
+.fz-board__list {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  --fz-row: calc((var(--fz-col) - var(--fz-gap)) / 2);
-  /* The sticker sheet's row, last, is as tall as the sheet needs. */
-  grid-template-rows: repeat(12, var(--fz-row)) auto;
-  grid-template-areas:
-    'mag  pc'
-    'mag  pc'
-    'mag  pc'
-    'tmu  sdz'
-    'tmu  sdz'
-    'prt  inf'
-    'prt  inf'
-    'prt  inf'
-    'room room'
-    'room room'
-    'room room'
-    'room room'
-    'stk  stk';
+  column-gap: var(--fz-col-gap);
+  row-gap: var(--fz-row-gap);
+  margin: 0;
+  padding: 0.75rem 0.5rem 1.75rem;
+  list-style: none;
 }
 @media (min-width: 48rem) {
-  .fz-bento {
-    --fz-col: calc((100cqw - 3 * var(--fz-gap)) / 4);
+  .fz-board__list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: repeat(6, var(--fz-row)) auto;
-    /* Left: two rows of 2:3 windows — the magazine and PC build, then Print
-       and the infographics. Right: the two foldered windows (TMU K-POP, SDZ)
-       as squares side by side, over the tall isometric room, with the
-       sticker sheet under the room at its width. */
-    grid-template-areas:
-      'mag  pc   tmu  sdz'
-      'mag  pc   tmu  sdz'
-      'mag  pc   room room'
-      'prt  inf  room room'
-      'prt  inf  room room'
-      'prt  inf  room room'
-      '.    .    stk  stk';
   }
 }
-/* Wide screens: the sheet leaves the grid and stands upright to the right
-   of the room, which shifts to the left edge of its cell (StickerRoom), the
-   sheet running past the grid's right edge into the page margin. */
-@media (min-width: 80rem) {
-  .fz-bento {
-    position: relative;
-    grid-template-rows: repeat(6, var(--fz-row));
-    grid-template-areas:
-      'mag  pc   tmu  sdz'
-      'mag  pc   tmu  sdz'
-      'mag  pc   room room'
-      'prt  inf  room room'
-      'prt  inf  room room'
-      'prt  inf  room room';
-  }
-}
-.fz-area-mag  { grid-area: mag; }
-.fz-area-sdz  { grid-area: sdz; }
-.fz-area-pc   { grid-area: pc; }
-.fz-area-tmu  { grid-area: tmu; }
-.fz-area-prt  { grid-area: prt; }
-.fz-area-inf  { grid-area: inf; }
-.fz-area-room { grid-area: room; }
-.fz-area-stk  { grid-area: stk; }
-
-/* --- window chrome (tiles + popup) ---------------------------------------- */
-/* iOS-style frosted glass for the windows: a translucent white fill over a
-   heavy blur of whatever is behind (with the saturation boost iOS adds, so
-   colours glow through rather than greying out), a bright hairline rim, and a
-   specular line along the top edge. */
-.fz-window,
-.fz-pop__window {
-  --fz-glass-fill: color-mix(in srgb, #ffffff 58%, transparent);
-  --fz-glass-rim:
-    inset 0 0 0 1px color-mix(in srgb, #ffffff 65%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #ffffff 90%, transparent);
-  background: var(--fz-glass-fill);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
-}
-
-/* Dots on the left, the file name centred on the whole bar: the two outer
-   columns are both the dots' width, so the middle one is centred and a long
-   name ellipsises before it can run into the dots. */
-.fz-bar {
-  --fz-dots-w: 1.9rem;
-  display: grid;
-  grid-template-columns: var(--fz-dots-w) minmax(0, 1fr) var(--fz-dots-w);
-  column-gap: 0.5rem;
-  align-items: center;
-  flex: none;
-  min-height: 2.125rem;
-  padding: 0 1.15rem;
-  background: var(--color-maroon);
-  color: var(--color-surface);
-  font-family: var(--font-brand);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
-.fz-bar__dots {
-  display: inline-flex;
-  gap: 0.45rem;
-}
-/* On a one-column tile, the longest names (PCBUILDOFMYDREAMS_FINAL) only fit
-   if the label takes everything right of the dots, centred in that. */
-@container (max-width: 17rem) {
-  .fz-bar {
-    grid-template-columns: auto minmax(0, 1fr);
-    padding-inline: 0.9rem 0.6rem;
-    font-size: 0.625rem;
-    letter-spacing: 0.01em;
-  }
-}
-.fz-bar__label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-}
-.fz-dot {
-  display: inline-grid;
-  place-items: center;
-  width: 0.625rem;
-  height: 0.625rem;
-  border-radius: 50%;
-}
-.fz-dot--red { background: var(--fz-dot-red); }
-.fz-dot--grey { background: var(--fz-dot-grey); }
-/* The popup's close dot: the × appears on hover, as on macOS, and the tap
-   target is grown to 44px around the dot. */
-.fz-dot--button {
+.fz-board__item {
   position: relative;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  line-height: 1;
-  color: var(--color-maroon);
 }
-.fz-dot--button span {
-  opacity: 0;
-  font-size: 0.6rem;
-  font-weight: 800;
-  transition: opacity 120ms;
-}
-.fz-dot--button:hover span,
-.fz-dot--button:focus-visible span {
-  opacity: 1;
-}
-.fz-dot--button::after {
-  content: '';
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
+/* The card in hand comes to the front, so its fan lies over its neighbours. */
+.fz-board__item:has(.fz-card:hover),
+.fz-board__item:has(.fz-card:focus-visible) {
+  z-index: 5;
 }
 
-.fz-window {
-  container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
+/* --- a print on the board (FunzieCard) ------------------------------------ */
+.fz-card {
+  position: relative;
+  display: block;
+  width: 100%;
   padding: 0;
   border: 0;
-  border-radius: 1.125rem;
-  overflow: hidden;
-  box-shadow:
-    var(--fz-glass-rim),
-    0 8px 24px -14px color-mix(in srgb, var(--color-ink) 30%, transparent);
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  transition:
-    transform 320ms var(--ease-brand),
-    box-shadow 320ms var(--ease-brand);
+  background: none;
+  cursor: pointer;
+  transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  transition: transform 450ms var(--ease-brand);
 }
-.fz-window:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    var(--fz-glass-rim),
-    0 14px 30px -12px color-mix(in srgb, var(--color-ink) 35%, transparent);
+.fz-card:focus-visible {
+  outline: none;
 }
-.fz-window:focus-visible {
-  border-radius: 1.125rem;
+.fz-card:focus-visible .fz-card__photo {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
 }
-.fz-window__body {
+.fz-card__pivot {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  /* Clear: the window's glass shows through behind the artwork. */
-  background: transparent;
+  display: block;
+  aspect-ratio: 4 / 5;
 }
-/* The picture fitted whole inside the window with an even margin — never
-   cropped. */
-.fz-window__body img {
-  position: absolute;
-  inset: 7%;
-  width: 86%;
-  height: 86%;
-  object-fit: contain;
-  transition: transform 600ms var(--ease-brand);
-}
-.fz-window:hover .fz-window__body img {
-  transform: scale(1.02);
-}
-.fz-window__body--icon img {
-  inset: 14%;
-  width: 72%;
-  height: 72%;
-}
-
-/* Swiping tiles (TILE_SWIPE in FunzieWindow.jsx): the pictures sit side by
-   side, one window wide each, on a track that slides left. */
-.fz-swipe {
+/* A photo print: the picture cropped to the card, in a white border, with a
+   soft shadow on the board. Every print on a card hangs from its pin, so it
+   turns about the pin's point. */
+.fz-card__print {
   position: absolute;
   inset: 0;
-  display: flex;
-  transition: transform 750ms var(--ease-brand);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: clamp(0.25rem, 0.45vw, 0.4rem) solid #fff;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-ink) 14%, transparent),
+    0 12px 24px -14px color-mix(in srgb, var(--color-ink) 50%, transparent);
+  transform-origin: calc(50% + var(--pin-x)) 1.1rem;
+  user-select: none;
+  -webkit-user-drag: none;
 }
-.fz-swipe[data-snap] {
-  transition: none;
+/* The other pictures, behind: at rest they just peek out from under the
+   photo, a stack; on hover (or keyboard focus) they swing out from the pin
+   into a fan, one after another. */
+.fz-card__under {
+  transform: translateX(var(--peek-x)) rotate(var(--peek));
+  transition: transform 520ms var(--ease-brand);
+  transition-delay: calc(var(--i) * 35ms);
 }
-.fz-swipe__slide {
-  position: relative;
-  flex: 0 0 100%;
+.fz-card__under:nth-of-type(1) {
+  --peek: -3.5deg;
+  --peek-x: -2%;
+  --fan: -22deg;
+  --fan-x: -30%;
+}
+.fz-card__under:nth-of-type(2) {
+  --peek: 3deg;
+  --peek-x: 2%;
+  --fan: 20deg;
+  --fan-x: 30%;
+}
+.fz-card__under:nth-of-type(3) {
+  --peek: -1.5deg;
+  --peek-x: 0%;
+  --fan: 6deg;
+  --fan-x: 8%;
+  --fan-y: -14%;
+}
+.fz-card:focus-visible {
+  transform: translate(var(--dx), calc(var(--dy) - 4px)) rotate(var(--rot)) scale(1.03);
+}
+.fz-card:focus-visible .fz-card__under {
+  transform: translate(var(--fan-x), var(--fan-y, 4%)) rotate(var(--fan));
+}
+@media (hover: hover) {
+  .fz-card:hover {
+    transform: translate(var(--dx), calc(var(--dy) - 4px)) rotate(var(--rot)) scale(1.03);
+  }
+  .fz-card:hover .fz-card__under {
+    transform: translate(var(--fan-x), var(--fan-y, 4%)) rotate(var(--fan));
+  }
 }
 
-/* The hover preview card (HOVER_PREVIEW). Fixed to the viewport and centred over
-   the tile it previews; once open it takes the pointer, and a click on it
-   opens the popup like a click on the tile. */
-.fz-preview {
-  position: fixed;
-  z-index: 60;
+/* The push pin: a chrome head, seen from just above, with a domed cap and a
+   short shadow on the print. Used on the prints and on the sticker sheet;
+   never in the pointer's way. */
+.fz-pin {
+  position: absolute;
+  z-index: 2;
+  top: 0.55rem;
+  left: calc(50% + var(--pin-x, 0px));
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-left: -0.65rem;
+  border-radius: 50%;
   pointer-events: none;
-  cursor: pointer;
-  /* As wide as its row, not squeezed by how far right `left` puts it. */
-  width: max-content;
-  box-sizing: border-box;
-  padding: 0.75rem;
-  border-radius: 1rem;
-  background: var(--color-surface);
+  background:
+    radial-gradient(circle at 34% 30%, #ffffff 0 10%, transparent 34%),
+    conic-gradient(from 200deg, #f6f6f6, #8e8e8e 20%, #e4e4e4 38%, #6a6a6a 60%, #cfcfcf 80%, #f6f6f6);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-ink) 8%, transparent),
-    0 18px 40px -16px color-mix(in srgb, var(--color-ink) 40%, transparent);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.94);
-  transition:
-    opacity 180ms ease,
-    transform 260ms var(--ease-brand);
+    inset 0 0 0 1px rgb(0 0 0 / 0.3),
+    inset 0 -2px 2px rgb(0 0 0 / 0.22),
+    2px 3px 3px -1px rgb(0 0 0 / 0.35),
+    5px 8px 6px -4px rgb(0 0 0 / 0.25);
 }
-.fz-preview[data-open] {
-  pointer-events: auto;
-  opacity: 1;
-  transform: translate(-50%, -50%);
+.fz-pin::before {
+  content: '';
+  position: absolute;
+  inset: 24%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #ffffff, #c4c4c4 55%, #7c7c7c);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.18);
 }
-.fz-preview__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.1rem 0.2rem 0.6rem;
-  font-size: 0.8125rem;
-  line-height: 1.2;
+/* On the sheet the pin is sized in the sheet's own art pixels, so it always
+   fits the strip left for it above the stickers (24 art px). */
+.fz-pin--sheet {
+  z-index: 3;
+  top: calc(3 * var(--u));
+  width: calc(17 * var(--u));
+  height: calc(17 * var(--u));
+  margin-left: calc(-8.5 * var(--u));
 }
-.fz-preview__title {
-  font-weight: 600;
-  color: var(--color-ink);
-}
-.fz-preview__count {
-  color: var(--color-ink-muted);
-}
-/* The pictures as one stack: all in the same grid cell, the first in front
-   and each one after it tucked behind, offset right by --fz-peek so a strip
-   of it still shows. The ones further back are a touch smaller, so the
-   stack reads as depth rather than a row. Every card is the same size, the
-   artwork fitted whole inside it — otherwise a narrow picture behind a wide
-   one would vanish behind it entirely. */
-.fz-preview__stack {
-  --fz-preview-h: clamp(7.5rem, 12vw, 10rem);
-  --fz-peek: 1.6rem;
-  display: grid;
-  justify-content: center;
-  align-items: center;
-  padding-right: 0.25rem;
-}
-.fz-preview__stack img {
-  grid-area: 1 / 1;
-  box-sizing: border-box;
-  height: var(--fz-preview-h);
-  width: calc(var(--fz-preview-h) * 0.8);
-  padding: 0.4rem;
-  object-fit: contain;
-  margin-left: calc(var(--i) * var(--fz-peek));
-  z-index: calc(var(--fz-stack-n) - var(--i));
-  transform: scale(calc(1 - var(--i) * 0.035));
-  transform-origin: 0 50%;
-  border-radius: 0.375rem;
-  background: var(--color-surface);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-ink) 8%, transparent),
-    6px 0 14px -6px color-mix(in srgb, var(--color-ink) 30%, transparent);
-}
-.fz-preview__hint {
-  padding: 0.6rem 0.2rem 0.05rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .fz-swipe,
-  .fz-preview {
+  .fz-card,
+  .fz-card__under {
     transition: none;
   }
 }
@@ -507,30 +394,40 @@
   width: calc(var(--w) * var(--u));
   height: calc(var(--h) * var(--u));
 }
+/* The room's cell: a square, which StickerRoom measures for its scale. */
+.fz-area-room {
+  width: min(100%, 28rem);
+  aspect-ratio: 1;
+}
+/* The sheet lies across, pinned along a strip at its top, clear of the
+   stickers; its width sets its scale (StickerRoom). Up to 80rem it sits
+   under the room at the room's width. */
+.fz-sheet.fz-area-stk {
+  width: min(100%, 28rem);
+  height: calc((var(--sheet-h) + 24) * var(--u));
+}
+.fz-sheet.fz-area-stk .fz-sheet__page {
+  top: calc(24 * var(--u));
+  bottom: auto;
+}
 @media (min-width: 80rem) {
-  .fz-room__space {
-    inset: 0 auto 0 calc(-1 * var(--room-x) * var(--u));
-    margin: auto 0;
-  }
-  .fz-sheet.fz-area-stk {
-    grid-area: room;
+  /* The room, large, in the wall's last column, centred on both rows. */
+  .fz-room.fz-area-room {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: calc(var(--room-w) * var(--u) + var(--fz-gap));
-    width: calc(var(--sheet-w) * var(--u));
-    height: auto;
-  }
-  /* Its page from the top margin down, leaving the foot for the hint. */
-  .fz-sheet.fz-area-stk .fz-sheet__page {
-    top: calc(8 * var(--u));
-    bottom: auto;
-  }
-  .fz-sheet.fz-area-stk .fz-sheet__hint,
-  .fz-sheet.fz-area-stk .fz-sheet__reset {
-    right: 0;
+    grid-column: 5;
+    grid-row: 1 / 3;
+    top: 50%;
     left: 0;
-    text-align: center;
+    width: 100%;
+    translate: 0 -50%;
+  }
+  /* The sheet fills the board's free corner: row 2, columns 3 and 4, with
+     a little more foot so the hint clears the bottom row of stickers. */
+  .fz-sheet.fz-area-stk {
+    grid-column: 3 / 5;
+    grid-row: 2;
+    width: 100%;
+    height: calc((var(--sheet-h) + 36) * var(--u));
   }
 }
 .fz-sheet__slot {
@@ -701,12 +598,19 @@
   }
 }
 
-/* --- popup --------------------------------------------------------------- */
+
+/* --- the project window (FunziePopup) -------------------------------------
+   Sized and dressed like the case-study window: (100dvh - 4rem) tall, at most
+   1.4 times as wide, never under 64rem nor over 92vw; a burgundy bar with
+   only its dots; the page's own ground. Maximized, or on a phone, it fills
+   the screen. Inside: the thumbnail strip, ruled off, then the picture and
+   its write-up side by side. */
 .fz-pop {
-  --fz-pop-pad: clamp(1.75rem, 3.6vw, 3.25rem);
+  --fz-pop-pad: clamp(1.5rem, 3vw, 2.75rem);
   /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
   margin: auto;
-  width: min(64rem, 100% - 2rem);
+  width: min(92vw, max(64rem, calc((100dvh - 4rem) * 1.4)), 100% - 2rem);
+  height: calc(100dvh - 4rem);
   max-width: none;
   max-height: none;
   padding: 0;
@@ -715,9 +619,12 @@
   overflow: visible;
   color: var(--color-ink);
 }
+.fz-pop[data-size='full'] {
+  width: 100%;
+  height: 100%;
+}
 .fz-pop::backdrop {
-  /* Light, so the glass window over it stays bright, as on iOS. */
-  background: color-mix(in srgb, var(--color-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--color-ink) 22%, transparent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   animation: fz-fade-in 220ms ease-out both;
@@ -728,197 +635,238 @@
 .fz-pop__window {
   display: flex;
   flex-direction: column;
-  max-height: calc(100dvh - 2rem);
-  border-radius: var(--radius-card);
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
   box-shadow:
-    var(--fz-glass-rim),
     0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
     0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
-  animation: fz-pop-in 380ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  animation: fz-pop-in 380ms var(--ease-brand) both;
+}
+.fz-pop[data-size='full'] .fz-pop__window {
+  border-radius: 0;
+  box-shadow: none;
 }
 .fz-pop[data-closing] .fz-pop__window {
   animation: fz-pop-out 180ms ease-in both;
 }
-.fz-pop .fz-bar {
-  font-size: 0.8125rem;
-  --fz-dots-w: 2.3rem;
+
+/* The bar: the case-study window's, restated so the two can change apart.
+   The dots' glyphs show while the pointer is over the pair, or on focus. */
+.fz-pop__bar {
+  display: flex;
+  flex: none;
+  align-items: center;
   min-height: 2.5rem;
-  padding-inline: 1.35rem;
+  padding-inline: 1.1rem;
+  background: var(--color-maroon);
 }
-.fz-pop .fz-dot {
-  width: 0.75rem;
-  height: 0.75rem;
+.fz-pop__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
 }
+.fz-pop__dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 0.875rem;
+  height: 0.875rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-maroon);
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.fz-pop__dot--close {
+  background: var(--fz-dot-red);
+}
+.fz-pop__dot--size {
+  background: var(--fz-dot-green);
+}
+.fz-pop__dot > * {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.fz-pop__dot svg {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+.fz-pop__controls:hover .fz-pop__dot > *,
+.fz-pop__dot:focus-visible > * {
+  opacity: 1;
+}
+/* A bigger target than the dot; a full 44px on a phone. */
+.fz-pop__dot::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 1.4rem;
+  height: 1.75rem;
+  transform: translate(-50%, -50%);
+}
+@media not all and (min-width: 48rem) {
+  .fz-pop__dot::after {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Phone: the strip runs along the top, ruled off below, and the picture and
+   write-up scroll under it. From 48rem: the strip is a narrow column down
+   the left, ruled off on its right, and picture and write-up sit side by
+   side, each fitted to the window's height. */
 .fz-pop__body {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   min-height: 0;
-  overflow: auto;
+}
+.fz-pop__thumbs {
+  flex: none;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--fz-divider);
+  scrollbar-width: none;
+}
+.fz-pop__thumb-list {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  list-style: none;
+}
+.fz-pop__thumb-list > [data-new-group] {
+  margin-left: 0.5rem;
+}
+.fz-pop__main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 @media (min-width: 48rem) {
   .fz-pop__body {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    align-items: start;
+    flex-direction: row;
   }
-}
-.fz-pop__media {
-  display: grid;
-  justify-items: center;
-  padding: var(--fz-pop-pad);
-}
-@media (min-width: 48rem) {
-  /* The faint line between the piece and the write-up, full height. */
-  .fz-pop__media {
-    align-self: stretch;
-    border-right: 1px solid var(--fz-divider);
-  }
-}
-/* --- Finder folders (TMU K-POP) ----------------------------------------- */
-/* A foldered window is a little wider, for the sidebar. Its write-up column
-   is narrower than the other windows' and set in tighter, so the text fills
-   it rather than floating in white space. */
-.fz-pop[data-folders] {
-  width: min(68rem, 100% - 2rem);
-}
-@media (min-width: 48rem) {
-  .fz-pop[data-folders] .fz-pop__body {
-    grid-template-columns: 8.75rem minmax(0, 1.2fr) minmax(0, 0.8fr);
-  }
-  /* `contain: size` keeps the write-up from setting the window's height, so
-     the slides column (the same height in every folder) does, and the window
-     never resizes or shifts when another folder opens; a longer write-up
-     scrolls inside its column instead. */
-  .fz-pop[data-folders] .fz-pop__text {
-    align-self: stretch;
-    padding: var(--fz-pop-pad) 2rem 1.25rem 1.75rem;
-    contain: size;
-    overflow-y: auto;
-  }
-}
-/* macOS sidebar: system type at Finder's sizes, a slightly greyer glass than
-   the window, a hairline down its edge. Rows are 28px with a 6px pill when
-   selected or hovered, the blue folder glyph leading. */
-.fz-finder {
-  --fz-finder-ink: rgb(0 0 0 / 0.85);
-  align-self: stretch;
-  padding: 0.6rem 0.4rem;
-  background: color-mix(in srgb, #e8e8ed 55%, transparent);
-  border-bottom: 1px solid var(--fz-divider);
-  font-family: var(--font-brand);
-  color: var(--fz-finder-ink);
-}
-@media (min-width: 48rem) {
-  .fz-finder {
-    padding-top: 0.85rem;
+  .fz-pop__thumbs {
+    width: clamp(5.25rem, 7vw, 6.5rem);
+    overflow: hidden auto;
     border-bottom: 0;
     border-right: 1px solid var(--fz-divider);
   }
-}
-.fz-finder__heading {
-  margin: 0 0 0.2rem;
-  padding-inline: 0.45rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: rgb(0 0 0 / 0.42);
-}
-/* A row of folders on phones, a column beside the slides from 48rem. */
-.fz-finder__list {
-  display: flex;
-  gap: 0.15rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-@media (min-width: 48rem) {
-  .fz-finder__list {
+  .fz-pop__thumb-list {
     flex-direction: column;
+    padding: 1rem 0.85rem;
+  }
+  .fz-pop__thumb-list > [data-new-group] {
+    margin-left: 0;
+    margin-top: 0.75rem;
+  }
+  .fz-pop__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    overflow: hidden;
   }
 }
-.fz-finder__item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  min-height: 1.6rem;
-  padding: 0.15rem 0.45rem;
+
+/* A thumbnail: a small square, the picture cropped to it; the picked one in
+   full colour with a burgundy ring, the others knocked back. */
+.fz-pop__thumb {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 3.5rem;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
   border: 0;
   border-radius: 6px;
-  background: transparent;
-  font: inherit;
-  font-size: 0.8125rem;
-  color: inherit;
-  text-align: left;
+  background: var(--color-surface);
   cursor: pointer;
-  transition: background 120ms;
-}
-.fz-finder__item:hover {
-  background: rgb(0 0 0 / 0.05);
-}
-.fz-finder__item[aria-current] {
-  background: rgb(0 0 0 / 0.1);
-  font-weight: 500;
-}
-.fz-folder-icon {
-  flex: none;
-  width: 1.15rem;
-  height: auto;
-}
-.fz-folder-icon__back { fill: var(--color-maroon); }
-.fz-folder-icon__front { fill: color-mix(in srgb, var(--color-maroon) 78%, #ffffff); }
-.fz-folder-icon__lip { fill: color-mix(in srgb, var(--color-maroon) 62%, #ffffff); }
-/* Finder's path bar, over the slides: the open folder and its item count. */
-.fz-finder__path {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: min(100%, 26rem, 100dvh - 18rem);
-  margin: 0 0 0.9rem;
-  font-family: var(--font-brand);
-  font-size: 0.8125rem;
-}
-.fz-finder__path-name {
-  font-weight: 600;
-}
-.fz-finder__path-count {
-  margin-left: auto;
-  color: rgb(0 0 0 / 0.42);
-}
-
-/* The magazine's stacked pictures. On phones each simply takes its natural
-   height at full width. Beside the write-up they fill the column's height
-   (the popup's, less its chrome and padding): the mockup at full width at the
-   bottom, the photo above taking what is left, shown whole. */
-.fz-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  width: 100%;
-}
-.fz-stack img {
-  display: block;
-  width: 100%;
-  height: auto;
-  min-height: 0;
-  object-fit: contain;
+  opacity: 0.5;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 10%, transparent);
+  transition:
+    opacity 160ms,
+    box-shadow 160ms;
 }
 @media (min-width: 48rem) {
-  .fz-stack {
-    height: min(46rem, 100dvh - 2rem - 2.5rem - 2 * var(--fz-pop-pad));
+  .fz-pop__thumb {
+    width: 100%;
   }
-  .fz-stack img:first-child {
-    flex: 1 1 0;
-  }
-  .fz-stack img:not(:first-child) {
-    flex: none;
-  }
+}
+.fz-pop__thumb:hover {
+  opacity: 0.85;
+}
+.fz-pop__thumb[aria-current] {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--color-maroon);
+}
+.fz-pop__thumb:focus-visible {
+  outline-offset: 2px;
+}
+.fz-pop__thumb img,
+.fz-pop__thumb video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+/* Small artwork (icons) is shown whole, with a margin. */
+.fz-pop__thumb[data-icon] img {
+  object-fit: contain;
+  padding: 18%;
+  box-sizing: border-box;
+}
+/* A video's thumbnail: its first frame and a play mark. */
+.fz-pop__thumb-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.45rem 0 0.45rem 0.75rem;
+  border-color: transparent transparent transparent #fff;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
 }
 
-/* Opt-in (PC build): the pictures sit in the middle of the window. */
-.fz-pop__body[data-center-media] .fz-pop__media {
-  align-content: center;
+/* The picked picture, large and whole, never cropped. */
+.fz-pop__stage {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  margin: 0;
+  padding: var(--fz-pop-pad);
 }
-/* Top-aligned with the picture: same top padding as the media column. */
+.fz-pop__stage img,
+.fz-pop__stage video {
+  display: block;
+  max-width: 100%;
+  max-height: min(60vh, 32rem);
+  object-fit: contain;
+  border-radius: 4px;
+  animation: fz-fade-in 220ms ease-out both;
+}
+@media (min-width: 48rem) {
+  .fz-pop__stage {
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .fz-pop__stage img,
+  .fz-pop__stage video {
+    max-height: 100%;
+  }
+}
+.fz-pop__stage[data-icon] img {
+  max-width: min(100%, 16rem);
+}
+
+/* The write-up beside it, scrolling on its own when it runs long. */
 .fz-pop__text {
   display: flex;
   flex-direction: column;
@@ -928,7 +876,10 @@
 }
 @media (min-width: 48rem) {
   .fz-pop__text {
+    min-height: 0;
+    overflow-y: auto;
     padding-top: var(--fz-pop-pad);
+    border-left: 1px solid var(--fz-divider);
   }
 }
 .fz-pop__title {
@@ -946,11 +897,9 @@
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
-/* Set exactly like the list after it, only bold. */
 .fz-pop__tools-label {
   font-weight: 800;
 }
-/* The icons sit in a row under the label. */
 .fz-pop__tool-list {
   display: flex;
   flex-wrap: wrap;
@@ -983,103 +932,13 @@
 .fz-pop__copy li + li {
   margin-top: 0.15em;
 }
-
-/* --- slides -------------------------------------------------------------- */
-.fz-slides {
-  position: relative;
-  width: min(100%, 26rem, 100dvh - 18rem);
-  container-type: inline-size;
-}
-.fz-slides__track {
-  display: flex;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-.fz-slides__track::-webkit-scrollbar {
-  display: none;
-}
-/* A square stage, its top level with the write-up's; the picture is fitted
-   whole inside it, never cropped, and centred. */
-.fz-slides__slide {
-  flex: 0 0 100%;
-  /* A definite height (not aspect-ratio), so a tall picture's max-height
-     resolves and it shrinks to fit instead of stretching the stage. */
-  height: 100cqi;
-  display: grid;
-  place-items: center;
-  scroll-snap-align: center;
-  scroll-snap-stop: always;
-}
-.fz-slides__slide img,
-.fz-slides__slide video {
-  display: block;
-  max-width: 100%;
-  /* The stage's own height, in container units: a percentage here resolves
-     against the grid row, not the stage, and tall pictures overflowed it. */
-  max-height: 100cqi;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 0.625rem;
-  user-select: none;
-}
-/* A video fills the stage box and letterboxes inside it: left to size
-   itself, it took its natural height and overflowed the stage. */
-.fz-slides__slide video {
-  width: 100%;
-  height: 100cqi;
-}
-.fz-slides__arrow {
-  position: absolute;
-  top: 50%;
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  margin-top: -1.125rem;
-  border: 0;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
-  color: var(--color-ink);
-  font-size: 1.5rem;
-  line-height: 1;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-ink) 20%, transparent);
-  opacity: 0;
-  transition: opacity 160ms;
-}
-.fz-slides__arrow--prev { left: -1.1rem; }
-.fz-slides__arrow--next { right: -1.1rem; }
-.fz-slides:hover .fz-slides__arrow:not(:disabled),
-.fz-slides__arrow:focus-visible {
-  opacity: 1;
-}
-.fz-slides__arrow:disabled {
-  pointer-events: none;
-}
-.fz-slides__dots {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
-.fz-slides__dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--fz-divider);
-  transition:
-    background 200ms,
-    width 200ms var(--ease-brand);
-}
-.fz-slides__dot[aria-current] {
-  width: 1.1rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-ink);
+@media (prefers-reduced-motion: reduce) {
+  .fz-pop__window,
+  .fz-pop::backdrop,
+  .fz-pop__stage img,
+  .fz-pop__stage video {
+    animation: none;
+  }
 }
 
 /* --- game covers (PC build) ---------------------------------------------- */

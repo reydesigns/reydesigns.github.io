@@ -23,6 +23,8 @@
   min-height: 2.25rem;
   padding: 0 0.9rem;
   background: var(--term-bar);
+  /* The bar and the screen are the same burgundy: a hairline divides them. */
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--term-text) 14%, transparent);
 }
 .term__dots {
   position: absolute;

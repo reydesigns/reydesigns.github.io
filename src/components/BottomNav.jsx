@@ -18,7 +18,7 @@ const CONTACT_LINKS = [
 
 const ITEMS = [
   { to: '/works', label: 'works', icon: navWorks },
-  { to: '/funzies', label: 'funzies', icon: navFunzies },
+  { to: '/design', label: 'design', icon: navFunzies },
   { to: '/me', label: 'me', avatar: true },
 ]
 

@@ -285,6 +285,25 @@ html.lenis body {
 }
 
 /* ---------------------------------------------------------------------------
+   Film grain over every Works card's thumbnail (WorkCard's Thumbnail).
+
+   A 160px tile of soft fractal noise, grey, contrast lifted round mid-grey,
+   blended in soft-light: mid-grey leaves a pixel alone, so the grain only
+   nudges the picture's own tones up and down (no grey veil over it), and its
+   specks are a little over a pixel across, so it reads as film rather than
+   TV static. It stays still. Strength: --card-grain-alpha.
+--------------------------------------------------------------------------- */
+.card-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='1.8' intercept='-.4'/%3E%3CfeFuncG type='linear' slope='1.8' intercept='-.4'/%3E%3CfeFuncB type='linear' slope='1.8' intercept='-.4'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: soft-light;
+  opacity: var(--card-grain-alpha);
+}
+
+/* ---------------------------------------------------------------------------
    The Vinyl Player (VinylPlayerModal.jsx, RecordPlayer.jsx, VinylStack.jsx).
 
    Every fill in the scene comes from one of these classes, so the colours
@@ -292,27 +311,79 @@ html.lenis body {
    a group, so the shapes inside one shadow merge rather than darkening where
    they overlap.
 --------------------------------------------------------------------------- */
-.vpf-sage { fill: var(--vp-sage); }
-.vpf-sage-light { fill: var(--vp-sage-light); }
-.vpf-sage-dark { fill: var(--vp-sage-dark); }
+.vpf-body { fill: var(--vp-body); }
+.vpf-body-light { fill: var(--vp-body-light); }
+.vpf-body-dark { fill: var(--vp-body-dark); }
+.vpf-case-floor { fill: var(--vp-case-floor); }
+/* The frosted top: one pale veil over the floor and what is on it. */
+.vpf-frost {
+  fill: var(--vp-frost);
+  opacity: var(--vp-frost-alpha);
+}
+/* Its rim, where the acrylic's cut edge catches the light, and the glints
+   across its top. */
+.vp-frost-edge {
+  fill: none;
+  stroke: var(--vp-frost);
+  stroke-width: 2.5;
+  opacity: 0.7;
+}
+.vp-frost-edge--inner {
+  stroke-width: 1.5;
+  opacity: 0.3;
+}
+.vp-frost-glint {
+  fill: var(--vp-frost);
+  opacity: 0.1;
+}
+.vpf-glow { fill: var(--vp-glow); }
+.vpf-pcb { fill: var(--vp-pcb); }
+.vpf-chip { fill: var(--vp-chip); }
+.vpf-cap { fill: var(--vp-cap); }
+.vpf-winding { fill: var(--vp-winding); }
+/* Wires and traces are strokes. */
+.vpw {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.vpw-light { stroke: var(--vp-wire-light); }
+.vpw-mid { stroke: var(--vp-wire-mid); }
+.vpw-dark { stroke: var(--vp-wire-dark); }
+.vpw-ribbon { stroke: var(--vp-ribbon); }
+.vpw-ribbon-line { stroke: var(--vp-body-dark); }
+.vpw-trace { stroke: var(--vp-glow); opacity: 0.75; }
+.vpw-glow { stroke: var(--vp-glow); }
+.vpw-sleeve { stroke: var(--vp-case-floor); }
 .vpf-floor { fill: var(--vp-floor); }
-.vpf-floor-light { fill: var(--vp-floor-light); }
-.vpf-floor-dark { fill: var(--vp-floor-dark); }
 .vpf-vinyl { fill: var(--vp-vinyl); }
 .vpf-vinyl-light { fill: var(--vp-vinyl-light); }
 .vpf-vinyl-dark { fill: var(--vp-vinyl-dark); }
 .vpf-sheen { fill: var(--vp-sheen); }
-.vpf-label-rim { fill: var(--vp-floor-light); }
+.vpf-label-rim { fill: var(--vp-label-rim); }
 .vpf-mat { fill: var(--vp-mat); }
 .vpf-mat-light { fill: var(--vp-mat-light); }
 .vpf-metal { fill: var(--vp-metal); }
 .vpf-metal-light { fill: var(--vp-metal-light); }
 .vpf-metal-dark { fill: var(--vp-metal-dark); }
-.vpf-maroon { fill: var(--color-maroon); }
-.vpf-maroon-light { fill: color-mix(in srgb, var(--color-maroon) 74%, var(--color-surface)); }
-.vpf-maroon-dark { fill: color-mix(in srgb, var(--color-maroon) 60%, var(--vp-vinyl-dark)); }
+.vpf-key { fill: var(--vp-key); }
+.vpf-key-light { fill: var(--vp-key-light); }
+.vpf-key-dark { fill: var(--vp-key-dark); }
+/* Laid over a chrome facet (RecordPlayer's bezel, the headshell) to light
+   or shade it by the way it faces, without a second gradient. */
+.vp-facet-light {
+  fill: #fff;
+  opacity: 0.3;
+}
+.vp-facet-dark {
+  fill: #000;
+  opacity: 0.32;
+}
 .vpf-led-off { fill: var(--vp-led-off); }
-.vpf-led-on { fill: var(--vp-led-on); }
+.vpf-led-on {
+  fill: var(--vp-led-on);
+  filter: drop-shadow(0 0 7px var(--vp-led-on));
+}
 .vp-shadow {
   fill: var(--vp-shadow);
   opacity: var(--vp-shadow-alpha);
@@ -377,7 +448,7 @@ html.lenis body {
 }
 .vp-key-ring {
   fill: none;
-  stroke: var(--color-ink);
+  stroke: var(--vp-glow);
   stroke-width: 6;
   visibility: hidden;
 }
@@ -391,14 +462,18 @@ html.lenis body {
   cursor: grab;
 }
 
-/* The pop-up: a diorama on a dim backdrop. From 40rem it is one 16:10 stage
-   as large as fits, with the title over the table in the player's column and
-   the caption in the band below the player; on a phone it fills the screen
+/* The pop-up: a window on a dim backdrop. A burgundy title bar with macOS
+   dots (red closes, green maximizes), then the scene's 16:10 canvas: the
+   sleeves down the left, and the title, hint and player as one group centred
+   top to bottom in the player's column, the caption in the band under the
+   player. Maximized, the frame fills the screen and the canvas is centred in
+   it at the largest size that fits. On a phone the window fills the screen
    and the title, stage and caption stack. */
 .vp-pop {
+  --vp-bar-h: 2.5rem;
   /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
   margin: auto;
-  width: min(75rem, 100% - 2rem, (100dvh - 2rem) * 1.6);
+  width: min(75rem, 100% - 2rem, (100dvh - 2rem - var(--vp-bar-h)) * 1.6);
   max-width: none;
   max-height: none;
   padding: 0;
@@ -417,11 +492,11 @@ html.lenis body {
 }
 .vp-frame {
   position: relative;
-  aspect-ratio: 1600 / 1000;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--color-surface);
-  container-type: inline-size;
   /* A hard shadow, like everything on the table. */
   box-shadow: 0.75rem 1rem 0 color-mix(in srgb, var(--color-ink) 28%, transparent);
   animation: vp-pop-in 320ms var(--ease-brand) both;
@@ -429,9 +504,92 @@ html.lenis body {
 .vp-pop[data-closing] .vp-frame {
   animation: vp-pop-out 180ms ease-in both;
 }
+.vp-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1600 / 1000;
+  container-type: inline-size;
+}
+@media (min-width: 40rem) {
+  .vp-pop[data-size='full'] {
+    width: 100%;
+    height: 100%;
+  }
+  .vp-pop[data-size='full'] .vp-frame {
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .vp-pop[data-size='full'] .vp-canvas {
+    width: min(100%, (100dvh - var(--vp-bar-h)) * 1.6);
+    margin: auto;
+  }
+}
 .vp-stage {
   position: absolute;
   inset: 0;
+}
+
+/* --- the title bar: the case-study window's, restated so the two can change
+   independently. The dots' glyphs (x and the corner arrows) show while the
+   pointer is over the pair, or on keyboard focus, as on macOS. --- */
+.vp-bar {
+  /* Over the equaliser, which a phone stretches over the whole frame. */
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--vp-bar-h);
+  padding-inline: 1.1rem;
+  background: var(--color-maroon);
+}
+.vp-bar__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.vp-dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 0.875rem;
+  height: 0.875rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-maroon);
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.vp-dot--close {
+  background: var(--fz-dot-red);
+}
+.vp-dot--size {
+  background: var(--fz-dot-green);
+}
+.vp-dot > * {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.vp-dot svg {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+.vp-bar__controls:hover .vp-dot > *,
+.vp-dot:focus-visible > * {
+  opacity: 1;
+}
+/* The hit area grows round each dot without the two overlapping. */
+.vp-dot::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 1.4rem;
+  height: 1.75rem;
+  transform: translate(-50%, -50%);
 }
 /* The Works card's spinning record (VinylThumb): a box over the platter,
    between the scene and the arm, turned by a CSS animation so the browser
@@ -477,15 +635,19 @@ html.lenis body {
   transition: opacity 700ms ease-out;
 }
 .vp-eq[data-on] {
-  opacity: 1;
+  opacity: var(--vp-eq-alpha);
   transition-duration: 350ms;
 }
+/* The title and hint, centred over the player: the box spans the player's
+   width (LAYOUTS.wide: x 660 to 1468 of 1600) and sits 12% down, so title,
+   hint and player make one group centred top to bottom in the window. */
 .vp-head {
   position: absolute;
   z-index: 1;
-  left: 42%;
-  right: 7rem;
-  top: 4.6%;
+  left: 41.25%;
+  right: 8.25%;
+  top: 12%;
+  text-align: center;
   pointer-events: none;
 }
 .vp-title {
@@ -506,49 +668,19 @@ html.lenis body {
   white-space: nowrap;
   color: rgb(0 0 0 / 0.55);
 }
-.vp-close {
-  position: absolute;
-  z-index: 2;
-  top: clamp(0.75rem, 1.7cqi, 1.25rem);
-  right: clamp(0.75rem, 1.7cqi, 1.25rem);
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  box-shadow: 0.1875rem 0.25rem 0 color-mix(in srgb, var(--color-ink) 16%, transparent);
-  transition: transform 160ms var(--ease-brand), box-shadow 160ms var(--ease-brand);
-}
-.vp-close:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 0.25rem 0.3125rem 0 color-mix(in srgb, var(--color-ink) 18%, transparent);
-}
-.vp-close:focus-visible {
-  border-radius: var(--radius-pill);
-}
-.vp-close svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-}
-/* The band under the player (its plinth and shadow end at 80.4% of the
-   frame): the caption is centred in it, inset from the frame's right edge so
-   a pill that wraps to two lines keeps its rounded end. */
+/* The band under the player (its plinth and shadow end at 87.8% of the
+   canvas): the caption is centred in it, across the player's width. */
 .vp-caption,
 .vp-hint--foot {
   position: absolute;
   z-index: 1;
-  left: 42%;
-  right: clamp(0.75rem, 2cqi, 1.5rem);
-  top: 80.5%;
+  left: 41.25%;
+  right: 8.25%;
+  top: 87.8%;
   bottom: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   margin: 0;
   pointer-events: none;
 }
@@ -556,11 +688,10 @@ html.lenis body {
   display: none;
   max-width: none;
 }
+/* One line of text, all capitals: the parts are separated by ordinary word
+   spaces, and nothing is tracked out, so the spacing reads as a sentence. */
 .vp-caption__pill {
-  display: inline-flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.625rem;
+  display: inline-block;
   max-width: 100%;
   padding: 0.625rem 1.125rem;
   border-radius: var(--radius-pill);
@@ -568,13 +699,12 @@ html.lenis body {
   box-shadow: 0.1875rem 0.25rem 0 color-mix(in srgb, var(--color-ink) 14%, transparent);
   font-size: clamp(0.8125rem, 1.15cqi, 0.9375rem);
   line-height: 1.25;
+  text-transform: uppercase;
   animation: vp-caption-in 260ms var(--ease-brand) both;
 }
 .vp-caption__label {
   font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--color-ink-muted);
 }
 .vp-caption__title {
@@ -590,9 +720,6 @@ html.lenis body {
    into the caption's band while nothing plays. */
 @media (min-width: 40rem) {
   @container (max-width: 60rem) {
-    .vp-head {
-      right: 4.25rem;
-    }
     .vp-title {
       font-size: clamp(1.125rem, 3.6cqi, 2.75rem);
     }
@@ -613,11 +740,17 @@ html.lenis body {
     height: calc(100dvh - 1rem);
   }
   .vp-frame {
-    display: flex;
-    flex-direction: column;
     height: 100%;
-    aspect-ratio: auto;
     box-shadow: 0.375rem 0.5rem 0 color-mix(in srgb, var(--color-ink) 28%, transparent);
+  }
+  /* The canvas steps aside: title, stage and caption stack in the frame. */
+  .vp-canvas {
+    display: contents;
+  }
+  /* A full 44px target round the one dot a phone has. */
+  .vp-dot::after {
+    width: 44px;
+    height: 44px;
   }
   /* The scene keeps its own proportions and sits, with the caption right
      under it, in the middle of the space below the title (shrinking, and
@@ -628,7 +761,7 @@ html.lenis body {
     left: auto;
     right: auto;
     top: auto;
-    padding: 1.25rem 4.25rem 0 1.25rem;
+    padding: 1.25rem 1.25rem 0;
   }
   .vp-stage {
     position: relative;

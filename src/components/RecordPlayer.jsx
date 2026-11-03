@@ -1,11 +1,19 @@
+import { useId } from 'react'
+
 /* ---------------------------------------------------------------------------
    The Vinyl Player's turntable, seen from straight above.
 
-   Everything is flat-shaded, faceted SVG: no gradients, no textures, only
-   solid fills in the --vp-* tokens (coloured through the .vpf-* classes in
-   global.css). The light is up and to the left, so a facet is lit, base or
-   shaded by which way it faces (facetClass), and every solid casts a hard,
-   offset shadow down and to the right.
+   Faceted SVG in the --vp-* tokens (coloured through the .vpf-* classes in
+   global.css), black, white and greys only. The light is up and to the
+   left, so a facet is lit, base or shaded by which way it faces
+   (facetClass), and every solid casts a hard, offset shadow down and to the
+   right.
+
+   Two things break the flat shading, by design. The body (Case) is a frosted,
+   clear acrylic top over a black floor, the electronics inside showing
+   through it, blurred, all held in a brushed-metal bezel. And the metal
+   parts (bezel, platter rim, tonearm, hinges, controls) are chrome: SVG
+   gradients (MetalDefs) whose stops are the --vp-chrome-* greys.
 
    The layout is a classic deck: the platter on the left half, the tonearm
    pivoting at the top right and swinging in from the right, and the controls
@@ -203,19 +211,265 @@ export function Record({ clipId, coverSrc, sheen = true }) {
   )
 }
 
-/* --- the player ------------------------------------------------------------ */
+/* --- chrome --------------------------------------------------------------- */
+
+/* The metallic gradients' stops: [offset, --vp-chrome-N]. `chrome` runs
+   corner to corner across whatever it fills; `bar` across a bar's thickness
+   (the arm tube, the hinges, the slider knob); `rim` once across the whole
+   platter, so the 40 rim facets read as one turned ring catching the light
+   in bands; `bezel` once across the whole case, a softer brushed finish. */
+const STOPS = {
+  chrome: [[0, 1], [0.28, 3], [0.46, 1], [0.6, 4], [0.8, 2], [1, 3]],
+  bar: [[0, 1], [0.42, 2], [0.58, 4], [1, 3]],
+  rim: [[0, 2], [0.18, 4], [0.36, 1], [0.5, 3], [0.64, 1], [0.82, 5], [1, 2]],
+  bezel: [[0, 2], [0.22, 3], [0.45, 1], [0.6, 3], [0.8, 2], [1, 4]],
+}
+function Stops({ list }) {
+  return list.map(([offset, n]) => <stop key={offset} offset={offset} style={{ stopColor: `var(--vp-chrome-${n})` }} />)
+}
+/** One set of gradients per player. Ids come from useId, so the card's two
+    layers and the pop-up never point at each other's. */
+function MetalDefs({ ids }) {
+  return (
+    <defs>
+      <linearGradient id={ids.chrome} x1="0" y1="0" x2="1" y2="1">
+        <Stops list={STOPS.chrome} />
+      </linearGradient>
+      <linearGradient id={ids.bar} x1="0" y1="0" x2="0" y2="1">
+        <Stops list={STOPS.bar} />
+      </linearGradient>
+      <linearGradient
+        id={ids.rim}
+        gradientUnits="userSpaceOnUse"
+        x1={PLATTER.x - PLATTER.r}
+        y1={PLATTER.y - PLATTER.r}
+        x2={PLATTER.x + PLATTER.r}
+        y2={PLATTER.y + PLATTER.r}
+      >
+        <Stops list={STOPS.rim} />
+      </linearGradient>
+      <linearGradient id={ids.bezel} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={PLINTH.w} y2={PLINTH.h}>
+        <Stops list={STOPS.bezel} />
+      </linearGradient>
+    </defs>
+  )
+}
+
+/* --- the case ------------------------------------------------------------- */
 
 const PLINTH_SHAPE = bevelled({ w: PLINTH.w, h: PLINTH.h, c: PLINTH.chamfer, b: PLINTH.bevel })
+
+
+/* The signal loom: three wires from the main board up to the back edge,
+   along it, and down under the platter to the motor, in the margin the
+   platter leaves clear. `o` moves a wire outwards (towards the case's
+   rim), so the three stay parallel round every bend. */
+const loom = (o) =>
+  `M ${640 + o} 214 C 628 130 600 ${54 - o} 520 ${54 - o} L 220 ${54 - o} ` +
+  `C ${160 - o} ${54 - o} ${128 - o} ${96 - o} ${128 - o} 210`
+const LOOM = [
+  ['vpw-light', 9],
+  ['vpw-mid', 0],
+  ['vpw-dark', -9],
+]
+/* Cable ties round the loom. */
+const TIES = [
+  { x: 300, y: 54, w: 7, h: 36 },
+  { x: 470, y: 54, w: 7, h: 36 },
+]
+/* The mains cable: from the power socket in the front edge, along it to
+   the power supply, an earth wire alongside. */
+const MAINS = 'M 166 636 L 660 636'
+const EARTH = 'M 166 622 L 660 622'
+
+/* The main board, under the controls, and what is on it. */
+const PCB = { x: 624, y: 214, w: 200, h: 252 }
+const TRACES = [
+  'M 696 252 L 730 252 L 742 264 L 742 300',
+  'M 696 266 L 718 266 L 726 274 L 726 300',
+  'M 676 340 L 706 340',
+  'M 676 372 L 706 372',
+  'M 736 360 L 736 398 L 724 410 L 650 410',
+  'M 766 316 L 784 316 L 796 304 L 796 236',
+  'M 766 344 L 782 344 L 792 354 L 792 440 L 780 452 L 722 452',
+  'M 640 296 L 640 312',
+]
+const VIAS = [[742, 300], [726, 300], [650, 410], [796, 236], [722, 452], [640, 296]]
+/** A chip seen from above, `pins` a side along the sides `sides` names. */
+function Chip({ x, y, w, h, pins, sides }) {
+  const out = []
+  const step = (len, n) => len / (n + 1)
+  if (sides.includes('x')) {
+    for (let k = 1; k <= pins; k += 1) {
+      const py = y + k * step(h, pins) - 2
+      out.push(<rect key={`l${k}`} x={x - 7} y={py} width="7" height="4" className="vpf-metal-dark" />)
+      out.push(<rect key={`r${k}`} x={x + w} y={py} width="7" height="4" className="vpf-metal-dark" />)
+    }
+  }
+  if (sides.includes('y')) {
+    for (let k = 1; k <= pins; k += 1) {
+      const px = x + k * step(w, pins) - 2
+      out.push(<rect key={`t${k}`} x={px} y={y - 7} width="4" height="7" className="vpf-metal-dark" />)
+      out.push(<rect key={`b${k}`} x={px} y={y + h} width="4" height="7" className="vpf-metal-dark" />)
+    }
+  }
+  return (
+    <>
+      {out}
+      <rect x={x} y={y} width={w} height={h} rx="2" className="vpf-chip" />
+      <circle cx={x + 7} cy={y + 7} r="2.5" className="vpf-body-light" />
+    </>
+  )
+}
+/** An electrolytic capacitor from above: its can, rim and vent cross. */
+function Cap({ cx, cy, r }) {
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={r} className="vpf-cap" />
+      <circle cx={cx} cy={cy} r={r * 0.72} className="vpf-metal-dark" />
+      <rect x={cx - r * 0.5} y={cy - 1} width={r} height="2" className="vpf-cap" />
+      <rect x={cx - 1} y={cy - r * 0.5} width="2" height={r} className="vpf-cap" />
+    </>
+  )
+}
+const SCREWS = [[50, 50], [890, 50], [50, 630], [890, 630]]
+
+/** What the frosted case shows of the inside: board, chips, power supply,
+    wires, the corner screws and the light ring under the platter. Drawn
+    sharp; Case blurs it. */
+function Internals() {
+  return (
+    <>
+      {/* Screws holding the floor, a slot across each. */}
+      {SCREWS.map(([x, y]) => (
+        <g key={`${x},${y}`}>
+          <circle cx={x} cy={y} r="9" className="vpf-metal" />
+          <rect x={x - 6} y={y - 1.5} width="12" height="3" className="vpf-metal-dark" />
+        </g>
+      ))}
+
+      {/* The power socket in the front edge: a shroud and three pins. */}
+      <rect x="104" y="612" width="62" height="40" rx="4" className="vpf-body-light" />
+      <rect x="112" y="618" width="46" height="28" rx="3" className="vpf-chip" />
+      {[122, 133, 144].map((x) => (
+        <rect key={x} x={x} y="626" width="5" height="12" className="vpf-metal" />
+      ))}
+      <path d={EARTH} className="vpw vpw-sleeve" strokeWidth="8" />
+      <path d={EARTH} className="vpw vpw-mid" strokeWidth="4.5" />
+      <path d={MAINS} className="vpw vpw-sleeve" strokeWidth="15" />
+      <path d={MAINS} className="vpw vpw-ribbon" strokeWidth="11" />
+
+      {/* The ribbon cable from the board under the platter, to the motor. */}
+      <path d="M 640 380 L 540 380" className="vpw vpw-ribbon" strokeWidth="26" strokeLinecap="butt" />
+      {[-7, 0, 7].map((d) => (
+        <path key={d} d={`M 640 ${380 + d} L 540 ${380 + d}`} className="vpw vpw-ribbon-line" strokeWidth="1.5" />
+      ))}
+
+      {/* The main board. */}
+      <rect x={PCB.x} y={PCB.y} width={PCB.w} height={PCB.h} rx="8" className="vpf-pcb" />
+      {TRACES.map((d) => (
+        <path key={d} d={d} className="vpw vpw-trace" strokeWidth="3" />
+      ))}
+      {VIAS.map(([x, y]) => (
+        <circle key={`${x},${y}`} cx={x} cy={y} r="4" className="vpf-glow" />
+      ))}
+      {/* A heatsink: a base plate and its fins. */}
+      <rect x="640" y="228" width="56" height="50" className="vpf-metal-dark" />
+      {Array.from({ length: 6 }, (_, k) => (
+        <rect key={k} x={643 + k * 9} y="228" width="4" height="50" className="vpf-metal" />
+      ))}
+      <Chip x={706} y={300} w={60} h={60} pins={5} sides="xy" />
+      <Chip x={640} y={322} w={36} h={70} pins={5} sides="x" />
+      <Cap cx={790} cy={262} r={13} />
+      <Cap cx={760} cy={262} r={10} />
+      <Cap cx={664} cy={436} r={15} />
+      {/* A pin header down the board's right edge. */}
+      {Array.from({ length: 8 }, (_, k) => (
+        <rect key={k} x="806" y={308 + k * 15} width="9" height="9" className="vpf-metal-light" />
+      ))}
+
+      {/* The power supply: a transformer (laminated core, winding)
+          and its smoothing capacitors, wired up to the board. */}
+      <path d="M 694 584 C 694 540 676 520 676 466" className="vpw vpw-mid" strokeWidth="5" />
+      <path d="M 712 584 C 714 530 744 520 744 466" className="vpw vpw-dark" strokeWidth="5" />
+      <rect x="660" y="584" width="72" height="58" rx="3" className="vpf-body-light" />
+      {[596, 610, 624].map((y) => (
+        <rect key={y} x="660" y={y} width="72" height="2" className="vpf-body-dark" />
+      ))}
+      <rect x="678" y="584" width="36" height="58" rx="2" className="vpf-winding" />
+      <Cap cx={764} cy={612} r={20} />
+      <Cap cx={800} cy={600} r={11} />
+
+      {/* The loom: a dark sleeve under each wire so it reads on the board
+          and the floor alike, then the wires, then the ties. */}
+      {LOOM.map(([, o]) => (
+        <path key={`s${o}`} d={loom(o)} className="vpw vpw-sleeve" strokeWidth="9" />
+      ))}
+      {LOOM.map(([cls, o]) => (
+        <path key={o} d={loom(o)} className={`vpw ${cls}`} strokeWidth="5.5" />
+      ))}
+      {TIES.map((t) => (
+        <rect key={`${t.x},${t.y}`} x={t.x - t.w / 2} y={t.y - t.h / 2} width={t.w} height={t.h} rx="2" className="vpf-body-dark" />
+      ))}
+
+      {/* The light ring under the platter's edge, which the frost turns into
+          a soft white halo round it. */}
+      <circle cx={PLATTER.x} cy={PLATTER.y} r={PLATTER.r + 9} className="vpw vpw-glow" strokeWidth="9" />
+    </>
+  )
+}
+
+/* Glints across the frosted top: two light bands on the light's diagonal,
+   corner to corner of the top-left of the case (the platter covers the
+   rest of them). Their ends lie on the top face's edges, so they need no
+   clip. */
+const GLINTS = [
+  '190,24 290,24 24,290 24,190',
+  '330,24 356,24 24,356 24,330',
+]
+
+/** The body: a black floor, the electronics on it seen through the frost
+    (blurred by `frostId`), the frosted acrylic top, and round it a
+    brushed-metal bezel, each facet lit or shaded by the way it faces, with
+    its outer edge catching the light. */
+function Case({ frostId, metal }) {
+  return (
+    <>
+      <defs>
+        <filter id={frostId} x="-5%" y="-5%" width="110%" height="110%">
+          <feGaussianBlur stdDeviation="3.2" />
+        </filter>
+      </defs>
+      <polygon points={PLINTH_SHAPE.outline} className="vpf-case-floor" />
+      <g filter={`url(#${frostId})`}>
+        <Internals />
+      </g>
+      <polygon points={PLINTH_SHAPE.top} className="vpf-frost" />
+      {PLINTH_SHAPE.faces.map((f, i) => {
+        const face = facetOf(f.n[0], f.n[1])
+        return (
+          <g key={i}>
+            <polygon points={f.points} fill={metal('bezel')} />
+            {face && <polygon points={f.points} className={`vp-facet-${face}`} />}
+          </g>
+        )
+      })}
+      {GLINTS.map((points) => (
+        <polygon key={points} points={points} className="vp-frost-glint" />
+      ))}
+      <polygon points={PLINTH_SHAPE.outline} className="vp-frost-edge" />
+      <polygon points={PLINTH_SHAPE.top} className="vp-frost-edge vp-frost-edge--inner" />
+    </>
+  )
+}
+
+/* --- the player ------------------------------------------------------------ */
 
 const RIM_SIDES = 40
 const RIM = Array.from({ length: RIM_SIDES }, (_, k) => {
   const a0 = (k / RIM_SIDES) * 360
   const a1 = ((k + 1) / RIM_SIDES) * 360
-  const mid = rad((a0 + a1) / 2)
-  return {
-    points: arcBand(PLATTER.r - 17, PLATTER.r, a0, a1, PLATTER.x, PLATTER.y, 1),
-    className: tone('metal', Math.cos(mid), Math.sin(mid)),
-  }
+  return { points: arcBand(PLATTER.r - 17, PLATTER.r, a0, a1, PLATTER.x, PLATTER.y, 1) }
 })
 /* The mat: a 40-gon in six alternating fan facets. */
 const MAT_R = PLATTER.r - 17
@@ -245,7 +499,7 @@ const CUE = { x: ARM.x + 76, y: ARM.y + 66 }
 const CONTROLS_X = 880
 
 /** The arm, in its own frame: pointing along +x from the pivot. */
-function ArmShape({ shadow = false }) {
+function ArmShape({ shadow = false, metal }) {
   const tube = HEAD.at
   const head = `translate(${HEAD.at} 0) rotate(${HEAD.bend})`
   if (shadow) {
@@ -266,17 +520,16 @@ function ArmShape({ shadow = false }) {
       <rect x="-106" y="-23" width="70" height="15" className="vpf-vinyl-light" />
       <rect x="-106" y="-8" width="70" height="16" className="vpf-vinyl" />
       <rect x="-106" y="8" width="70" height="15" className="vpf-vinyl-dark" />
-      <rect x="-36" y="-5" width="36" height="10" className="vpf-metal-dark" />
-      {/* The tube: a lit upper facet and a base lower one. */}
-      <rect x="0" y="-6" width={tube} height="6" className="vpf-metal-light" />
-      <rect x="0" y="0" width={tube} height="6" className="vpf-metal" />
+      <rect x="-36" y="-5" width="36" height="10" fill={metal('bar')} />
+      {/* The tube: chrome, lit along its top edge. */}
+      <rect x="0" y="-6" width={tube} height="12" fill={metal('bar')} />
       <g transform={head}>
-        <polygon points="-4,-8 66,-15 74,-11 74,0 -4,0" className="vpf-metal-light" />
-        <polygon points="-4,0 74,0 74,13 66,16 -4,8" className="vpf-metal" />
-        {/* The cartridge, in the site's maroon, and the finger lift. */}
-        <rect x="36" y="-10" width="32" height="20" className="vpf-maroon" />
-        <rect x="36" y="-10" width="32" height="7" className="vpf-maroon-light" />
-        <polygon points="46,-14 57,-14 64,-38 56,-40" className="vpf-metal-dark" />
+        <polygon points="-4,-8 66,-15 74,-11 74,13 66,16 -4,8" fill={metal('chrome')} />
+        <polygon points="-4,0 74,0 74,13 66,16 -4,8" className="vp-facet-dark" />
+        {/* The cartridge, black, and the finger lift. */}
+        <rect x="36" y="-10" width="32" height="20" className="vpf-key" />
+        <rect x="36" y="-10" width="32" height="7" className="vpf-key-light" />
+        <polygon points="46,-14 57,-14 64,-38 56,-40" fill={metal('chrome')} />
       </g>
     </>
   )
@@ -319,6 +572,10 @@ export function RecordPlayer({
         }
       : undefined
   const hasRecord = platterIndex !== null
+  const uid = useId()
+  const frostId = `${uid}frost`
+  const metalIds = { chrome: `${uid}chrome`, bar: `${uid}bar`, rim: `${uid}rim`, bezel: `${uid}bezel` }
+  const metal = (k) => `url(#${metalIds[k]})`
 
   const stopKeys = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -329,26 +586,25 @@ export function RecordPlayer({
 
   return (
     <g>
+      <MetalDefs ids={metalIds} />
       {under && (
         <>
           {/* --- the plinth ------------------------------------------------- */}
           <g className="vp-shadow">
             <polygon points={PLINTH_SHAPE.outline} transform="translate(22 28)" />
           </g>
-          {PLINTH_SHAPE.faces.map((f, i) => (
-            <polygon key={i} points={f.points} className={tone('sage', f.n[0], f.n[1])} />
+          <Case frostId={frostId} metal={metal} />
+          {/* Chrome hinges along the back, where a dust cover would hang. */}
+          {[120, 520].map((x) => (
+            <rect key={x} x={x} y={PLINTH.bevel} width="120" height="12" fill={metal('bar')} />
           ))}
-          <polygon points={PLINTH_SHAPE.top} className="vpf-sage" />
-          {/* A faint seam where a dust cover would hinge, along the back. */}
-          <rect x="120" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
-          <rect x="520" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
 
           {/* --- the platter -------------------------------------------------- */}
           <g className="vp-shadow">
             <polygon points={ngon(RIM_SIDES, PLATTER.r, PLATTER.x + 10, PLATTER.y + 13)} />
           </g>
           {RIM.map((f, i) => (
-            <polygon key={i} points={f.points} className={f.className} />
+            <polygon key={i} points={f.points} fill={metal('rim')} />
           ))}
           {MAT.map((points, i) => (
             <polygon key={i} points={points} className={i % 2 ? 'vpf-mat-light' : 'vpf-mat'} />
@@ -401,18 +657,16 @@ export function RecordPlayer({
         <>
           {/* --- controls, down the right edge -------------------------------- */}
           <circle ref={reg('led')} cx={CONTROLS_X} cy="250" r="8" className={ledOn ? 'vpf-led-on' : 'vpf-led-off'} />
-          <rect x={CONTROLS_X - 15} y="282" width="30" height="20" rx="3" className="vpf-sage-dark" />
-          <rect x={CONTROLS_X - 15} y="282" width="30" height="7" rx="2" className="vpf-metal-dark" />
-          <rect x={CONTROLS_X - 15} y="310" width="30" height="20" rx="3" className="vpf-metal" />
-          <rect x={CONTROLS_X - 15} y="310" width="30" height="7" rx="2" className="vpf-metal-light" />
+          <rect x={CONTROLS_X - 15} y="282" width="30" height="20" rx="3" className="vpf-body-dark" />
+          <rect x={CONTROLS_X - 15} y="282" width="30" height="7" rx="2" fill={metal('bar')} />
+          <rect x={CONTROLS_X - 15} y="310" width="30" height="20" rx="3" fill={metal('chrome')} />
           {/* Pitch slider: the slot, centre ticks, and the knob at zero. */}
-          <rect x={CONTROLS_X - 7} y="360" width="14" height="190" rx="3" className="vpf-sage-dark" />
+          <rect x={CONTROLS_X - 7} y="360" width="14" height="190" rx="3" className="vpf-body-dark" />
           {[380, 412, 488, 520].map((y) => (
-            <rect key={y} x={CONTROLS_X - 26} y={y} width="10" height="3" className="vpf-sage-dark" />
+            <rect key={y} x={CONTROLS_X - 26} y={y} width="10" height="3" className="vpf-metal-dark" />
           ))}
-          <rect x={CONTROLS_X - 30} y="448" width="14" height="4" className="vpf-sage-light" />
-          <rect x={CONTROLS_X - 20} y="441" width="40" height="9" className="vpf-metal-light" />
-          <rect x={CONTROLS_X - 20} y="450" width="40" height="9" className="vpf-metal" />
+          <rect x={CONTROLS_X - 30} y="448" width="14" height="4" className="vpf-glow" />
+          <rect x={CONTROLS_X - 20} y="441" width="40" height="18" rx="2" fill={metal('bar')} />
           {/* Start/stop: a stop button while a record plays. */}
           <g
             role={onStop ? 'button' : undefined}
@@ -427,12 +681,12 @@ export function RecordPlayer({
             <g className="vp-shadow">
               <rect x={CONTROLS_X - 34 + 5} y={584 + 6} width="68" height="52" rx="5" />
             </g>
-            <rect x={CONTROLS_X - 34} y="584" width="68" height="52" rx="5" className="vpf-maroon-dark" />
-            <rect x={CONTROLS_X - 30} y="586" width="60" height="42" rx="4" className="vpf-maroon" />
-            <rect x={CONTROLS_X - 30} y="586" width="60" height="14" rx="4" className="vpf-maroon-light" />
-            <rect x={CONTROLS_X - 9} y="600" width="18" height="18" className="vpf-metal-light" />
-            {/* Its keyboard focus ring, drawn round the key on the sage, where
-                ink shows up (on the maroon face it would not). */}
+            <rect x={CONTROLS_X - 34} y="584" width="68" height="52" rx="5" className="vpf-key-dark" />
+            <rect x={CONTROLS_X - 30} y="586" width="60" height="42" rx="4" className="vpf-key" />
+            <rect x={CONTROLS_X - 30} y="586" width="60" height="14" rx="4" className="vpf-key-light" />
+            <rect x={CONTROLS_X - 9} y="600" width="18" height="18" fill={metal('chrome')} />
+            {/* Its keyboard focus ring, drawn round the key on the case in
+                white (ink would not show on the black key or the frost). */}
             {onStop && (
               <rect x={CONTROLS_X - 44} y="574" width="88" height="74" rx="10" className="vp-key-ring" />
             )}
@@ -443,12 +697,12 @@ export function RecordPlayer({
           <g className="vp-shadow">
             <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" transform="translate(6 8)" />
           </g>
-          <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" className="vpf-sage-dark" />
-          <rect x={ARM.x - 15} y="496" width="30" height="12" rx="3" className="vpf-metal-dark" />
+          <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" className="vpf-body" />
+          <rect x={ARM.x - 15} y="496" width="30" height="12" rx="3" fill={metal('bar')} />
           {/* Cue lever on its plinth. */}
-          <rect x={CUE.x - 14} y={CUE.y - 10} width="28" height="58" rx="4" className="vpf-sage-dark" />
+          <rect x={CUE.x - 14} y={CUE.y - 10} width="28" height="58" rx="4" className="vpf-body" />
           <g ref={reg('cue')} transform={cueTransform(armLift)}>
-            <rect x={CUE.x - 4} y={CUE.y - 26} width="8" height="46" rx="3" className="vpf-metal-light" />
+            <rect x={CUE.x - 4} y={CUE.y - 26} width="8" height="46" rx="3" fill={metal('chrome')} />
           </g>
           {/* Pivot: a faceted base under the arm and a bearing cap over it. */}
           <g className="vp-shadow">
@@ -466,7 +720,7 @@ export function RecordPlayer({
           </g>
           <g ref={reg('arm')} transform={armTransform(armAngle)}>
             <g transform={`translate(${ARM.x} ${ARM.y})`}>
-              <ArmShape />
+              <ArmShape metal={metal} />
             </g>
           </g>
           <Dome n={8} r={20} cx={ARM.x} cy={ARM.y} material="metal" turn={0} />

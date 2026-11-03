@@ -97,7 +97,7 @@ export function WorksGrid({ className = '', ...rest }) {
         onClickCapture={onClick}
         onPointerOver={warm}
         onFocus={warm}
-        className={`grid w-full max-w-[120rem] grid-cols-1 gap-[1.5rem] lg:grid-cols-2`}
+        className={`grid w-full max-w-[120rem] grid-cols-1 gap-[1.5rem] [@media(hover:hover)]:gap-y-[var(--card-blurb-room)] lg:grid-cols-2`}
       >
         {WORKS_GRID.map((study) => (
           <li key={study.slug} className="min-w-0">

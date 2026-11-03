@@ -8,16 +8,18 @@ import { useInView } from '@/lib/useInView'
    One card in the Works grid.
 
    Minimal by client request: the card IS the thumbnail — a 16:9 still/video
-   filling the whole card, no white frame, no meta row, no Pixelta title. Two
-   things sit on top of it:
+   filling the whole card, no white frame, no meta row, no Pixelta title. One
+   thing sits on it, and one drops down below it:
 
-     chip         top-left, always shown: the client's logo and the study's
+     chip         bottom-left, always shown: the client's logo and the study's
                   name in burgundy on a frosted light pill, so the card can be
                   identified at a glance without a caption under it.
-     description  bottom band, HIDDEN by default. A pointer that can hover
-                  reveals it on hover; a keyboard reveals it on focus. Touch
-                  never sees it — a tap opens the case study, which says the
-                  same thing at length.
+     description  under the card, HIDDEN by default: a bare uppercase caption
+                  in soft burgundy, no panel behind it, that fades up into the
+                  space below the card's bottom edge (WorksGrid leaves room
+                  for it between rows). A pointer that can hover reveals it on
+                  hover; a keyboard reveals it on focus. Touch never sees it —
+                  a tap opens the case study, which says the same at length.
 
    Every card shows a still the moment it renders, whatever the input: the
    poster (one frame of the walkthrough, ~30-50 KB of WebP) is a plain <img>
@@ -53,7 +55,7 @@ const FROST = 'bg-[var(--card-chip-bg)] backdrop-blur-md'
 function Thumbnail({ study, thumbRef, videoRef, mode, near, children }) {
   const comingSoon = study.status === 'coming-soon'
   return (
-    <div ref={thumbRef} data-card-thumb="" className="absolute inset-0">
+    <div ref={thumbRef} data-card-thumb="" className="absolute inset-0 isolate">
       {/* A card that brings its own picture (the Vinyl Player's scene). */}
       {children}
 
@@ -108,11 +110,15 @@ function Thumbnail({ study, thumbRef, videoRef, mode, near, children }) {
           </span>
         </span>
       )}
+
+      {/* Film grain over the whole picture, still or playing (see
+          .card-grain). `isolate` on this box keeps its blend to the picture. */}
+      <span aria-hidden="true" className="card-grain" />
     </div>
   )
 }
 
-/** Top-left: the client's logo and the study's name. The name is the card
+/** Bottom-left: the client's logo and the study's name. The name is the card
  *  link's accessible name, so it is real text, not an image. A card with no
  *  logo (the Vinyl Player) shows the name alone, padded evenly, at the same
  *  height as the others. */
@@ -120,7 +126,7 @@ function Chip({ study }) {
   return (
     <span
       data-card-chip=""
-      className={`absolute left-[0.875rem] top-[0.875rem] inline-flex max-w-[calc(100%-1.75rem)] items-center gap-[0.5rem] rounded-[var(--radius-pill)] py-[0.3rem] ${study.logo ? 'pl-[0.35rem]' : 'min-h-[2.1rem] pl-[0.85rem]'} pr-[0.85rem] ${FROST}`}
+      className={`absolute bottom-[0.875rem] left-[0.875rem] inline-flex max-w-[calc(100%-1.75rem)] items-center gap-[0.5rem] rounded-[var(--radius-pill)] py-[0.3rem] ${study.logo ? 'pl-[0.35rem]' : 'min-h-[2.1rem] pl-[0.85rem]'} pr-[0.85rem] ${FROST}`}
     >
       {study.logo && (
         <img
@@ -141,20 +147,31 @@ function Chip({ study }) {
   )
 }
 
-/** Bottom band: the one-line description. Hidden until hover (pointers that
- *  can hover) or keyboard focus; aria-hidden because it repeats, in short,
- *  what the case study opens with. */
+/** Under the card: the one-line description, as a caption. The card link's
+ *  next sibling, so it answers the link's hover and focus as a Tailwind
+ *  peer. Hidden until hover (pointers that can hover) or keyboard focus, and
+ *  never in the pointer's way; aria-hidden because it repeats, in short, what
+ *  the case study opens with.
+ *
+ *  Type: one sentence on one line, uppercase, flush with the card's left
+ *  edge. Semibold rather than the eyebrow's 800 because it is a sentence, not
+ *  a label, and tracked tighter (0.04em) for the same reason. Its size
+ *  (--card-blurb-size) shrinks with the card where the sentence would not
+ *  otherwise fit; an ellipsis is the last resort, not the plan.
+ *
+ *  Motion: it rises 0.5rem as it fades in, a beat after the card is reached
+ *  (75ms), and leaves at once. Reduced motion keeps the fade, drops the rise. */
 function Description({ study }) {
   return (
     <span
       data-card-blurb=""
       aria-hidden="true"
       className={
-        'absolute inset-x-[0.875rem] bottom-[0.875rem] rounded-[1rem] px-[1rem] py-[0.75rem] ' +
-        'text-[length:var(--text-works-meta)] font-medium leading-snug text-[var(--color-maroon)] ' +
-        `${FROST} translate-y-2 opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-brand)] ` +
-        '[@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100 ' +
-        'group-focus-visible:translate-y-0 group-focus-visible:opacity-100 motion-reduce:translate-y-0'
+        'pointer-events-none absolute inset-x-0 top-[calc(100%+0.75rem)] block overflow-hidden text-ellipsis whitespace-nowrap ' +
+        'text-[length:var(--card-blurb-size)] font-semibold uppercase leading-[1.6] tracking-[0.04em] text-[var(--card-blurb-ink)] ' +
+        'translate-y-[0.5rem] opacity-0 transition-[opacity,translate] duration-[450ms] ease-[var(--ease-brand)] ' +
+        '[@media(hover:hover)]:peer-hover:translate-y-0 [@media(hover:hover)]:peer-hover:opacity-100 [@media(hover:hover)]:peer-hover:delay-75 ' +
+        'peer-focus-visible:translate-y-0 peer-focus-visible:opacity-100 motion-reduce:translate-y-0'
       }
     >
       {study.blurb}
@@ -241,15 +258,21 @@ export function WorkCard({ study, thumbnail, onOpen }) {
     )
   }
 
+  // The description lives outside the link (the card clips what is inside
+  // it), so the two share a wrapper. It hangs below the wrapper, in the room
+  // WorksGrid leaves between rows. The wrapper is a size container so the
+  // description can size itself to the card's width.
   return (
-    <Link
-      to={`/works/${study.slug}`}
-      data-card=""
-      className={`${CARD} hover:shadow-md focus-visible:shadow-md`}
-    >
-      {thumb}
-      <Chip study={study} />
+    <div className="@container relative">
+      <Link
+        to={`/works/${study.slug}`}
+        data-card=""
+        className={`${CARD} peer hover:shadow-md focus-visible:shadow-md`}
+      >
+        {thumb}
+        <Chip study={study} />
+      </Link>
       <Description study={study} />
-    </Link>
+    </div>
   )
 }
