@@ -32,7 +32,7 @@ export const isMediaAbort = (r) =>
 /* SwiftShader (software GL) is what lets the landing page's WebGL drawings
    start in a headless browser, but it rasterises everything in software: a
    pop-up over the Works grid paints at well under 1 fps. A check that needs
-   no WebGL and does need frames (the ASCII Flowers canvas) passes
+   no WebGL and does need frames (the Binary Bloom canvas) passes
    `{ gpu: true }` to use the machine's GPU instead. */
 export function launch({ gpu = false } = {}) {
   return puppeteer.launch({

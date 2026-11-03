@@ -190,10 +190,16 @@
   --vp-led-off: #6b5048;
   --vp-led-on: #ff6a3d;
 
-  /* --- ASCII Flowers (the second Works toy) ------------------------------- */
-  /* The square the flower is drawn on: a very dark brown, the turntable's
-     brown (#6b5048) taken nearly to black, so a bloom's glow shows. */
-  --fl-ground: #1c1411;
+  /* --- Binary Bloom (the second Works toy) -------------------------------- */
+  /* The square the flower is drawn on: a very dark, cool brown (almost as
+     much blue as green in it, so it reads as brown-grey rather than warm),
+     so a bloom's glow shows. The unchosen flower names are set in it too. */
+  --fl-ground: #221e1f;
+  /* The chosen flower's name and dot: the equaliser's wine, a burgundy that
+     reads clearly against the brown (10:1 on white). */
+  --fl-chosen: #7a1a30;
+  /* The botanical name in the square's corner: a calligraphic serif italic. */
+  --font-botanical: 'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif;
   /* The three colours for the drawing, its digits and its glow: burgundy,
      grey and brown, each taken light enough to read on the dark square.
      Burgundy is the equaliser's middle step, grey the window dot's grey,

@@ -9,7 +9,7 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
 /* ---------------------------------------------------------------------------
    The two-column card grid on its own: no Layout, no nav, no page chrome.
    (WORKS_GRID: four case studies and two toys: the Vinyl Player, which sits
-   beside Lipton and puts Shore-Up on a third row, and ASCII Flowers beside
+   beside Lipton and puts Shore-Up on a third row, and Binary Bloom beside
    Shore-Up.)
 
    It is rendered twice: as the second screen of the landing page (under the
@@ -61,7 +61,7 @@ export function WorksGrid({ className = '', ...rest }) {
   }, [])
   const closeVinyl = useCallback(() => setVinylOpen(false), [])
 
-  // ASCII Flowers opens its pop-up the same way (no audio to wake).
+  // Binary Bloom opens its pop-up the same way (no audio to wake).
   const [flowersOpen, setFlowersOpen] = useState(false)
   const flowersCard = useRef(null)
   const openFlowers = useCallback((event) => {
@@ -114,7 +114,7 @@ export function WorksGrid({ className = '', ...rest }) {
           <li key={study.slug} className="min-w-0">
             {study.slug === 'vinyl-player' ? (
               <WorkCard study={study} thumbnail={<VinylThumb />} onOpen={openVinyl} />
-            ) : study.slug === 'ascii-flowers' ? (
+            ) : study.slug === 'binary-bloom' ? (
               <WorkCard study={study} thumbnail={<FlowerThumb paused={flowersOpen || vinylOpen} />} onOpen={openFlowers} />
             ) : (
               <WorkCard study={study} />

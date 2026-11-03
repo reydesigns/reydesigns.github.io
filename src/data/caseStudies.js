@@ -95,24 +95,24 @@ export const VINYL_PLAYER = {
 }
 
 /**
- * ASCII Flowers: the second toy. Its card opens a pop-up (FlowerGenerator)
- * where a line-drawn flower, seen from above, blooms under the pointer and
- * sheds ASCII pollen. Kept out of CASE_STUDIES for the same reasons as the
- * Vinyl Player.
+ * Binary Bloom: the second toy. Its card opens a pop-up (FlowerGenerator)
+ * where a bitmap line drawing of a plant, covered in glitching binary,
+ * blooms flower by flower under the pointer. Kept out of CASE_STUDIES for
+ * the same reasons as the Vinyl Player.
  */
-export const ASCII_FLOWERS = {
-  slug: 'ascii-flowers',
-  title: 'ASCII Flowers',
-  metaTitle: 'ASCII Flowers',
+export const BINARY_BLOOM = {
+  slug: 'binary-bloom',
+  title: 'Binary Bloom',
+  metaTitle: 'Binary Bloom',
   tag: 'INTERACTIVE',
   status: 'toy',
 }
 
 /** The Works grid's cards, in order: the Vinyl Player sits beside Lipton on
  *  the second row, which moves Shore-Up down to the third, under Lipton, and
- *  ASCII Flowers fills the place beside it. */
+ *  Binary Bloom fills the place beside it. */
 export const WORKS_GRID = CASE_STUDIES.flatMap((c) =>
-  c.slug === 'lipton' ? [c, VINYL_PLAYER] : c.slug === 'shore-up' ? [c, ASCII_FLOWERS] : [c],
+  c.slug === 'lipton' ? [c, VINYL_PLAYER] : c.slug === 'shore-up' ? [c, BINARY_BLOOM] : [c],
 )
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)

@@ -8,7 +8,7 @@ import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 
 /* ---------------------------------------------------------------------------
-   ASCII Flowers: the Works card that opens a little flower generator.
+   Binary Bloom: the Works card that opens a little flower generator.
 
    A plant drawn in a faint bitmap line on a dark brown square (a 3D model,
    painted by lib/flowers/render.js), covered in binary digits that glitch in
@@ -27,8 +27,10 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
    The pop-up follows VinylPlayerModal's: a native <dialog> (Escape, focus
    trap and the top layer come free), the page behind held still, the custom
    cursor moved inside, a short animated close, and focus handed back to the
-   card. It borrows the Vinyl Player's dialog and close-button styles, so
-   the two toys open and close alike.
+   card. It borrows the Vinyl Player's dialog styles, so the two toys open
+   and close alike, but shows no close button: Escape or a click outside
+   closes it, and the button is there only for a keyboard, seen when it has
+   focus.
 --------------------------------------------------------------------------- */
 
 const CLOSE_MS = 180
@@ -270,17 +272,11 @@ function FlowerGenerator({ onClose, reduced }) {
 
   return (
     <div className="fl-frame">
-      <button type="button" className="vp-close" onClick={onClose} aria-label="Close">
-        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-          <path d="M5 5 15 15M15 5 5 15" />
-        </svg>
-      </button>
-
       <div className="fl-head">
         <h2 id="fl-title" className="fl-title font-display">
-          ASCII Flowers
+          Binary Bloom
         </h2>
-        <p className="fl-hint">{canHover ? 'Hover a flower to bloom it' : 'Tap a flower to bloom it'}</p>
+        <p className="fl-hint">{canHover ? 'Hover to bring it to life' : 'Tap to bring it to life'}</p>
       </div>
 
       <div className="fl-controls">
@@ -357,6 +353,11 @@ function FlowerGenerator({ onClose, reduced }) {
             {species.latin}
           </span>
         </span>
+      </button>
+
+      {/* Last, so the pop-up does not open with focus on it. */}
+      <button type="button" className="fl-close" onClick={onClose}>
+        Close
       </button>
     </div>
   )

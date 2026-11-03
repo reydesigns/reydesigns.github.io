@@ -55,7 +55,7 @@ await part('cards', async (browser) => {
       ratio: el.getBoundingClientRect().width / el.getBoundingClientRect().height,
       blurb: el.querySelector('[data-card-blurb]') ? Number(getComputedStyle(el.querySelector('[data-card-blurb]')).opacity) : null,
     })))
-  // Four studies and two toys, the Vinyl Player and ASCII Flowers (each opens
+  // Four studies and two toys, the Vinyl Player and Binary Bloom (each opens
   // its own pop-up, not a study).
   check('six cards', cards.length === 6, cards.length)
   check('cards are 16:9', cards.every((c) => Math.abs(c.ratio - 16 / 9) < 0.02), cards.map((c) => c.ratio.toFixed(3)).join(' '))

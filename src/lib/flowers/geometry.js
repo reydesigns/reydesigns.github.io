@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   The flower generator's geometry kit (ASCII Flowers on the Works page).
+   The flower generator's geometry kit (Binary Bloom on the Works page).
 
    Everything is built from three kinds of part, all in world units with y up:
 

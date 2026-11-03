@@ -1,11 +1,13 @@
 /**
- * ASCII Flowers: the Works card and its pop-up (FlowerGenerator).
+ * Binary Bloom: the Works card and its pop-up (FlowerGenerator).
  *
  *   node scripts/checks/flowers.mjs            (dev server on :5173)
  *   SHOTS=/some/dir node scripts/checks/flowers.mjs   also saves screenshots
  *
  * Desktop: the card sits beside Shore-Up and draws; a click opens the
- * pop-up, with the flower on a dark square; hovering one flower blooms that
+ * pop-up, titled Binary Bloom with no close button to see, the flower on a
+ * dark square with its botanical name in the top corner, and a plain list
+ * of plants (the chosen one burgundy); hovering one flower blooms that
  * flower alone, and it closes again after the pointer leaves; Enter opens
  * them all, one after another; the digits keep changing; picking one of the
  * three swatches recolours the drawing; every plant draws; Escape closes and
@@ -97,7 +99,7 @@ const browser = await launch({ gpu: true })
   const order = await page.evaluate(() =>
     [...document.querySelectorAll('[data-card-name]')].map((n) => n.textContent.trim()),
   )
-  check('card sits beside Shore-Up', order.at(-1) === 'ASCII Flowers' && order.at(-2) === 'Shore-Up', order.join(' | '))
+  check('card sits beside Shore-Up', order.at(-1) === 'Binary Bloom' && order.at(-2) === 'Shore-Up', order.join(' | '))
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)
@@ -134,7 +136,51 @@ const browser = await launch({ gpu: true })
     const bg = getComputedStyle(document.querySelector('.fl-stage .fl-square')).backgroundColor
     return { w: Math.round(r.width), h: Math.round(r.height), bg }
   })
-  check('the flower sits on a dark square', square.w === square.h && square.w > 300 && /rgb\(2\d, 2\d, 1\d\)/.test(square.bg), JSON.stringify(square))
+  const dark = square.bg.match(/\d+/g).map(Number).every((v) => v < 48)
+  check('the flower sits on a dark square', square.w === square.h && square.w > 300 && dark, JSON.stringify(square))
+  const room = await page.evaluate(() => {
+    const st = document.querySelector('.fl-stage').getBoundingClientRect()
+    const sq = document.querySelector('.fl-stage .fl-square').getBoundingClientRect()
+    return [sq.left - st.left, st.right - sq.right, sq.top - st.top, st.bottom - sq.bottom].map(Math.round)
+  })
+  check('white space on all four sides, centred', room.every((v) => v >= 28) && Math.abs(room[0] - room[1]) <= 2 && Math.abs(room[2] - room[3]) <= 2, room.join(' '))
+  const head = await page.evaluate(() => ({
+    title: document.querySelector('#fl-title')?.textContent,
+    hint: document.querySelector('.fl-hint')?.textContent,
+    closeShown: (() => {
+      const b = document.querySelector('.fl-close')
+      const r = b?.getBoundingClientRect()
+      return !!r && r.width > 2 && r.height > 2
+    })(),
+    oldClose: !!document.querySelector('.fl-frame .vp-close'),
+  }))
+  check('titled Binary Bloom, with the new hint', head.title === 'Binary Bloom' && head.hint === 'Hover to bring it to life', JSON.stringify(head))
+  check('no close button to see', !head.closeShown && !head.oldClose)
+  const label = await page.evaluate(() => {
+    const sq = document.querySelector('.fl-stage .fl-square').getBoundingClientRect()
+    const el = document.querySelector('.fl-latin')
+    const r = el.getBoundingClientRect()
+    return {
+      topRight: r.top - sq.top < 30 && sq.right - r.right < 30,
+      font: getComputedStyle(el).fontFamily,
+      loaded: document.fonts.check('italic 500 16px "Cormorant Garamond"'),
+    }
+  })
+  check('the botanical name sits top right, in Cormorant italic', label.topRight && /Cormorant/.test(label.font) && label.loaded, JSON.stringify(label))
+  const options = await page.evaluate(() =>
+    [...document.querySelectorAll('.fl-option')].map((o) => ({
+      on: o.querySelector('input').checked,
+      color: getComputedStyle(o).color,
+      bg: getComputedStyle(o).backgroundColor,
+    })),
+  )
+  const chosen = options.find((o) => o.on)
+  const others = options.filter((o) => !o.on)
+  check(
+    'the chosen plant is burgundy, the rest cool brown, with no highlight',
+    chosen?.color === 'rgb(122, 26, 48)' && others.every((o) => o.color === 'rgb(34, 30, 31)') && options.every((o) => o.bg === 'rgba(0, 0, 0, 0)'),
+    JSON.stringify(options),
+  )
   await page.mouse.move(5, 5)
   await sleep(600)
   check('every flower starts in bud', (await opened(page)) === 0)

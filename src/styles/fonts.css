@@ -10,9 +10,11 @@
                  Has NO quote or dash glyphs (" ' “ ” ‘ ’ – — …), so any quote
                  set in Pixelta silently falls back. Keep quotes in Nunito.
 
-   Two deliberate exceptions keep their own faces: the Me page's terminal is
-   monospace (it is a Python REPL), and the TMU K-POP case study's live
-   mockups and chart use Bebas Neue (they recreate the club's own site).
+   Three deliberate exceptions keep their own faces: the Me page's terminal
+   is monospace (it is a Python REPL), the TMU K-POP case study's live
+   mockups and chart use Bebas Neue (they recreate the club's own site), and
+   Binary Bloom sets each flower's botanical name in Cormorant Garamond
+   italic, the way a botanical plate labels its specimen.
 --------------------------------------------------------------------------- */
 
 @font-face {
@@ -53,4 +55,14 @@
   font-weight: 400;
   font-display: swap;
   src: url('../../Assets/brand/fonts/bebas-neue/bebas-neue-latin.woff2') format('woff2');
+}
+
+/* Cormorant Garamond italic (OFL), weight 500, latin only: just the botanical
+   names in Binary Bloom's square (Lycoris radiata and the rest). */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../../Assets/brand/fonts/cormorant-garamond/cormorant-garamond-italic-500-latin.woff2') format('woff2');
 }
