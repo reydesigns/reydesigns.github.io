@@ -20,16 +20,19 @@ import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
  * `metaTitle` is the readable form for the browser tab (card titles are
  * stylised, e.g. all caps) and `description` is the meta description.
  *
- * Titles, client names and tags are transcribed verbatim from
- * Assets/site-design/images/works-page.png. Card order matches the comp:
- * HeySo and TMU on the top row, then Lipton and Shore-Up. The grid itself
- * reads WORKS_GRID (below), which puts the Vinyl Player beside Lipton and so
- * moves Shore-Up down to a third row, under Lipton.
+ * `title` is the stylised name, transcribed verbatim from
+ * Assets/site-design/images/works-page.png; it heads the "next case study"
+ * link and the coming-soon shell. Card order matches the comp: HeySo and TMU
+ * on the top row, then Lipton and Shore-Up. The grid itself reads WORKS_GRID
+ * (below), which puts the Vinyl Player beside Lipton and so moves Shore-Up
+ * down to a third row, under Lipton.
  *
- * `logo` is the small client mark on the Works card. The four marks only ever
- * existed inside the comp, so they were sliced out of works-page.png as 160px
- * squares centred on each mark — the comp is 4x a 1728pt frame, so they render
- * 1:1 in the card's 40pt logo slot.
+ * The Works card shows only `logo` and `metaTitle` (its top-left chip) and,
+ * on hover, `blurb`. The four marks only ever existed inside the comp, so they
+ * were sliced out of works-page.png as 160px squares centred on each mark.
+ *
+ * `blurb` — one line, drafted from each article's objective. DRAFT: the client
+ * to edit. Coming-soon studies have none (their card shows no description).
  */
 export const CASE_STUDIES = [
   {
@@ -38,8 +41,7 @@ export const CASE_STUDIES = [
     title: 'Heyso...',
     metaTitle: 'HeySo',
     description: 'Case study: HeySo, a group-planning app designed in a day at the WITM WeDesignTech Hackathon 2023.',
-    client: 'WITM: Designathon',
-    tag: 'PRODUCT',
+    blurb: 'A group-planning app my team designed in a day for the WITM WeDesignTech Hackathon 2023.',
     video: heysoVideo,
     videoPoster: heysoPoster,
     status: 'published',
@@ -50,8 +52,7 @@ export const CASE_STUDIES = [
     title: 'TMU-KPOP revamp',
     metaTitle: 'TMU-KPOP revamp',
     description: 'Case study: a web design and revamp for TMU-KPOP.',
-    client: 'TMU-KPOP',
-    tag: 'WEB DESIGN',
+    blurb: 'A fast-turnaround revamp of the TMU K-POP club website, shipped before the school year began.',
     video: tmuVideo,
     videoPoster: tmuPoster,
     status: 'published',
@@ -62,8 +63,7 @@ export const CASE_STUDIES = [
     title: 'LIPTON TEA MOBILE',
     metaTitle: 'Lipton Tea Mobile',
     description: 'Case study: a UI revamp of the Lipton Tea mobile experience.',
-    client: 'Lipton Tea',
-    tag: 'UI REVAMP',
+    blurb: 'A UI revamp of the Lipton Tea mobile experience, made for GCM 810: Creativity, Clients & Design.',
     video: liptonVideo,
     videoPoster: liptonPoster,
     status: 'published',
@@ -74,8 +74,6 @@ export const CASE_STUDIES = [
     title: 'SHORE-UP',
     metaTitle: 'Shore-Up',
     description: 'Shore-Up, a hackathon project. The case study is coming soon.',
-    client: 'SHORE-UP',
-    tag: 'HACKATHON',
     poster: shoreUpImage, // static thumbnail — no walkthrough video exists
     status: 'coming-soon',
   },
@@ -86,14 +84,13 @@ export const CASE_STUDIES = [
  * a pop-up on the page it is on (VinylPlayerModal) instead of a route, so it
  * is kept out of CASE_STUDIES, which also drives /works/:slug and the "next
  * case study" link, and joins the grid only through WORKS_GRID. Its records
- * come from src/data/vinyls.json (scripts/fetch-vinyls.mjs). It has no client,
- * so no logo or client line: the card shows just its tag and title.
+ * come from src/data/vinyls.json (scripts/fetch-vinyls.mjs). It has no client
+ * and no blurb: its card shows the name alone in the chip, over the scene.
  */
 export const VINYL_PLAYER = {
   slug: 'vinyl-player',
   title: 'Vinyl Player',
   metaTitle: 'Vinyl Player',
-  tag: 'INTERACTIVE',
   status: 'toy',
 }
 

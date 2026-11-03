@@ -16,7 +16,7 @@ const GAP_MS = 380 // pause on an empty slot before the next word
  * is text that ends each word, like the closing full stop; it is typed and
  * backspaced along with the word. `wordClassName` styles the word but not
  * `after` — on the landing page the word is Pixelta and the full stop stays in
- * the headline's Kumbh Sans, like the one after "how". The invisible copies
+ * the headline's Nunito, like the one after "how". The invisible copies
  * are built from the same two spans, so the slot is measured in the fonts
  * that are actually drawn.
  *

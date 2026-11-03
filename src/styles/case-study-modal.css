@@ -1,0 +1,200 @@
+/* ---------------------------------------------------------------------------
+   The case-study pop-up (CaseStudyModal).
+
+   Two sizes, on [data-size]:
+     window   a big window over the dimmed page: 92vw × (100dvh − 4rem),
+              centred, rounded. 92vw (no rem cap) keeps the study's own
+              layout maths true inside it — TMU's wide band is 77.5vw and
+              has to fit beside the section nav.
+     full     the whole screen, square corners. The green dot's maximize, and
+              always below 64rem.
+
+   The title bar is the Funzies window's (burgundy, Nunito, macOS dots),
+   restated here so the two can change independently.
+--------------------------------------------------------------------------- */
+
+.cs-modal {
+  /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
+  margin: auto;
+  width: 92vw;
+  height: calc(100dvh - 4rem);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  color: var(--color-ink);
+}
+.cs-modal[data-size='full'] {
+  width: 100%;
+  height: 100%;
+}
+.cs-modal::backdrop {
+  background: color-mix(in srgb, var(--color-ink) 22%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: cs-modal-fade-in 220ms ease-out both;
+}
+.cs-modal[data-closing]::backdrop {
+  animation: cs-modal-fade-out 180ms ease-in both;
+}
+
+.cs-modal__frame {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-bg);
+  /* The containing block for the study's fixed section nav (see the
+     component's notes): any transform does it. */
+  transform: translateZ(0);
+  box-shadow:
+    0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
+    0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
+  animation: cs-modal-in 380ms var(--ease-brand) both;
+}
+.cs-modal[data-size='full'] .cs-modal__frame {
+  border-radius: 0;
+  box-shadow: none;
+}
+.cs-modal[data-closing] .cs-modal__frame {
+  animation: cs-modal-out 180ms ease-in both;
+}
+
+/* --- title bar ------------------------------------------------------------ */
+/* Controls left, the study's name centred on the whole bar: the outer columns
+   are equal, so the middle one is centred and a long name ellipsises. */
+.cs-modal__bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  flex: none;
+  min-height: 2.5rem;
+  padding-inline: 1.1rem;
+  background: var(--color-maroon);
+  color: var(--color-surface);
+  font-family: var(--font-brand);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.cs-modal__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  justify-self: start;
+}
+.cs-modal__title {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The dots. Their glyphs (× and the corner arrows) show while the pointer is
+   over the pair, or on keyboard focus, as on macOS. The hit area grows to
+   28px around each dot without the two overlapping. */
+.cs-modal__dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 0.875rem;
+  height: 0.875rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-maroon);
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.cs-modal__dot--close {
+  background: var(--fz-dot-red);
+}
+.cs-modal__dot--size {
+  background: var(--fz-dot-green);
+}
+.cs-modal__dot > * {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.cs-modal__dot svg {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+.cs-modal__controls:hover .cs-modal__dot > *,
+.cs-modal__dot:focus-visible > * {
+  opacity: 1;
+}
+.cs-modal__dot::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 1.4rem;
+  height: 1.75rem;
+  transform: translate(-50%, -50%);
+}
+
+/* Phones and tablets: a back chevron instead of the dots, a full 44px target. */
+.cs-modal__back {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -0.85rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-surface);
+  cursor: pointer;
+}
+.cs-modal__back svg {
+  width: 0.6rem;
+  height: 1.05rem;
+}
+
+/* --- the study ------------------------------------------------------------ */
+.cs-modal__scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+}
+
+@keyframes cs-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+}
+@keyframes cs-modal-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes cs-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes cs-modal-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-modal__frame,
+  .cs-modal::backdrop {
+    animation: none;
+  }
+}

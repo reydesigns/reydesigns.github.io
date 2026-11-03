@@ -10,9 +10,9 @@ html {
   /* Lenis drives scrolling; this is the no-JS / reduced-motion fallback. */
   scroll-behavior: smooth;
   background: var(--color-bg);
-  /* The scroll lock during the loader sets `overflow: hidden` on <html>. On a
-     platform with classic (space-taking) scrollbars that would reflow the page
-     mid-animation, so reserve the gutter up front. No-op where scrollbars
+  /* Anything that sets `overflow: hidden` on <html> (a scroll lock) would, on
+     a platform with classic (space-taking) scrollbars, reflow the page as the
+     bar disappears, so reserve the gutter up front. No-op where scrollbars
      overlay, which is every platform the comps were designed on. */
   scrollbar-gutter: stable;
 }
@@ -48,9 +48,9 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Kumbh Sans has no italic cut. The comps are slanted because Figma
-   synthesised an oblique, so reproduce that rather than letting the browser
-   pick its own faux-italic angle. */
+/* Only the upright brand font is shipped. The comps are slanted because
+   Figma synthesised an oblique, so reproduce that rather than letting the
+   browser pick its own faux-italic angle. */
 .font-oblique {
   transform: skewX(-11deg);
   transform-origin: 0 100%;
@@ -106,8 +106,9 @@ html.lenis body {
 }
 
 /* ---------------------------------------------------------------------------
-   Loader wordmark: hidden on the hero, eases in as the take-over glide brings
-   its screen up (see LoaderStage). The delay lets the glide get going first.
+   Loader wordmark for LoaderStage, which is no longer mounted: the loader has
+   left the landing scroll. Goes with that component when the first-load
+   overlay replaces it.
 --------------------------------------------------------------------------- */
 .loader-mark {
   opacity: 0;
@@ -259,8 +260,8 @@ html.lenis body {
 }
 
 /* ---------------------------------------------------------------------------
-   The landing page is one continuous document: hero, loader, works. Nothing
-   inside it may widen the page, and the three screens are measured in dvh.
+   The landing page is one continuous document: hero, then works. Nothing
+   inside it may widen the page, and the two screens are measured in dvh.
 --------------------------------------------------------------------------- */
 .screen {
   min-height: 100dvh;
@@ -431,6 +432,34 @@ html.lenis body {
 .vp-stage {
   position: absolute;
   inset: 0;
+}
+/* The Works card's spinning record (VinylThumb): a box over the platter,
+   between the scene and the arm, turned by a CSS animation so the browser
+   rotates it on the compositor instead of repainting the card. 1.8s a turn
+   is 33 1/3 rpm. It pauses where it is while the card is off screen, and
+   never runs under reduced motion. */
+.vp-card-record {
+  position: absolute;
+  pointer-events: none;
+}
+.vp-card-record > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: vp-spin 1.8s linear infinite paused;
+}
+.vp-card-record[data-spin] > svg {
+  animation-play-state: running;
+}
+@keyframes vp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vp-card-record > svg {
+    animation: none;
+  }
 }
 /* The equaliser behind a playing record (VinylPlayerModal Equaliser): a
    canvas with one pixel per cell, stretched over the frame with hard edges

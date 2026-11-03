@@ -285,11 +285,14 @@ function ArmShape({ shadow = false }) {
 /**
  * The turntable. `vinyls` gets one hidden platter slot each, so the live
  * scene can put any record down without React in the loop; a still render
- * shows `platterIndex` and poses the arm with `armAngle` / `armLift`, and
- * with `spin` turns that record at 33 1/3 rpm by itself (the Works card).
- * The spin is SVG's own animateTransform rather than CSS: it turns about the
- * record's own centre in every browser, where a CSS transform on an SVG group
- * puts its origin in different places in Safari and Firefox.
+ * shows `platterIndex` and poses the arm with `armAngle` / `armLift`.
+ *
+ * `layer` splits a still into the two halves either side of the record on
+ * the platter, for the Works card, which spins that record in a layer of its
+ * own between them (VinylThumb): 'base' is everything under it (the record
+ * itself left out, its shadow kept), 'top' only what lies over it (its
+ * stationary sheen, the spindle, the arm and the arm's shadow). Without
+ * `layer`, everything is drawn, in the same order.
  *
  * `onStop` makes the start/stop key a real button while `canStop` is true.
  */
@@ -304,8 +307,10 @@ export function RecordPlayer({
   ledOn = false,
   canStop = false,
   onStop,
-  spin = false,
+  layer,
 }) {
+  const under = layer !== 'top'
+  const over = layer !== 'base'
   const reg = (key, i) =>
     parts
       ? (el) => {
@@ -324,139 +329,149 @@ export function RecordPlayer({
 
   return (
     <g>
-      {/* --- the plinth ------------------------------------------------- */}
-      <g className="vp-shadow">
-        <polygon points={PLINTH_SHAPE.outline} transform="translate(22 28)" />
-      </g>
-      {PLINTH_SHAPE.faces.map((f, i) => (
-        <polygon key={i} points={f.points} className={tone('sage', f.n[0], f.n[1])} />
-      ))}
-      <polygon points={PLINTH_SHAPE.top} className="vpf-sage" />
-      {/* A faint seam where a dust cover would hinge, along the back. */}
-      <rect x="120" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
-      <rect x="520" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
+      {under && (
+        <>
+          {/* --- the plinth ------------------------------------------------- */}
+          <g className="vp-shadow">
+            <polygon points={PLINTH_SHAPE.outline} transform="translate(22 28)" />
+          </g>
+          {PLINTH_SHAPE.faces.map((f, i) => (
+            <polygon key={i} points={f.points} className={tone('sage', f.n[0], f.n[1])} />
+          ))}
+          <polygon points={PLINTH_SHAPE.top} className="vpf-sage" />
+          {/* A faint seam where a dust cover would hinge, along the back. */}
+          <rect x="120" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
+          <rect x="520" y={PLINTH.bevel} width="120" height="8" className="vpf-sage-dark" />
 
-      {/* --- the platter -------------------------------------------------- */}
-      <g className="vp-shadow">
-        <polygon points={ngon(RIM_SIDES, PLATTER.r, PLATTER.x + 10, PLATTER.y + 13)} />
-      </g>
-      {RIM.map((f, i) => (
-        <polygon key={i} points={f.points} className={f.className} />
-      ))}
-      {MAT.map((points, i) => (
-        <polygon key={i} points={points} className={i % 2 ? 'vpf-mat-light' : 'vpf-mat'} />
-      ))}
-      <polygon points={ngon(RIM_SIDES, MAT_R * 0.36, PLATTER.x, PLATTER.y, 0.5)} className="vpf-mat-light" />
+          {/* --- the platter -------------------------------------------------- */}
+          <g className="vp-shadow">
+            <polygon points={ngon(RIM_SIDES, PLATTER.r, PLATTER.x + 10, PLATTER.y + 13)} />
+          </g>
+          {RIM.map((f, i) => (
+            <polygon key={i} points={f.points} className={f.className} />
+          ))}
+          {MAT.map((points, i) => (
+            <polygon key={i} points={points} className={i % 2 ? 'vpf-mat-light' : 'vpf-mat'} />
+          ))}
+          <polygon points={ngon(RIM_SIDES, MAT_R * 0.36, PLATTER.x, PLATTER.y, 0.5)} className="vpf-mat-light" />
 
-      {/* Drop target: a solid faceted ring whose opacity the live scene sets
-          from how close a carried record is. */}
-      <polygon
-        ref={reg('ring')}
-        points={RING}
-        className="vp-ring"
-        opacity="0"
-        data-vp-platter=""
-      />
+          {/* Drop target: a solid faceted ring, which the live scene lights
+              while a carried record is over the turntable's side of the drop
+              line. */}
+          <polygon
+            ref={reg('ring')}
+            points={RING}
+            className="vp-ring"
+            opacity="0"
+            data-vp-platter=""
+          />
 
-      {/* Records sit on the mat: a tight shadow, the turning disc, then the
-          stationary sheen and the spindle over it. */}
-      <g className="vp-shadow" ref={reg('platterShadow')} display={hasRecord ? undefined : 'none'}>
-        <circle cx={PLATTER.x + 4} cy={PLATTER.y + 6} r={RECORD_R} />
-      </g>
-      {vinyls.map((v, i) => (
-        <g
-          key={v.id}
-          ref={reg('platterRecord', i)}
-          transform={platterRecordTransform(0)}
-          display={platterIndex === i ? undefined : 'none'}
-        >
-          {spin && platterIndex === i ? (
-            <g>
-              {/* 1.8s a turn is 33 1/3 rpm. */}
-              <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="1.8s" repeatCount="indefinite" />
-              <Record clipId={clipId} coverSrc={coverSrc(v)} sheen={false} />
-            </g>
-          ) : (
+          {/* Records sit on the mat: a tight shadow, the turning disc, then the
+              stationary sheen and the spindle over it. */}
+          <g className="vp-shadow" ref={reg('platterShadow')} display={hasRecord ? undefined : 'none'}>
+            <circle cx={PLATTER.x + 4} cy={PLATTER.y + 6} r={RECORD_R} />
+          </g>
+        </>
+      )}
+      {!layer &&
+        vinyls.map((v, i) => (
+          <g
+            key={v.id}
+            ref={reg('platterRecord', i)}
+            transform={platterRecordTransform(0)}
+            display={platterIndex === i ? undefined : 'none'}
+          >
             <Record clipId={clipId} coverSrc={coverSrc(v)} sheen={false} />
-          )}
-        </g>
-      ))}
-      <g
-        ref={reg('platterSheen')}
-        transform={`translate(${PLATTER.x} ${PLATTER.y}) scale(${RECORD_R / DISC})`}
-        display={hasRecord ? undefined : 'none'}
-      >
-        <Sheen />
-      </g>
-      <Dome n={6} r={10} cx={PLATTER.x} cy={PLATTER.y} material="metal" />
+          </g>
+        ))}
+      {over && (
+        <>
+          <g
+            ref={reg('platterSheen')}
+            transform={`translate(${PLATTER.x} ${PLATTER.y}) scale(${RECORD_R / DISC})`}
+            display={hasRecord ? undefined : 'none'}
+          >
+            <Sheen />
+          </g>
+          <Dome n={6} r={10} cx={PLATTER.x} cy={PLATTER.y} material="metal" />
+        </>
+      )}
 
-      {/* --- controls, down the right edge -------------------------------- */}
-      <circle ref={reg('led')} cx={CONTROLS_X} cy="250" r="8" className={ledOn ? 'vpf-led-on' : 'vpf-led-off'} />
-      <rect x={CONTROLS_X - 15} y="282" width="30" height="20" rx="3" className="vpf-sage-dark" />
-      <rect x={CONTROLS_X - 15} y="282" width="30" height="7" rx="2" className="vpf-metal-dark" />
-      <rect x={CONTROLS_X - 15} y="310" width="30" height="20" rx="3" className="vpf-metal" />
-      <rect x={CONTROLS_X - 15} y="310" width="30" height="7" rx="2" className="vpf-metal-light" />
-      {/* Pitch slider: the slot, centre ticks, and the knob at zero. */}
-      <rect x={CONTROLS_X - 7} y="360" width="14" height="190" rx="3" className="vpf-sage-dark" />
-      {[380, 412, 488, 520].map((y) => (
-        <rect key={y} x={CONTROLS_X - 26} y={y} width="10" height="3" className="vpf-sage-dark" />
-      ))}
-      <rect x={CONTROLS_X - 30} y="448" width="14" height="4" className="vpf-sage-light" />
-      <rect x={CONTROLS_X - 20} y="441" width="40" height="9" className="vpf-metal-light" />
-      <rect x={CONTROLS_X - 20} y="450" width="40" height="9" className="vpf-metal" />
-      {/* Start/stop: a stop button while a record plays. */}
-      <g
-        role={onStop ? 'button' : undefined}
-        tabIndex={onStop ? (canStop ? 0 : -1) : undefined}
-        aria-label={onStop ? 'Stop the record' : undefined}
-        aria-disabled={onStop ? !canStop : undefined}
-        className={onStop ? 'vp-key' : undefined}
-        data-vp-stop={onStop ? '' : undefined}
-        onClick={onStop ? () => onStop() : undefined}
-        onKeyDown={onStop ? stopKeys : undefined}
-      >
-        <g className="vp-shadow">
-          <rect x={CONTROLS_X - 34 + 5} y={584 + 6} width="68" height="52" rx="5" />
-        </g>
-        <rect x={CONTROLS_X - 34} y="584" width="68" height="52" rx="5" className="vpf-maroon-dark" />
-        <rect x={CONTROLS_X - 30} y="586" width="60" height="42" rx="4" className="vpf-maroon" />
-        <rect x={CONTROLS_X - 30} y="586" width="60" height="14" rx="4" className="vpf-maroon-light" />
-        <rect x={CONTROLS_X - 9} y="600" width="18" height="18" className="vpf-metal-light" />
-        {/* Its keyboard focus ring, drawn round the key on the sage, where
-            ink shows up (on the maroon face it would not). */}
-        {onStop && (
-          <rect x={CONTROLS_X - 44} y="574" width="88" height="74" rx="10" className="vp-key-ring" />
-        )}
-      </g>
+      {under && (
+        <>
+          {/* --- controls, down the right edge -------------------------------- */}
+          <circle ref={reg('led')} cx={CONTROLS_X} cy="250" r="8" className={ledOn ? 'vpf-led-on' : 'vpf-led-off'} />
+          <rect x={CONTROLS_X - 15} y="282" width="30" height="20" rx="3" className="vpf-sage-dark" />
+          <rect x={CONTROLS_X - 15} y="282" width="30" height="7" rx="2" className="vpf-metal-dark" />
+          <rect x={CONTROLS_X - 15} y="310" width="30" height="20" rx="3" className="vpf-metal" />
+          <rect x={CONTROLS_X - 15} y="310" width="30" height="7" rx="2" className="vpf-metal-light" />
+          {/* Pitch slider: the slot, centre ticks, and the knob at zero. */}
+          <rect x={CONTROLS_X - 7} y="360" width="14" height="190" rx="3" className="vpf-sage-dark" />
+          {[380, 412, 488, 520].map((y) => (
+            <rect key={y} x={CONTROLS_X - 26} y={y} width="10" height="3" className="vpf-sage-dark" />
+          ))}
+          <rect x={CONTROLS_X - 30} y="448" width="14" height="4" className="vpf-sage-light" />
+          <rect x={CONTROLS_X - 20} y="441" width="40" height="9" className="vpf-metal-light" />
+          <rect x={CONTROLS_X - 20} y="450" width="40" height="9" className="vpf-metal" />
+          {/* Start/stop: a stop button while a record plays. */}
+          <g
+            role={onStop ? 'button' : undefined}
+            tabIndex={onStop ? (canStop ? 0 : -1) : undefined}
+            aria-label={onStop ? 'Stop the record' : undefined}
+            aria-disabled={onStop ? !canStop : undefined}
+            className={onStop ? 'vp-key' : undefined}
+            data-vp-stop={onStop ? '' : undefined}
+            onClick={onStop ? () => onStop() : undefined}
+            onKeyDown={onStop ? stopKeys : undefined}
+          >
+            <g className="vp-shadow">
+              <rect x={CONTROLS_X - 34 + 5} y={584 + 6} width="68" height="52" rx="5" />
+            </g>
+            <rect x={CONTROLS_X - 34} y="584" width="68" height="52" rx="5" className="vpf-maroon-dark" />
+            <rect x={CONTROLS_X - 30} y="586" width="60" height="42" rx="4" className="vpf-maroon" />
+            <rect x={CONTROLS_X - 30} y="586" width="60" height="14" rx="4" className="vpf-maroon-light" />
+            <rect x={CONTROLS_X - 9} y="600" width="18" height="18" className="vpf-metal-light" />
+            {/* Its keyboard focus ring, drawn round the key on the sage, where
+                ink shows up (on the maroon face it would not). */}
+            {onStop && (
+              <rect x={CONTROLS_X - 44} y="574" width="88" height="74" rx="10" className="vp-key-ring" />
+            )}
+          </g>
 
-      {/* --- the tonearm -------------------------------------------------- */}
-      {/* Arm rest, where the arm lies when it is parked. */}
-      <g className="vp-shadow">
-        <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" transform="translate(6 8)" />
-      </g>
-      <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" className="vpf-sage-dark" />
-      <rect x={ARM.x - 15} y="496" width="30" height="12" rx="3" className="vpf-metal-dark" />
-      {/* Cue lever on its plinth. */}
-      <rect x={CUE.x - 14} y={CUE.y - 10} width="28" height="58" rx="4" className="vpf-sage-dark" />
-      <g ref={reg('cue')} transform={cueTransform(armLift)}>
-        <rect x={CUE.x - 4} y={CUE.y - 26} width="8" height="46" rx="3" className="vpf-metal-light" />
-      </g>
-      {/* Pivot: a faceted base under the arm and a bearing cap over it. */}
-      <g className="vp-shadow">
-        <polygon points={ngon(8, 52, ARM.x + 8, ARM.y + 11, 0.5)} />
-      </g>
-      <Dome n={8} r={52} cx={ARM.x} cy={ARM.y} material="metal" />
-      <g className="vp-shadow" ref={reg('armShadow')} transform={armShadowTransform(armAngle, armLift)}>
-        <g transform={`translate(${ARM.x} ${ARM.y})`}>
-          <ArmShape shadow />
-        </g>
-      </g>
-      <g ref={reg('arm')} transform={armTransform(armAngle)}>
-        <g transform={`translate(${ARM.x} ${ARM.y})`}>
-          <ArmShape />
-        </g>
-      </g>
-      <Dome n={8} r={20} cx={ARM.x} cy={ARM.y} material="metal" turn={0} />
+          {/* --- the tonearm -------------------------------------------------- */}
+          {/* Arm rest, where the arm lies when it is parked. */}
+          <g className="vp-shadow">
+            <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" transform="translate(6 8)" />
+          </g>
+          <rect x={ARM.x - 15} y="496" width="30" height="46" rx="4" className="vpf-sage-dark" />
+          <rect x={ARM.x - 15} y="496" width="30" height="12" rx="3" className="vpf-metal-dark" />
+          {/* Cue lever on its plinth. */}
+          <rect x={CUE.x - 14} y={CUE.y - 10} width="28" height="58" rx="4" className="vpf-sage-dark" />
+          <g ref={reg('cue')} transform={cueTransform(armLift)}>
+            <rect x={CUE.x - 4} y={CUE.y - 26} width="8" height="46" rx="3" className="vpf-metal-light" />
+          </g>
+          {/* Pivot: a faceted base under the arm and a bearing cap over it. */}
+          <g className="vp-shadow">
+            <polygon points={ngon(8, 52, ARM.x + 8, ARM.y + 11, 0.5)} />
+          </g>
+          <Dome n={8} r={52} cx={ARM.x} cy={ARM.y} material="metal" />
+        </>
+      )}
+      {over && (
+        <>
+          <g className="vp-shadow" ref={reg('armShadow')} transform={armShadowTransform(armAngle, armLift)}>
+            <g transform={`translate(${ARM.x} ${ARM.y})`}>
+              <ArmShape shadow />
+            </g>
+          </g>
+          <g ref={reg('arm')} transform={armTransform(armAngle)}>
+            <g transform={`translate(${ARM.x} ${ARM.y})`}>
+              <ArmShape />
+            </g>
+          </g>
+          <Dome n={8} r={20} cx={ARM.x} cy={ARM.y} material="metal" turn={0} />
+        </>
+      )}
     </g>
   )
 }

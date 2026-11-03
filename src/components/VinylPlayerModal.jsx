@@ -381,16 +381,17 @@ function layoutOf({ w, h, size, stack, player, bleed = 0 }) {
 
 /* Scene units. `player` places the turntable (its own units are the
    plinth's); `stack` is the column the sleeves fan down. The card is the
-   thumbnail's 601:299, `wide` the pop-up from a tablet up (16:10), `tall` a
+   Works card's 16:9, `wide` the pop-up from a tablet up (16:10), `tall` a
    phone, where the column runs down the left and the player sits beside it,
    level with its middle, with a small margin of table at either side. */
 const LAYOUTS = {
   card: layoutOf({
     w: 1600,
-    h: 796,
+    h: 900,
     size: 262,
-    stack: { cx: 318, top: 24, bottom: 772 },
-    player: { x: 726, y: 106, s: 0.84 },
+    // The stack starts below the card's name chip, top left.
+    stack: { cx: 300, top: 112, bottom: 880 },
+    player: { x: 690, y: 165, s: 0.84 },
   }),
   wide: layoutOf({
     w: 1600,
@@ -1114,7 +1115,10 @@ const register = (parts, key, i) =>
     : undefined
 
 /** The SVG itself, shared by the card's still and the live pop-up. */
-function Diorama({ layout, coverPx, still, spin, live, parts, order, tabStop, on, svgEvents, playing, onStop, describedBy, className }) {
+function Diorama({ layout, coverPx, still, layer, live, parts, order, tabStop, on, svgEvents, playing, onStop, describedBy, className }) {
+  // The card's top layer (see VinylThumb) is only what lies over its
+  // spinning record: no table, no stack.
+  const onlyTop = layer === 'top'
   const clipId = useId()
   const coverSrc = useCallback((v) => coverAt(v.coverUrl, coverPx), [coverPx])
   const P = layout.player
@@ -1143,7 +1147,7 @@ function Diorama({ layout, coverPx, still, spin, live, parts, order, tabStop, on
       </defs>
       {/* The card's still sits on the low-poly tabletop. The pop-up's table is
           the frame itself, plain white, so the Equaliser can show through. */}
-      {!live && (
+      {!live && !onlyTop && (
         <g pointerEvents="none">
           <rect x={layout.floor.x} y={layout.floor.y} width={layout.floor.w} height={layout.floor.h} className="vpf-floor" />
           {layout.floor.tris.map((f, i) => (
@@ -1162,23 +1166,25 @@ function Diorama({ layout, coverPx, still, spin, live, parts, order, tabStop, on
           ledOn={Boolean(still)}
           canStop={playing !== null && playing !== undefined}
           onStop={live ? onStop : undefined}
-          spin={spin}
+          layer={layer}
         />
       </g>
-      <VinylStack
-        vinyls={vinyls}
-        slots={layout.slots}
-        size={layout.size}
-        clipId={clipId}
-        coverSrc={coverSrc}
-        parts={parts}
-        order={order}
-        tabStop={tabStop}
-        on={on}
-        still={still}
-        describedBy={describedBy}
-        playingIndex={playing}
-      />
+      {!onlyTop && (
+        <VinylStack
+          vinyls={vinyls}
+          slots={layout.slots}
+          size={layout.size}
+          clipId={clipId}
+          coverSrc={coverSrc}
+          parts={parts}
+          order={order}
+          tabStop={tabStop}
+          on={on}
+          still={still}
+          describedBy={describedBy}
+          playingIndex={playing}
+        />
+      )}
       {/* Records in the air: carried, or flying to the platter or home. */}
       {live && (
         <g pointerEvents="none" aria-hidden="true">
@@ -1208,16 +1214,55 @@ const STILL = {
   arm: ARM_PLAY + (ARM_DRIFT - ARM_PLAY) * 0.4,
 }
 
-/** The Works card's thumbnail: the scene mid-song, nothing interactive. The
-    record on the platter turns while the card is on screen, the way the other
-    cards' walkthroughs play only in view, and holds still under reduced
-    motion. */
+/** A share of `of`, as a CSS percentage. */
+const pct = (v, of) => `${r2((v / of) * 100)}%`
+
+/** One record on its own, centred in its box, for the card to spin. */
+function LoneRecord({ v, coverPx }) {
+  const clipId = useId()
+  return (
+    <svg viewBox={`${-DISC} ${-DISC} ${DISC * 2} ${DISC * 2}`} aria-hidden="true" focusable="false">
+      <defs>
+        <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+          <circle cx="0.5" cy="0.5" r="0.5" />
+        </clipPath>
+      </defs>
+      <Record clipId={clipId} coverSrc={coverAt(v.coverUrl, coverPx)} sheen={false} />
+    </svg>
+  )
+}
+
+/**
+ * The Works card's thumbnail: the scene mid-song, nothing interactive, with
+ * the record on the platter turning while the card is on screen (the way the
+ * other cards' walkthroughs play only in view), and holding still under
+ * reduced motion.
+ *
+ * The spin is three layers, not one animated SVG: the scene without that
+ * record, the record alone in an HTML box over its place on the platter, and
+ * what lies over it (sheen, spindle, arm) on top. The box turns with a CSS
+ * animation, which the browser runs on its compositor, so the card never has
+ * to be repainted while it spins (an animated SVG repaints every frame, and
+ * slowed the other cards' hover fades); an HTML box also turns about its own
+ * centre in every browser. The card is 16:9 like its scene, so the box's
+ * percentages line up with the platter exactly.
+ */
 export function VinylThumb() {
   const reduced = useReducedMotion()
   const [viewRef, inView] = useInView({ threshold: 0 })
+  const L = LAYOUTS.card
+  const P = L.player
+  const r = RECORD_R * P.s
+  const cx = P.x + PLATTER.x * P.s
+  const cy = P.y + PLATTER.y * P.s
+  const box = { left: pct(cx - r, L.w), top: pct(cy - r, L.h), width: pct(2 * r, L.w), height: pct(2 * r, L.h) }
   return (
     <div ref={viewRef} className="absolute inset-0">
-      <Diorama layout={LAYOUTS.card} coverPx={200} still={STILL} spin={inView && !reduced} className="block h-full w-full" />
+      <Diorama layout={L} coverPx={200} still={STILL} layer="base" className="absolute inset-0 block h-full w-full" />
+      <div className="vp-card-record" data-spin={(inView && !reduced) || undefined} style={box}>
+        <LoneRecord v={vinyls[STILL.platter]} coverPx={200} />
+      </div>
+      <Diorama layout={L} coverPx={200} still={STILL} layer="top" className="absolute inset-0 block h-full w-full" />
     </div>
   )
 }

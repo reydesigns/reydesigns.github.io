@@ -40,7 +40,7 @@ const easeOut = (p) => 1 - (1 - p) ** 3
  *
  * `segments` is an array of { text, display, quote } — `display: true` keeps
  * the segment in Pixelta after it resolves (the "why" / "obvious." accents),
- * `quote: true` keeps it in Kumbh Sans (Pixelta has no quote glyphs). A
+ * `quote: true` keeps it in Nunito (Pixelta has no quote glyphs). A
  * segment of `{ br: true }` is a hard line break: the headline's two-line set
  * cannot be produced by wrapping at any width, because line two is wider than
  * the point at which line one would have to break.
@@ -127,8 +127,8 @@ export function ScrambleText({ segments, durationMs = 3000, className = '', as: 
           <span key={`w-${wi}`} className="inline-block whitespace-nowrap">
             {word.map((c) => {
               // Pixelta accents ("why", "obvious.") keep their face after they
-              // resolve; the quotes around them stay in Kumbh Sans because
-              // Pixelta has no quote glyphs. Everything else is plain Kumbh —
+              // resolve; the quotes around them stay in Nunito because
+              // Pixelta has no quote glyphs. Everything else is plain Nunito —
               // the comp slants this line, the client does not want it.
               const face = c.display ? 'font-display' : c.quote ? 'quote-mark' : ''
 

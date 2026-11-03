@@ -11,22 +11,27 @@
 
 @theme {
   /* --- colour ------------------------------------------------------------ */
-  /* Page ground: a warm off-white. (The comps measured #e9e8dd; lightened
-     towards white by client request.) */
-  --color-bg: #f6f3ea;
+  /* Page ground: a white-grey (client request, replacing the comps' warm
+     cream #e9e8dd / #f6f3ea). Neutral, a hair cool, never warm: a cream or
+     beige ground pulls the burgundy towards brown, a clean grey keeps it
+     reading as wine. Every supporting grey below sits on this same neutral
+     axis; the only warmth on the page is the burgundy family itself. */
+  --color-bg: #f4f4f5;
+  /* The burgundy family — unchanged. On --color-bg: ink 16.8:1, maroon
+     15.3:1, muted ink 10.3:1 (all AAA). */
   /* Primary ink: logo, headline, body copy, top-bar links, case-study nav. */
   --color-ink: #2d0510;
   /* Secondary ink: hero eyebrow, tagline, status-pill copy. */
   --color-ink-muted: #523138;
-  /* Thumbnail / video placeholder fill. 37% of the Works page. */
+  /* The brand burgundy: card chips, window title bars, thumbnail backing. */
   --color-maroon: #440000;
 
   /* Surfaces */
   --color-surface: #ffffff;        /* project cards, phone-mockup cards       */
   --color-surface-alt: #fbfbfb;    /* case-study image cards                  */
-  --color-surface-sunken: #efede5; /* statistics + insights cards             */
-  --color-surface-persona: #eae8e0;/* persona card — only 5 levels above bg   */
-  --color-nav: #d9d2ca;            /* bottom / side nav pill background       */
+  --color-surface-sunken: #ebebed; /* statistics + insights cards             */
+  --color-surface-persona: #e9e9eb;/* persona card — a step below the ground   */
+  --color-nav: #d9d8db;            /* bottom / side nav pill background       */
   /* Secondary hero labels (eyebrow + tagline). Raised from the comps' 30% so
      they read clearly. */
   --hero-label-opacity: 0.75;
@@ -34,8 +39,8 @@
   --hero-status-opacity: 0.55;
 
   /* --- type -------------------------------------------------------------- */
-  --font-brand: 'Kumbh Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Pixelta', 'Kumbh Sans', ui-serif, serif;
+  --font-brand: 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Pixelta', 'Nunito', ui-serif, serif;
 
   /* Fluid scale. Reference width is 1728px (the comps are 6912px = 4×).
      Verified side-by-side against the screenshots in QA. */
@@ -55,6 +60,9 @@
      are both 14px — between --text-eyebrow and --text-body, so neither fits. */
   --text-works-title: clamp(2.25rem, 4vw, 4.3125rem);
   --text-works-meta: clamp(0.8125rem, 0.81vw, 0.875rem);
+  /* The frosted backing behind a card's name chip and hover description: the
+     nav pill's recipe, light enough that the thumbnail still reads through. */
+  --card-chip-bg: color-mix(in srgb, var(--color-surface) 82%, transparent);
 
   /* --- layout ------------------------------------------------------------ */
   --page-gutter: clamp(1.25rem, 3.7vw, 4rem);
@@ -114,14 +122,14 @@
   --chart-grid: color-mix(in srgb, var(--color-ink) 10%, transparent);
   /* The chart's condensed display face: the club site's Bebas Neue (loaded in
      fonts.css), echoing the example's bold condensed bar labels. */
-  --font-tk-display: 'Bebas Neue', 'Kumbh Sans', sans-serif;
+  --font-tk-display: 'Bebas Neue', 'Nunito', sans-serif;
 
   /* --- Funzies ----------------------------------------------------------- */
   /* Window chrome on the tiles and the popup: the maroon title bar from
      Assets/funzies/funzies page.png, with a red close dot and a grey one. */
   --fz-dot-red: #ff3b30;
   --fz-dot-green: #28c840;
-  --fz-dot-grey: #b9b1ae;
+  --fz-dot-grey: #b7b5b8;
   --fz-divider: color-mix(in srgb, var(--color-ink) 12%, transparent);
   /* The popup's header is Pixelta at 40px. */
   --fz-pop-title: 2.5rem;
@@ -184,7 +192,7 @@
 
   /* --- Experience timeline (Me page) ------------------------------------- */
   /* A grey rule and dots; the logos are maroon, knocked back. */
-  --tl-line: #c9c3bf;
+  --tl-line: #c9c7ca;
   --tl-logo-opacity: 0.6;
 
   /* --- GIF content boxes -------------------------------------------------- */

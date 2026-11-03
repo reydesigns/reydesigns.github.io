@@ -18,9 +18,9 @@ export function useMediaQuery(query, fallback = false) {
 }
 
 /**
- * The breakpoint the whole site pivots on: above it the nav is a vertical pill
- * at the left edge and the landing page runs the hero -> loader -> works scroll
- * sequence; below it the nav stays a bottom bar and there is no loader at all.
+ * The breakpoint the whole site pivots on: above it the landing page glides
+ * from the hero to the works grid (with a fine pointer) and the top bar floats
+ * over the grid; below it the page just scrolls.
  */
 export const WIDE = '(min-width: 64rem)'
 
@@ -29,3 +29,6 @@ export const SM = '(min-width: 40rem)'
 
 /** A pointer that can hover. False on phones and touch tablets. */
 export const HOVER = '(hover: hover)'
+
+/** A precise primary pointer — mouse or trackpad. Gates the landing glide. */
+export const FINE = '(pointer: fine)'

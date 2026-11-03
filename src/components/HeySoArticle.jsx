@@ -10,13 +10,13 @@ import {
   NumberedList,
   Outro,
   P,
+  RoleCard,
   Section,
   Tags,
 } from './caseStudyParts'
 import heysoVideo from '@assets/heyso/video/walkthrough-1080p.webm'
 import heysoLogo from '@assets/brand/icons/clients/heyso.png'
-import imgRole from '@assets/heyso/images/figures/01-role-team-tools.png'
-import imgThemes from '@assets/heyso/images/figures/02-theme-brainstorm.png'
+import imgThemes from '@assets/heyso/images/figures/02-brainstorm-board.png'
 import imgKeywords from '@assets/heyso/images/figures/03-research-figjam-board.png'
 import imgPersona from '@assets/heyso/images/figures/06-user-persona.png'
 import imgFlows from '@assets/heyso/images/figures/07-user-flows.png'
@@ -200,10 +200,19 @@ function Statistics() {
   )
 }
 
-function Insights() {
+/* The three problem zones the brainstorm narrowed to. Live text in the same
+   emoji-row card as INSIGHTS; it used to be a slice of the comp stacked on
+   the brainstorm screenshot, with the old cream and font baked in. */
+const ZONES = [
+  ['😵‍💫', 'overstimulation of information'],
+  ['⚖️', 'balance between work and life'],
+  ['👩‍💻', 'efficiency for student + study life'],
+]
+
+function EmojiRows({ rows }) {
   return (
     <div className="cs-figure cs-card cs-rows">
-      {INSIGHTS.map(([emoji, note]) => (
+      {rows.map(([emoji, note]) => (
         <div key={note} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-[var(--cs-5)]">
           <span aria-hidden="true" className="text-[length:var(--cs-emoji)] leading-none">
             {emoji}
@@ -340,12 +349,15 @@ export function HeySoArticle({ next }) {
           Using technology, your challenge is to mediate between the benefits of an information
           society and the disadvantages it comes with.
         </P>
-        <Figure
-          src={imgRole}
-          width={2084}
-          height={978}
-          inset
-          alt="My role: product designer, researcher, brand designer. Duration: 1 day sprint, 13 hours. Team: Stella, Miguel, Curtis. Tools: Figma, FigJam."
+        {/* Live text, like the other studies' role cards — it used to be a
+            slice of the comp, with the old cream and font baked in. */}
+        <RoleCard
+          cells={[
+            ['My role', ['Product Designer', 'Researcher', 'Brand Designer']],
+            ['Duration', ['1 Day Sprint', '13 Hours']],
+            ['Team', ['Stella', 'Miguel', 'Curtis']],
+            ['Tools', ['Figma', 'FigJam']],
+          ]}
         />
       </Section>
 
@@ -372,12 +384,13 @@ export function HeySoArticle({ next }) {
           With the broad theme given, we branched through different zones within the{' '}
           <Accent>information overload</Accent> problem space.
         </h2>
+        <EmojiRows rows={ZONES} />
         <Figure
           src={imgThemes}
           width={2775}
-          height={3011}
+          height={1932}
           tab={197}
-          alt="Three candidate zones — overstimulation of information, balance between work and life, efficiency for student plus study life — above the team's 10-minute FigJam brainstorm on life in an information society."
+          alt="The team's 10-minute FigJam brainstorm on life in an information society: sticky notes from Curtis, Stella, Shreya and Miguel, with the themes and target market they voted up."
         />
 
         <h2 className={H2}>
@@ -452,7 +465,7 @@ export function HeySoArticle({ next }) {
         </div>
 
         <h3 className={H3}>Validating our research</h3>
-        <Insights />
+        <EmojiRows rows={INSIGHTS} />
 
         <h2 className={H2}>Who is our targeted user? &ndash; pain points &amp; goals</h2>
         <P>

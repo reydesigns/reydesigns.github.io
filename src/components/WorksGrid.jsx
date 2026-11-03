@@ -1,59 +1,55 @@
 import { useCallback, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { WorkCard } from './WorkCard'
+import { useOpenCaseStudy } from './CaseStudyModal'
 import { VinylPlayerModal, VinylThumb, prepareVinylAudio } from './VinylPlayerModal'
 import { WORKS_GRID } from '@/data/caseStudies'
-import { useReducedMotion } from '@/lib/useReducedMotion'
-import { morphCardToCaseStudy } from '@/lib/cardMorph'
+import { loadCaseStudy } from '@/lib/caseStudyChunk'
 
 /* ---------------------------------------------------------------------------
    The two-column card grid on its own: no Layout, no nav, no page chrome.
+   (WORKS_GRID: four case studies and the Vinyl Player, which sits beside
+   Lipton and puts Shore-Up on a third row.)
 
-   It is rendered twice: as the third screen of the landing page's scroll
-   sequence, and as the whole of the `/works` route. Both have to be the same
-   pixels, which is why the grid geometry lives here and not in either page.
+   It is rendered twice: as the second screen of the landing page (under the
+   hero, on every width), and as the whole of the `/works` route. Both have to
+   be the same pixels, which is why the grid geometry lives here and not in
+   either page.
 
-   Grid geometry from Assets/site-design/images/works-page.png at 1728px:
-   two 619px columns, 75px apart, 26px between rows — i.e. a 1313px block,
-   centred.
+   Grid geometry (client request — big cards, little space between them; the
+   comp's works-page.png had 619px cards 75px apart): two columns, a 1.5rem
+   gap both ways, and on wide screens only a 1.5rem margin either side, so the
+   cards run nearly edge to edge (≈828px wide at 1728px). They are sized by
+   the viewport's width, not its height: the grid can run past one screen, and
+   the reader scrolls a little for the second row (client: "it's okay if the
+   user has to scroll a bit"). Ultra-wide screens stop at 120rem.
 
-   The card -> case-study morph is wired up here, at the grid, rather than
-   inside WorkCard: the click is intercepted on the way up so the card itself
-   stays an ordinary <Link> that middle-clicks, cmd-clicks and degrades without
-   JavaScript exactly as before.
+   Opening a study in the pop-up (CaseStudyModal) is wired up here, at the
+   grid, rather than inside WorkCard: a plain click is intercepted on its way
+   down to the card, so the card itself stays an ordinary <Link> to /works/:slug that
+   middle-clicks, cmd-clicks and degrades without JavaScript to the study's own
+   page, exactly as before.
 --------------------------------------------------------------------------- */
 
 /* The bottom padding is what keeps the last row of cards out from under the
    nav pill at the end of the scroll. The pill is fixed bottom-centre on every
    width, and NavDock publishes `--dock-clear` (pill's distance from the
    viewport bottom + a 16px gap). The footer always comes after this section
-   and already fills part of that distance — on /works it is in flow below, on
-   the landing works screen its height is reserved below this section (see
-   Layout) — so only the remainder is padded here. On phones the footer pads
+   and already fills part of that distance — in flow below it on /works and on
+   the landing page below 64rem, its height reserved below this section on the
+   wide landing works screen (see Layout) — so only the remainder is padded
+   here. On phones the footer pads
    itself past the pill (see Footer), the remainder goes negative, and the
    2rem floor is all that is left: one clearance, not two stacked. */
 const SECTION =
-  'flex flex-1 items-center justify-center px-[var(--page-gutter)] pt-[clamp(1rem,2.5vh,2rem)] ' +
-  'pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
-
-/* On wide screens the first two rows of the grid must fit in one viewport
-   between the top bar and the nav pill. A card's height follows its width
-   (the thumbnail is 601:299), so the grid's width is capped by the viewport's
-   height: roughly 2px of width per 1px of height, less the fixed chrome and
-   card text. At the 1728x1117 reference this works out at ~1180px. It never
-   goes below 70rem, where the card titles would start to wrap; on a viewport
-   shorter than that the works screen simply scrolls a little. The Vinyl
-   Player (WORKS_GRID) pushes Shore-Up to a third row, under Lipton, which
-   sits below the fold and is reached by scrolling. */
-const GRID_FIT = 'lg:max-w-[min(82.0625rem,max(70rem,calc(201dvh-66.6rem)))]'
+  'flex flex-1 items-center justify-center px-[var(--page-gutter)] lg:px-[1.5rem] ' +
+  'pt-[clamp(1rem,2.5vh,2rem)] pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
 
 export function WorksGrid({ className = '', ...rest }) {
-  const navigate = useNavigate()
-  const reduced = useReducedMotion()
+  const openCaseStudy = useOpenCaseStudy()
 
   /* The Vinyl Player card opens its pop-up here, on whichever page the grid
      is on. Its click is the user gesture iOS needs before it will load audio,
-     so the five previews start loading inside it, before the pop-up renders. */
+     so the previews start loading inside it, before the pop-up renders. */
   const [vinylOpen, setVinylOpen] = useState(false)
   const vinylCard = useRef(null)
   const openVinyl = useCallback((event) => {
@@ -65,36 +61,43 @@ export function WorksGrid({ className = '', ...rest }) {
 
   const onClick = useCallback(
     (event) => {
-      if (reduced) return
       // Anything other than a plain primary click belongs to the browser.
       if (event.defaultPrevented) return
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return
       }
 
-      const link = event.target.closest?.('a[href]')
+      const link = event.target.closest?.('a[data-card][href]')
       if (!link) return
-      const href = link.getAttribute('href') || ''
-      if (!/^\/works\/[^/]+$/.test(href)) return
-
-      // The thumbnail is the card's first child — the 601:299 maroon block.
-      const thumb = link.querySelector('[data-card-thumb]') ?? link.firstElementChild
-      if (!thumb) return
+      // The href carries the router's basename in production; the slug is the
+      // last segment either way.
+      const slug = (link.getAttribute('href') || '').match(/\/works\/([^/?#]+)$/)?.[1]
+      if (!slug) return
 
       event.preventDefault()
-      morphCardToCaseStudy({ thumb, to: href, navigate })
+      openCaseStudy(slug)
     },
-    [navigate, reduced],
+    [openCaseStudy],
   )
+
+  // A pointer heading for a card, or focus landing on one, starts the study's
+  // chunk downloading if the idle prefetch (App) has not got to it yet.
+  const warm = useCallback(() => {
+    loadCaseStudy().catch(() => {})
+  }, [])
 
   return (
     <section className={`${SECTION} ${className}`} {...rest}>
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions --
           this only ever upgrades a real link that is already keyboard
           reachable; it adds no new interactive surface. */}
+      {/* Capture phase: the card's <Link> handles the click on the way up,
+          navigating to the study's page; this has to get there first. */}
       <ul
-        onClick={onClick}
-        className={`grid w-full max-w-[82.0625rem] ${GRID_FIT} grid-cols-1 gap-x-[4.6875rem] gap-y-[1.625rem] lg:grid-cols-2`}
+        onClickCapture={onClick}
+        onPointerOver={warm}
+        onFocus={warm}
+        className={`grid w-full max-w-[120rem] grid-cols-1 gap-[1.5rem] lg:grid-cols-2`}
       >
         {WORKS_GRID.map((study) => (
           <li key={study.slug} className="min-w-0">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useCaseStudyHost } from './caseStudyHost'
 
 /**
  * Scroll to a case-study section.
@@ -7,10 +8,23 @@ import { useEffect, useState } from 'react'
  * directly would fight it. It is exposed as `window.__lenis` by SmoothScroll,
  * which only mounts it when the visitor has not asked for reduced motion — so
  * its absence is also the signal to jump rather than glide.
+ *
+ * In the pop-up (`root` = its scroller, see caseStudyHost.js) Lenis is stopped
+ * and the scroller is an ordinary overflow box, so it is scrolled directly,
+ * landing the section where its scroll-margin says — the same spot the page
+ * lands it.
  */
-export function scrollToSection(id, { reduced = false } = {}) {
+export function scrollToSection(id, { reduced = false, root = null } = {}) {
   const el = document.getElementById(id)
   if (!el) return
+
+  if (root) {
+    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0
+    const top =
+      el.getBoundingClientRect().top - root.getBoundingClientRect().top + root.scrollTop - margin
+    root.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' })
+    return
+  }
 
   const lenis = window.__lenis
   if (lenis && typeof lenis.scrollTo === 'function') {
@@ -52,10 +66,14 @@ export const END_MARKER = '[data-cs-end]'
  * marker is on screen the reader is, by construction, inside the last section,
  * and it takes the highlight. Still no scroll handler.
  *
+ * Inside the pop-up the same band and marker are measured against its
+ * scroller instead of the viewport (the observers' `root`).
+ *
  * @param ids section element ids, in document order. Must be a stable array.
  */
 export function useActiveSection(ids) {
   const [active, setActive] = useState(ids[0])
+  const { root } = useCaseStudyHost()
 
   useEffect(() => {
     const els = ids.map((id) => document.getElementById(id)).filter(Boolean)
@@ -88,7 +106,7 @@ export function useActiveSection(ids) {
       },
       // Top ~28% of the viewport. Nothing intersects while the hero is on
       // screen, which is why `active` starts on the first section.
-      { rootMargin: '0px 0px -72% 0px', threshold: 0 },
+      { root, rootMargin: '0px 0px -72% 0px', threshold: 0 },
     )
     els.forEach((el) => band.observe(el))
 
@@ -99,12 +117,12 @@ export function useActiveSection(ids) {
         (entries) => {
           // A page short enough to show its own end without scrolling would
           // otherwise be pinned to the last section forever.
-          const scrollable =
-            document.documentElement.scrollHeight > document.documentElement.clientHeight + 4
+          const box = root ?? document.documentElement
+          const scrollable = box.scrollHeight > box.clientHeight + 4
           atEnd = scrollable && entries[entries.length - 1].isIntersecting
           pick()
         },
-        { threshold: 0 },
+        { root, threshold: 0 },
       )
       end.observe(marker)
     }
@@ -113,14 +131,15 @@ export function useActiveSection(ids) {
       band.disconnect()
       end?.disconnect()
     }
-  }, [ids])
+  }, [ids, root])
 
   return active
 }
 
-/** How far through the document the reader is, 0–1. */
+/** How far through the document — or the pop-up's scroller — the reader is, 0–1. */
 export function useScrollProgress() {
   const [progress, setProgress] = useState(0)
+  const { root } = useCaseStudyHost()
 
   useEffect(() => {
     let frame = 0
@@ -128,8 +147,9 @@ export function useScrollProgress() {
     const read = () => {
       frame = 0
       const doc = document.documentElement
-      const span = doc.scrollHeight - window.innerHeight
-      setProgress(span > 0 ? Math.min(1, Math.max(0, window.scrollY / span)) : 0)
+      const span = root ? root.scrollHeight - root.clientHeight : doc.scrollHeight - window.innerHeight
+      const y = root ? root.scrollTop : window.scrollY
+      setProgress(span > 0 ? Math.min(1, Math.max(0, y / span)) : 0)
     }
 
     const schedule = () => {
@@ -139,14 +159,15 @@ export function useScrollProgress() {
     read()
     // Lenis moves the real scroll position, so a plain passive listener covers
     // both the smooth and the reduced-motion case.
-    window.addEventListener('scroll', schedule, { passive: true })
+    const target = root ?? window
+    target.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     return () => {
       if (frame) cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', schedule)
+      target.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
-  }, [])
+  }, [root])
 
   return progress
 }

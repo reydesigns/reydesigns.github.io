@@ -35,32 +35,31 @@ function nextAfter(slug) {
   return null
 }
 
-export function CaseStudy() {
-  const { slug } = useParams()
+/**
+ * The case study itself — section nav and article — with no page chrome, so
+ * it can render in either host: its own route (CaseStudy, below, wraps it in
+ * Layout) or the pop-up over the works grid (CaseStudyModal, which provides
+ * the scroll root and the close / next-study actions through caseStudyHost).
+ */
+export function CaseStudyBody({ slug }) {
   const study = getCaseStudy(slug)
-
-  // Hooks run before the redirect below; an unknown slug just falls back to the default.
-  useDocumentMeta({ title: study?.metaTitle, description: study?.description })
-
-  if (!study) return <Navigate to="/works" replace />
+  if (!study) return null
 
   // The rest are shells until their screenshots land, so they get the title
   // and nothing that would pretend to be a case study.
   const entry = ARTICLES[slug]
   if (!entry) {
     return (
-      <Layout>
-        <section className="flex flex-1 items-center px-[var(--page-gutter)]">
-          <h1 className="font-display text-[length:var(--text-card-title)] text-[var(--color-ink)]">
-            {study.title}
-          </h1>
-        </section>
-      </Layout>
+      <section className="flex flex-1 items-center px-[var(--page-gutter)]">
+        <h1 className="font-display text-[length:var(--text-card-title)] text-[var(--color-ink)]">
+          {study.title}
+        </h1>
+      </section>
     )
   }
 
   return (
-    <Layout>
+    <>
       <CaseStudyNav key={slug} sections={entry.sections} ids={entry.ids} />
       {/* The fixed panel is out of flow, so the article is pushed clear of it
           by hand. Below 64rem the nav is a strip above the article instead and
@@ -71,6 +70,22 @@ export function CaseStudy() {
       <div data-skip-target="" tabIndex={-1} className="mt-[1.5rem] scroll-mt-[calc(1.25rem+47px)] lg:mt-[2.5rem] lg:scroll-mt-0 lg:pl-[clamp(9.5rem,11.5vw,12.25rem)]">
         <entry.Article key={slug} next={nextAfter(slug)} />
       </div>
+    </>
+  )
+}
+
+export function CaseStudy() {
+  const { slug } = useParams()
+  const study = getCaseStudy(slug)
+
+  // Hooks run before the redirect below; an unknown slug just falls back to the default.
+  useDocumentMeta({ title: study?.metaTitle, description: study?.description })
+
+  if (!study) return <Navigate to="/works" replace />
+
+  return (
+    <Layout>
+      <CaseStudyBody slug={slug} />
     </Layout>
   )
 }

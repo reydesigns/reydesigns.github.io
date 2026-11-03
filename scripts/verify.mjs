@@ -6,6 +6,7 @@
  *   node scripts/verify.mjs [width] [height]
  */
 import puppeteer from 'puppeteer-core'
+import { isMediaAbort } from './lib/browser.mjs'
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const W = Number(process.argv[2] ?? 1728)
@@ -35,9 +36,9 @@ for (const route of ROUTES) {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`)
   })
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
-  page.on('requestfailed', (r) =>
-    errors.push(`requestfailed: ${r.url().slice(-60)} ${r.failure()?.errorText}`),
-  )
+  page.on('requestfailed', (r) => {
+    if (!isMediaAbort(r)) errors.push(`requestfailed: ${r.url().slice(-60)} ${r.failure()?.errorText}`)
+  })
 
   try {
     await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}${route}`, {

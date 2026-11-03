@@ -10,6 +10,7 @@
  * never resolves and lazy WebGL never initialises, so the capture lies.
  */
 import puppeteer from 'puppeteer-core'
+import { isMediaAbort } from './lib/browser.mjs'
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const [, , path = '/', out = 'shot.png', w = '1728', h = '1000', waitMs = '3500', reduced = ''] =
@@ -39,7 +40,9 @@ page.on('console', (m) => {
   if (m.type() === 'error') errors.push(`console: ${m.text()}`)
 })
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
-page.on('requestfailed', (r) => errors.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`))
+page.on('requestfailed', (r) => {
+  if (!isMediaAbort(r)) errors.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`)
+})
 
 await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}${path}`, { waitUntil: 'networkidle2', timeout: 30000 })
 await new Promise((r) => setTimeout(r, Number(waitMs)))
