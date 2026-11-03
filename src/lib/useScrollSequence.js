@@ -7,7 +7,9 @@ import { useReducedMotion } from './useReducedMotion'
    `/` is ONE document, two screens tall:
 
        0  ──────── hero          (100dvh, top bar included)
-       1  ──────── works grid    (100dvh at least; taller on a phone)
+       1  ──────── works grid    (100dvh at least; taller on a phone, and a
+                                  little taller on a laptop, where the
+                                  big cards run past one screen)
 
    On a desktop (`glide`: wide viewport, fine pointer, no reduced motion) a
    downward scroll past 0.15 of a viewport from the hero hands over: the page

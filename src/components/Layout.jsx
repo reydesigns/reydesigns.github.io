@@ -64,8 +64,9 @@ function SkipLink() {
  * re-measured on resize.
  *
  * `stickyHeader` is set by the landing page on wide viewports, where `/` is
- * two exact screens — hero, then works grid — and the bar stays on screen over
- * the grid. Three things follow from the bar floating over content:
+ * the hero (exactly one screen) and then the works grid (one screen at least,
+ * a little more where the big cards run past it), and the bar stays on screen
+ * over the grid. Three things follow from the bar floating over content:
  *
  *   * it is painted on --color-bg rather than left transparent, so cards pass
  *     behind it instead of showing through it;
@@ -73,7 +74,7 @@ function SkipLink() {
  *     at the bottom, so its cards are centred in the space those two leave
  *     rather than running underneath either. Padding inside a
  *     `min-height: 100dvh` screen does not make the screen any taller, so the
- *     landing page stays exactly two viewports;
+ *     works screen still starts exactly one viewport down;
  *   * the footer comes out of flow and pins to the bottom of the document. On
  *     `/` that is the bottom of the works screen, which is where it belongs —
  *     and being absolute it cannot add a third screen or shift the works screen

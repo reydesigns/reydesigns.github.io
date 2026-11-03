@@ -12,10 +12,13 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
    be the same pixels, which is why the grid geometry lives here and not in
    either page.
 
-   Grid geometry: two columns with a tight 1.5rem gap both ways (client
-   request — bigger cards, less space between them; the comp's works-page.png
-   had 619px cards 75px apart). The block is centred, up to 100rem wide, and on
-   wide screens as big as the viewport's height allows (GRID_FIT).
+   Grid geometry (client request — big cards, little space between them; the
+   comp's works-page.png had 619px cards 75px apart): two columns, a 1.5rem
+   gap both ways, and on wide screens only a 1.5rem margin either side, so the
+   cards run nearly edge to edge (≈828px wide at 1728px). They are sized by
+   the viewport's width, not its height: the grid can run past one screen, and
+   the reader scrolls a little for the second row (client: "it's okay if the
+   user has to scroll a bit"). Ultra-wide screens stop at 120rem.
 
    Opening a study in the pop-up (CaseStudyModal) is wired up here, at the
    grid, rather than inside WorkCard: a plain click is intercepted on its way
@@ -35,21 +38,8 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
    itself past the pill (see Footer), the remainder goes negative, and the
    2rem floor is all that is left: one clearance, not two stacked. */
 const SECTION =
-  'flex flex-1 items-center justify-center px-[var(--page-gutter)] pt-[clamp(1rem,2.5vh,2rem)] ' +
-  'pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
-
-/* On wide screens the 2x2 grid must fit in one viewport between the top bar
-   and the nav pill. A card is a 16:9 thumbnail and nothing else, so its height
-   follows its width, and the grid's width is capped by the viewport's height:
-   two rows of ((W − 24px) / 2) × 9/16 plus the 24px row gap have to fit in
-   100dvh less ~252px of chrome (top bar, section padding, nav-pill clearance),
-   which solves to W ≈ 177.8dvh − 29.2rem. The 252px is generous, though —
-   measured, the grid can take another ~25px of height and still clear the
-   top bar and the pill by 20px+ — so the cap is W = 177.8dvh − 27.9rem: the
-   grid is about one viewport less 240px tall. On laptop screens that height
-   cap is what sizes the cards (≈758px wide at 1728x1117, 565px at 1440x900);
-   very tall or wide screens stop at the 100rem ceiling or the page gutters. */
-const GRID_FIT = 'lg:max-w-[min(100rem,calc(177.8dvh-27.9rem))]'
+  'flex flex-1 items-center justify-center px-[var(--page-gutter)] lg:px-[1.5rem] ' +
+  'pt-[clamp(1rem,2.5vh,2rem)] pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
 
 export function WorksGrid({ className = '', ...rest }) {
   const openCaseStudy = useOpenCaseStudy()
@@ -92,7 +82,7 @@ export function WorksGrid({ className = '', ...rest }) {
         onClickCapture={onClick}
         onPointerOver={warm}
         onFocus={warm}
-        className={`grid w-full max-w-[100rem] ${GRID_FIT} grid-cols-1 gap-[1.5rem] lg:grid-cols-2`}
+        className={`grid w-full max-w-[120rem] grid-cols-1 gap-[1.5rem] lg:grid-cols-2`}
       >
         {CASE_STUDIES.map((study) => (
           <li key={study.slug} className="min-w-0">
