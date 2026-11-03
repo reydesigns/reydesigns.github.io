@@ -1,12 +1,13 @@
-import { useCallback } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { WorkCard } from './WorkCard'
-import { CASE_STUDIES } from '@/data/caseStudies'
+import { VinylPlayerModal, VinylThumb, prepareVinylAudio } from './VinylPlayerModal'
+import { WORKS_GRID } from '@/data/caseStudies'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { morphCardToCaseStudy } from '@/lib/cardMorph'
 
 /* ---------------------------------------------------------------------------
-   The 2x2 card grid on its own — no Layout, no nav, no page chrome.
+   The two-column card grid on its own: no Layout, no nav, no page chrome.
 
    It is rendered twice: as the third screen of the landing page's scroll
    sequence, and as the whole of the `/works` route. Both have to be the same
@@ -35,18 +36,32 @@ const SECTION =
   'flex flex-1 items-center justify-center px-[var(--page-gutter)] pt-[clamp(1rem,2.5vh,2rem)] ' +
   'pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
 
-/* On wide screens the 2x2 grid must fit in one viewport between the top bar
-   and the nav pill. A card's height follows its width (the thumbnail is
-   601:299), so the grid's width is capped by the viewport's height:
-   roughly 2px of width per 1px of height, less the fixed chrome and card text.
-   At the 1728x1117 reference this works out at ~1180px. It never goes below
-   70rem, where the card titles would start to wrap; on a viewport shorter than
-   that the works screen simply scrolls a little. */
+/* On wide screens the first two rows of the grid must fit in one viewport
+   between the top bar and the nav pill. A card's height follows its width
+   (the thumbnail is 601:299), so the grid's width is capped by the viewport's
+   height: roughly 2px of width per 1px of height, less the fixed chrome and
+   card text. At the 1728x1117 reference this works out at ~1180px. It never
+   goes below 70rem, where the card titles would start to wrap; on a viewport
+   shorter than that the works screen simply scrolls a little. The Vinyl
+   Player (WORKS_GRID) pushes Shore-Up to a third row, under Lipton, which
+   sits below the fold and is reached by scrolling. */
 const GRID_FIT = 'lg:max-w-[min(82.0625rem,max(70rem,calc(201dvh-66.6rem)))]'
 
 export function WorksGrid({ className = '', ...rest }) {
   const navigate = useNavigate()
   const reduced = useReducedMotion()
+
+  /* The Vinyl Player card opens its pop-up here, on whichever page the grid
+     is on. Its click is the user gesture iOS needs before it will load audio,
+     so the five previews start loading inside it, before the pop-up renders. */
+  const [vinylOpen, setVinylOpen] = useState(false)
+  const vinylCard = useRef(null)
+  const openVinyl = useCallback((event) => {
+    prepareVinylAudio()
+    vinylCard.current = event.currentTarget
+    setVinylOpen(true)
+  }, [])
+  const closeVinyl = useCallback(() => setVinylOpen(false), [])
 
   const onClick = useCallback(
     (event) => {
@@ -81,12 +96,17 @@ export function WorksGrid({ className = '', ...rest }) {
         onClick={onClick}
         className={`grid w-full max-w-[82.0625rem] ${GRID_FIT} grid-cols-1 gap-x-[4.6875rem] gap-y-[1.625rem] lg:grid-cols-2`}
       >
-        {CASE_STUDIES.map((study) => (
+        {WORKS_GRID.map((study) => (
           <li key={study.slug} className="min-w-0">
-            <WorkCard study={study} />
+            {study.status === 'toy' ? (
+              <WorkCard study={study} thumbnail={<VinylThumb />} onOpen={openVinyl} />
+            ) : (
+              <WorkCard study={study} />
+            )}
           </li>
         ))}
       </ul>
+      <VinylPlayerModal open={vinylOpen} onClose={closeVinyl} returnFocus={vinylCard} />
     </section>
   )
 }

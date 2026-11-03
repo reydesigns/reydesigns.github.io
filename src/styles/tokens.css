@@ -140,6 +140,48 @@
   --term-dot-yellow: #febc2e;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
+  /* --- Vinyl Player (the Works toy) -------------------------------------- */
+  /* A low-poly diorama, flat shaded with the light up and to the left: every
+     solid is three facets of one colour (lit, base, shaded) and casts a hard
+     shadow down and to the right. Solid fills only, never a gradient. The
+     body is sage; the base is the client's #9CAF88. */
+  --vp-sage: #9caf88;
+  --vp-sage-light: #b5c4a3;
+  --vp-sage-dark: #80946e;
+  /* The low-poly tabletop under the Works card's still. (In the pop-up the
+     table is plain white: --color-surface.) */
+  --vp-floor: #f0e8d8;
+  --vp-floor-light: #f3ecdf;
+  --vp-floor-dark: #ece3d2;
+  /* The equaliser behind a playing record: the maroon family in five flat
+     steps, palest (the bars' tips) to the site's maroon (their feet). Plain
+     #rrggbb, because a canvas reads them. */
+  --vp-eq-1: #f4dfe2;
+  --vp-eq-2: #dfa4ad;
+  --vp-eq-3: #b4566a;
+  --vp-eq-4: #7a1a30;
+  --vp-eq-5: #440000;
+  /* One shadow colour for everything: ink, laid on at a fixed strength by
+     the shapes that use it, so overlapping parts never double up. */
+  --vp-shadow: #2d0510;
+  --vp-shadow-alpha: 0.16;
+  /* Records: near-black with a lighter groove facet and a stationary sheen. */
+  --vp-vinyl: #211d20;
+  --vp-vinyl-light: #2e292d;
+  --vp-vinyl-dark: #141213;
+  --vp-sheen: #5a5358;
+  /* The rubber mat, the platter's metal rim and the tonearm. */
+  --vp-mat: #3b4636;
+  --vp-mat-light: #434f3e;
+  --vp-metal-light: #f1eee7;
+  --vp-metal: #d6d2c8;
+  --vp-metal-dark: #b2ada2;
+  /* The drop-target ring round the platter while a record is carried. */
+  --vp-ring: #fffbf2;
+  /* The power light: off, and on while a record plays. */
+  --vp-led-off: #6b5048;
+  --vp-led-on: #ff6a3d;
+
   /* --- Experience timeline (Me page) ------------------------------------- */
   /* A grey rule and dots; the logos are maroon, knocked back. */
   --tl-line: #c9c3bf;

@@ -22,7 +22,9 @@ import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
  *
  * Titles, client names and tags are transcribed verbatim from
  * Assets/site-design/images/works-page.png. Card order matches the comp:
- * HeySo and TMU on the top row, Lipton and Shore-Up on the bottom.
+ * HeySo and TMU on the top row, then Lipton and Shore-Up. The grid itself
+ * reads WORKS_GRID (below), which puts the Vinyl Player beside Lipton and so
+ * moves Shore-Up down to a third row, under Lipton.
  *
  * `logo` is the small client mark on the Works card. The four marks only ever
  * existed inside the comp, so they were sliced out of works-page.png as 160px
@@ -78,6 +80,26 @@ export const CASE_STUDIES = [
     status: 'coming-soon',
   },
 ]
+
+/**
+ * The Vinyl Player: a small interactive toy, not a case study. Its card opens
+ * a pop-up on the page it is on (VinylPlayerModal) instead of a route, so it
+ * is kept out of CASE_STUDIES, which also drives /works/:slug and the "next
+ * case study" link, and joins the grid only through WORKS_GRID. Its records
+ * come from src/data/vinyls.json (scripts/fetch-vinyls.mjs). It has no client,
+ * so no logo or client line: the card shows just its tag and title.
+ */
+export const VINYL_PLAYER = {
+  slug: 'vinyl-player',
+  title: 'Vinyl Player',
+  metaTitle: 'Vinyl Player',
+  tag: 'INTERACTIVE',
+  status: 'toy',
+}
+
+/** The Works grid's cards, in order: the Vinyl Player sits beside Lipton on
+ *  the second row, which moves Shore-Up down to the third, under Lipton. */
+export const WORKS_GRID = CASE_STUDIES.flatMap((c) => (c.slug === 'lipton' ? [c, VINYL_PLAYER] : [c]))
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)
 

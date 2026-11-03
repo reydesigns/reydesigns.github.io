@@ -63,7 +63,7 @@ const CARD =
    lines, as they did before at the 2.25rem floor. */
 const TITLE = 'text-[length:min(var(--text-works-title),12.9cqi)]'
 
-function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
+function Thumbnail({ study, thumbRef, videoRef, mode, near, children }) {
   const comingSoon = study.status === 'coming-soon'
   return (
     <div
@@ -122,6 +122,9 @@ function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
           </span>
         </span>
       )}
+
+      {/* A card that brings its own picture (the Vinyl Player's still). */}
+      {children}
     </div>
   )
 }
@@ -133,20 +136,27 @@ function CardBody({ study }) {
           phones the right side matches the left instead, because those 18px
           are what the client name needs to fit. */}
       <div className="mt-[0.5rem] flex h-10 items-center justify-between gap-3 pl-[0.6875rem] pr-[0.6875rem] sm:pr-[1.8125rem]">
+        {/* A card with no client (the Vinyl Player) leaves this side empty;
+            the row keeps its 40px height, so the title lines up with its
+            neighbour's. */}
         <span className="flex min-w-0 items-center gap-[0.625rem]">
-          <img
-            src={study.logo}
-            alt=""
-            width="40"
-            height="40"
-            className="h-10 w-10 shrink-0 object-contain"
-          />
+          {study.logo && (
+            <img
+              src={study.logo}
+              alt=""
+              width="40"
+              height="40"
+              className="h-10 w-10 shrink-0 object-contain"
+            />
+          )}
           {/* Two lines rather than an ellipsis: on a narrow phone
               "WITM: Designathon" is wider than the room left by the logo and
               the pill, and two short lines still sit inside the 40px row. */}
-          <span className="line-clamp-2 text-[length:var(--text-works-meta)] font-semibold leading-tight text-[var(--color-ink-muted)]">
-            {study.client}
-          </span>
+          {study.client && (
+            <span className="line-clamp-2 text-[length:var(--text-works-meta)] font-semibold leading-tight text-[var(--color-ink-muted)]">
+              {study.client}
+            </span>
+          )}
         </span>
 
         {/* Every tag is the same pill — one fixed width, height and type size —
@@ -168,7 +178,7 @@ function CardBody({ study }) {
   )
 }
 
-export function WorkCard({ study }) {
+export function WorkCard({ study, thumbnail, onOpen }) {
   const videoRef = useRef(null)
   const reduced = useReducedMotion()
   // Data saver turns autoplay off.
@@ -211,9 +221,32 @@ export function WorkCard({ study }) {
   }, [mode])
 
   const thumb = (
-    <Thumbnail study={study} thumbRef={thumbRef} videoRef={videoRef} mode={mode} near={near} />
+    <Thumbnail study={study} thumbRef={thumbRef} videoRef={videoRef} mode={mode} near={near}>
+      {thumbnail}
+    </Thumbnail>
   )
   const body = <CardBody study={study} />
+
+  /* A card that opens a pop-up on this page rather than a case study (the
+     Vinyl Player): the same shell and hover shadow as a published card, but
+     the control is a <button> stretched over it, not a link. A button cannot
+     hold the card's <h2>, so the heading stays a heading and the button
+     sits on top, carrying the card's name. */
+  if (onOpen) {
+    return (
+      <article className={`${CARD} relative hover:shadow-md has-[:focus-visible]:shadow-md`}>
+        {thumb}
+        {body}
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-label={study.client ? `${study.title}: ${study.client}` : study.title}
+          onClick={onOpen}
+          className="absolute inset-0 rounded-[var(--radius-card)]!"
+        />
+      </article>
+    )
+  }
 
   if (comingSoon) {
     return (

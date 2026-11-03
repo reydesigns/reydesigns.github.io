@@ -17,13 +17,19 @@ export default defineConfig({
       '@assets': fileURLToPath(new URL('./Assets', import.meta.url)),
     },
   },
-  server: { port: 5173, open: false },
+  // strictPort: a second session's server fails loudly instead of drifting to
+  // 5174 while the scripts keep testing :5173. Parallel worktree sessions pass
+  // their own port: `npm run dev -- --port 5174` + BASE_URL=http://localhost:5174.
+  server: { port: 5173, strictPort: true, open: false },
   build: {
     // Videos and fonts are emitted as files rather than inlined as base64.
     assetsInlineLimit: 4096,
-    // The one chunk over Vite's 500 kB default is Drawing3D (three.js, ~528 kB,
-    // 133 kB gzip). It is already lazy — fetched only on the landing page from
-    // 40rem up, never on phones — so the warning has nothing left to tell us.
+    // Two chunks pass Vite's 500 kB default. Drawing3D (three.js, ~545 kB,
+    // 138 kB gzip) is already lazy: it is fetched only on the landing page from
+    // 40rem up, never on phones. The entry chunk is just over (~505 kB, ~184 kB
+    // gzip) since the Vinyl Player's scene and audio joined the Works grid; the
+    // card's thumbnail draws the same scene, so it loads with the page. Neither
+    // warning would have anything left to tell us.
     chunkSizeWarningLimit: 600,
   },
 })

@@ -283,6 +283,378 @@ html.lenis body {
   width: clamp(7rem, 19vw, 22rem);
 }
 
+/* ---------------------------------------------------------------------------
+   The Vinyl Player (VinylPlayerModal.jsx, RecordPlayer.jsx, VinylStack.jsx).
+
+   Every fill in the scene comes from one of these classes, so the colours
+   stay in tokens.css. Shadows are a single ink colour at a fixed strength on
+   a group, so the shapes inside one shadow merge rather than darkening where
+   they overlap.
+--------------------------------------------------------------------------- */
+.vpf-sage { fill: var(--vp-sage); }
+.vpf-sage-light { fill: var(--vp-sage-light); }
+.vpf-sage-dark { fill: var(--vp-sage-dark); }
+.vpf-floor { fill: var(--vp-floor); }
+.vpf-floor-light { fill: var(--vp-floor-light); }
+.vpf-floor-dark { fill: var(--vp-floor-dark); }
+.vpf-vinyl { fill: var(--vp-vinyl); }
+.vpf-vinyl-light { fill: var(--vp-vinyl-light); }
+.vpf-vinyl-dark { fill: var(--vp-vinyl-dark); }
+.vpf-sheen { fill: var(--vp-sheen); }
+.vpf-label-rim { fill: var(--vp-floor-light); }
+.vpf-mat { fill: var(--vp-mat); }
+.vpf-mat-light { fill: var(--vp-mat-light); }
+.vpf-metal { fill: var(--vp-metal); }
+.vpf-metal-light { fill: var(--vp-metal-light); }
+.vpf-metal-dark { fill: var(--vp-metal-dark); }
+.vpf-maroon { fill: var(--color-maroon); }
+.vpf-maroon-light { fill: color-mix(in srgb, var(--color-maroon) 74%, var(--color-surface)); }
+.vpf-maroon-dark { fill: color-mix(in srgb, var(--color-maroon) 60%, var(--vp-vinyl-dark)); }
+.vpf-led-off { fill: var(--vp-led-off); }
+.vpf-led-on { fill: var(--vp-led-on); }
+.vp-shadow {
+  fill: var(--vp-shadow);
+  opacity: var(--vp-shadow-alpha);
+}
+.vp-ring {
+  fill: none;
+  stroke: var(--vp-ring);
+  stroke-width: 12;
+  stroke-linejoin: round;
+}
+.vp-focus {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 7;
+}
+.vp-glint {
+  fill: var(--color-surface);
+  opacity: 0.12;
+}
+.vp-edge-lit {
+  fill: var(--color-surface);
+  opacity: 0.22;
+}
+.vp-edge-shade {
+  fill: var(--vp-shadow);
+  opacity: 0.26;
+}
+
+/* The sleeves are the buttons, and draw their own focus ring (the lifted
+   copy's outline) instead of the page's rectangle. Nothing in the scene lets
+   the browser pan, zoom or select under a finger: `touch-action` is set on
+   the <svg> itself because Chrome ignores it on the shapes inside, and a
+   drag would be cancelled as a pan after its first move. The pop-up never
+   scrolls, so nothing is lost. */
+.vp-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.vp-sleeve,
+.vp-grab {
+  touch-action: none;
+  cursor: grab;
+  outline: none;
+}
+.vp-grab {
+  pointer-events: visiblePainted;
+}
+.vp-sleeve:focus-visible,
+.vp-key:focus-visible {
+  outline: none;
+}
+.vp-key {
+  cursor: pointer;
+}
+.vp-key[aria-disabled='true'] {
+  pointer-events: none;
+}
+.vp-key-ring {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 6;
+  visibility: hidden;
+}
+.vp-key:focus-visible .vp-key-ring {
+  visibility: visible;
+}
+/* The lifted sleeve's hit area (VinylStack): `pointer-events` comes from its
+   attribute, so it answers only while the sleeve is up. */
+.vp-hit {
+  touch-action: none;
+  cursor: grab;
+}
+
+/* The pop-up: a diorama on a dim backdrop. From 40rem it is one 16:10 stage
+   as large as fits, with the title over the table in the player's column and
+   the caption in the band below the player; on a phone it fills the screen
+   and the title, stage and caption stack. */
+.vp-pop {
+  /* Preflight zeroes the UA's `margin: auto`, which is what centres a modal. */
+  margin: auto;
+  width: min(75rem, 100% - 2rem, (100dvh - 2rem) * 1.6);
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  overscroll-behavior: contain;
+  color: var(--color-ink);
+}
+.vp-pop::backdrop {
+  background: color-mix(in srgb, var(--color-ink) 44%, transparent);
+  animation: vp-fade-in 240ms ease-out both;
+}
+.vp-pop[data-closing]::backdrop {
+  animation: vp-fade-out 180ms ease-in both;
+}
+.vp-frame {
+  position: relative;
+  aspect-ratio: 1600 / 1000;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  container-type: inline-size;
+  /* A hard shadow, like everything on the table. */
+  box-shadow: 0.75rem 1rem 0 color-mix(in srgb, var(--color-ink) 28%, transparent);
+  animation: vp-pop-in 320ms var(--ease-brand) both;
+}
+.vp-pop[data-closing] .vp-frame {
+  animation: vp-pop-out 180ms ease-in both;
+}
+.vp-stage {
+  position: absolute;
+  inset: 0;
+}
+/* The equaliser behind a playing record (VinylPlayerModal Equaliser): a
+   canvas with one pixel per cell, stretched over the frame with hard edges
+   (crisp-edges is Firefox's older spelling), under everything else. It fades
+   in as a record starts and out as the bars fall. */
+.vp-eq {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms ease-out;
+}
+.vp-eq[data-on] {
+  opacity: 1;
+  transition-duration: 350ms;
+}
+.vp-head {
+  position: absolute;
+  z-index: 1;
+  left: 42%;
+  right: 7rem;
+  top: 4.6%;
+  pointer-events: none;
+}
+.vp-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.6cqi, 2.75rem);
+  line-height: 1;
+  color: var(--color-ink);
+}
+/* One quiet line of capitals: black at 55%, about the faintest that still
+   passes for small text (4.7:1) on the white table. */
+.vp-hint {
+  margin: 0.9em 0 0;
+  font-size: clamp(0.625rem, 1.05cqi, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgb(0 0 0 / 0.55);
+}
+.vp-close {
+  position: absolute;
+  z-index: 2;
+  top: clamp(0.75rem, 1.7cqi, 1.25rem);
+  right: clamp(0.75rem, 1.7cqi, 1.25rem);
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: 0.1875rem 0.25rem 0 color-mix(in srgb, var(--color-ink) 16%, transparent);
+  transition: transform 160ms var(--ease-brand), box-shadow 160ms var(--ease-brand);
+}
+.vp-close:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 0.25rem 0.3125rem 0 color-mix(in srgb, var(--color-ink) 18%, transparent);
+}
+.vp-close:focus-visible {
+  border-radius: var(--radius-pill);
+}
+.vp-close svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+/* The band under the player (its plinth and shadow end at 80.4% of the
+   frame): the caption is centred in it, inset from the frame's right edge so
+   a pill that wraps to two lines keeps its rounded end. */
+.vp-caption,
+.vp-hint--foot {
+  position: absolute;
+  z-index: 1;
+  left: 42%;
+  right: clamp(0.75rem, 2cqi, 1.5rem);
+  top: 80.5%;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  pointer-events: none;
+}
+.vp-hint--foot {
+  display: none;
+  max-width: none;
+}
+.vp-caption__pill {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
+  max-width: 100%;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: 0.1875rem 0.25rem 0 color-mix(in srgb, var(--color-ink) 14%, transparent);
+  font-size: clamp(0.8125rem, 1.15cqi, 0.9375rem);
+  line-height: 1.25;
+  animation: vp-caption-in 260ms var(--ease-brand) both;
+}
+.vp-caption__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.vp-caption__title {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.vp-caption__artist {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+/* A small diorama (a landscape phone, a narrow window, a tablet held
+   upright): the title alone over the player, smaller, and the hint moved down
+   into the caption's band while nothing plays. */
+@media (min-width: 40rem) {
+  @container (max-width: 60rem) {
+    .vp-head {
+      right: 4.25rem;
+    }
+    .vp-title {
+      font-size: clamp(1.125rem, 3.6cqi, 2.75rem);
+    }
+    .vp-head .vp-hint {
+      display: none;
+    }
+    .vp-hint--foot:not([hidden]) {
+      display: flex;
+    }
+    .vp-caption__pill {
+      padding: 0.4375rem 0.875rem;
+    }
+  }
+}
+@media not all and (min-width: 40rem) {
+  .vp-pop {
+    width: calc(100% - 1rem);
+    height: calc(100dvh - 1rem);
+  }
+  .vp-frame {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    aspect-ratio: auto;
+    box-shadow: 0.375rem 0.5rem 0 color-mix(in srgb, var(--color-ink) 28%, transparent);
+  }
+  /* The scene keeps its own proportions and sits, with the caption right
+     under it, in the middle of the space below the title (shrinking, and
+     letterboxed, on a short screen); its table runs on past the SVG's box
+     (overflow), under the title and the caption. */
+  .vp-head {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    padding: 1.25rem 4.25rem 0 1.25rem;
+  }
+  .vp-stage {
+    position: relative;
+    inset: auto;
+    flex: 0 1 auto;
+    min-height: 0;
+    margin-top: auto;
+    aspect-ratio: var(--vp-aspect);
+  }
+  .vp-svg {
+    overflow: visible;
+  }
+  .vp-caption {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.5rem;
+    margin-bottom: auto;
+    padding: 0 1rem 1.25rem;
+  }
+}
+@keyframes vp-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.96);
+  }
+}
+@keyframes vp-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes vp-caption-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+}
+@keyframes vp-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes vp-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

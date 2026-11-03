@@ -1,0 +1,42 @@
+[
+  {
+    "id": "my-eyes",
+    "title": "MY EYES",
+    "artist": "Travis Scott",
+    "album": "UTOPIA",
+    "coverUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/09/7d/b0/097db06f-8403-3cf7-7510-139e570ca66b/196871341882.jpg/600x600bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/08/5d/d8/085dd8b4-8f4e-c1cd-dc28-174276391c89/mzaf_9721563425278163706.plus.aac.p.m4a"
+  },
+  {
+    "id": "let-it-happen",
+    "title": "Let It Happen",
+    "artist": "Tame Impala",
+    "album": "Currents",
+    "coverUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/2e/b4/a82eb490-f30a-a321-461a-0383c88fec95/15UMGIM23316.rgb.jpg/600x600bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/77/68/1f/77681ffc-56e6-813c-e1bc-d94a9b5893c1/mzaf_570579359857462588.plus.aac.p.m4a"
+  },
+  {
+    "id": "back-home",
+    "title": "Back Home",
+    "artist": "Yeat & Joji",
+    "album": "ADL",
+    "coverUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/fc/3e/1c/fc3e1c95-df92-f28c-5e93-ba37efa60e8a/26UMGIM24390.rgb.jpg/600x600bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/af/25/cd/af25cdd8-ff32-396d-60b0-5d98c3d8bfc7/mzaf_5390730631971077544.plus.aac.p.m4a"
+  },
+  {
+    "id": "rendezvous",
+    "title": "Rendezvous",
+    "artist": "Don Toliver feat. Yeat",
+    "album": "OCTANE",
+    "coverUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/e8/e5/c6/e8e5c690-a958-622e-eb62-0dce6059300e/075679599360.jpg/600x600bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/20/1f/72/201f726a-cea0-7ec7-700a-98aa481b58bd/mzaf_4179558640322155812.plus.aac.p.m4a"
+  },
+  {
+    "id": "rocketeer",
+    "title": "Rocketeer",
+    "artist": "Far East Movement & Ryan Tedder",
+    "album": "Free Wired",
+    "coverUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/5f/69/26/5f6926ea-5a7f-17d9-25ce-dbcddfbc14d8/10UMGIM25431.rgb.jpg/600x600bb.jpg",
+    "previewUrl": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/2b/1f/36/2b1f3606-fb68-5241-1a0e-87fd345ac027/mzaf_8719340920409218644.plus.aac.p.m4a"
+  }
+]
