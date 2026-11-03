@@ -7,7 +7,8 @@
  */
 import puppeteer from 'puppeteer-core'
 import fs from 'node:fs'
-const BASE = 'http://localhost:5173/Assets/tmu-kpop/'
+const ORIGIN = process.env.BASE_URL ?? 'http://localhost:5173'
+const BASE = `${ORIGIN}/Assets/tmu-kpop/`
 const OUT = 'Assets/tmu-kpop/images/web/'
 const COMP = BASE + 'tmukpop%20case%20study.png'
 const I = (n) => BASE + 'images/' + encodeURIComponent(n)
@@ -25,7 +26,7 @@ const jobs = [
   { out: 'card-faq.webp', src: COMP, crop: [4604, 18272, 1679, 2015], ground: true, w: 900 },
 ]
 const b = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, protocolTimeout: 900000 })
-const p = await b.newPage(); await p.goto('http://localhost:5173/favicon.svg')
+const p = await b.newPage(); await p.goto(`${ORIGIN}/favicon.svg`)
 const only = process.argv.slice(2)
 for (const job of jobs.filter(j => !only.length || only.includes(j.out))) {
   const res = await p.evaluate(async (job, I1, I2) => {

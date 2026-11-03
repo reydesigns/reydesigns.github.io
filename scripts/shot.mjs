@@ -41,7 +41,7 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 page.on('requestfailed', (r) => errors.push(`requestfailed: ${r.url()} ${r.failure()?.errorText}`))
 
-await page.goto(`http://localhost:5173${path}`, { waitUntil: 'networkidle2', timeout: 30000 })
+await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}${path}`, { waitUntil: 'networkidle2', timeout: 30000 })
 await new Promise((r) => setTimeout(r, Number(waitMs)))
 
 const probe = await page.evaluate(() => ({

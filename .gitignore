@@ -27,3 +27,6 @@ service-account*.json
 Assets/tmu-kpop/tmukpop case study.png
 Assets/lipton/lipton tea case study.png
 Assets/heyso/images/case-study.png
+
+# Claude Code worktrees (parallel sessions, one per terminal)
+.claude/worktrees/

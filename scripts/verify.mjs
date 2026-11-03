@@ -40,7 +40,7 @@ for (const route of ROUTES) {
   )
 
   try {
-    await page.goto(`http://localhost:5173${route}`, {
+    await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}${route}`, {
       waitUntil: 'networkidle2',
       timeout: 30000,
     })

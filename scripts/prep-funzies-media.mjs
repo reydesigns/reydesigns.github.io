@@ -15,7 +15,7 @@ import { execFileSync } from 'node:child_process'
 const SRC = 'Assets/funzies/'
 const OUT = 'Assets/funzies/web/'
 const TMP = OUT + '.tmp/'
-const BASE = 'http://localhost:5173/'
+const BASE = `${process.env.BASE_URL ?? 'http://localhost:5173'}/`
 
 /* [output, source, max long edge, crop?, opts?]. Photos and posters are
    capped at 1600px — the popup frame is never wider than ~560 CSS px, so that

@@ -5,8 +5,9 @@
  */
 import puppeteer from 'puppeteer-core'
 import fs from 'node:fs'
-const COMP = 'http://localhost:5173/Assets/lipton/lipton%20tea%20case%20study.png'
-const I = (n) => 'http://localhost:5173/Assets/lipton/Images/' + encodeURIComponent(n)
+const ORIGIN = process.env.BASE_URL ?? 'http://localhost:5173'
+const COMP = `${ORIGIN}/Assets/lipton/lipton%20tea%20case%20study.png`
+const I = (n) => `${ORIGIN}/Assets/lipton/Images/` + encodeURIComponent(n)
 const OUT = 'Assets/lipton/Images/web/'
 // Phones are cut from the comp (4x a 1728pt frame). Each crop is generous; the
 // comp's ground, the maroon feature tab and the sunken card colour are flood-
@@ -30,7 +31,7 @@ const jobs = [
 ]
 const only = process.argv.slice(2)
 const b = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true, protocolTimeout: 900000 })
-const p = await b.newPage(); await p.goto('http://localhost:5173/favicon.svg')
+const p = await b.newPage(); await p.goto(`${ORIGIN}/favicon.svg`)
 for (const job of jobs.filter((j) => !only.length || only.includes(j.out))) {
   const r = await p.evaluate(async (job) => {
     const NS = 'http://www.w3.org/1999/xhtml'

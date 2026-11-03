@@ -29,7 +29,7 @@ import { drawStickers } from './lib/room-art.mjs'
 
 const SRC = '/Assets/funzies/isometric%20room.jpeg'
 const OUT = 'Assets/funzies/web/room/'
-const BASE = 'http://localhost:5173/'
+const BASE = `${process.env.BASE_URL ?? 'http://localhost:5173'}/`
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const STICKER_EDGE = 1
 const ROOM_EDGE = 4

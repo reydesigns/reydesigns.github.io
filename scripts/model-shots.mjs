@@ -6,7 +6,7 @@
  *   node scripts/model-shots.mjs <suffix>     e.g. before | after
  *
  * Writes restyle/renders/<model>-<suffix>.png for each drawing. Needs the dev
- * server on :5173. Uses the same Chrome + SwiftShader setup as shot.mjs.
+ * server on :5173 (or BASE_URL). Uses the same Chrome + SwiftShader setup as shot.mjs.
  */
 import puppeteer from 'puppeteer-core'
 
@@ -24,7 +24,7 @@ const page = await browser.newPage()
 await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 })
 // Reduced motion stills the sway and bob, so before and after are framed alike.
 await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' })
+await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}/`, { waitUntil: 'networkidle2' })
 await new Promise((r) => setTimeout(r, 4000))
 // The drawings overlap the headline; hide everything but them so each crop
 // shows the model alone on the page background.

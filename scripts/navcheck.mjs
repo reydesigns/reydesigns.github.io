@@ -16,7 +16,7 @@ const rect = () =>
 async function measure(route, settle, scrollToEnd) {
   const page = await browser.newPage()
   await page.setViewport({ width: 1728, height: 1117 })
-  await page.goto(`http://localhost:5173${route}`, { waitUntil: 'networkidle2' })
+  await page.goto(`${process.env.BASE_URL ?? 'http://localhost:5173'}${route}`, { waitUntil: 'networkidle2' })
   await new Promise((r) => setTimeout(r, 2500))
   if (scrollToEnd) {
     await page.evaluate(() => {
