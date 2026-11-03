@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { useSaveData } from '@/lib/useSaveData'
 import { useInView } from '@/lib/useInView'
@@ -7,34 +7,32 @@ import { useInView } from '@/lib/useInView'
 /* ---------------------------------------------------------------------------
    One card in the Works grid.
 
-   Every number below is measured off Assets/site-design/images/works-page.png
-   (6912×4468 = 4× a 1728pt frame), card-relative:
+   Minimal by client request: the card IS the thumbnail — a 16:9 still/video
+   filling the whole card, no white frame, no meta row, no Pixelta title. Two
+   things sit on top of it:
 
-     card            619 × 453,  radius --radius-card
-     padding          9 left/right/top, 22 bottom
-     thumbnail      601 × 299  (601/299 ≈ 2:1), radius --radius-card
-     meta row        40 tall, 8 below the thumbnail
-       logo slot     40 square, 20 from the card's left edge
-       client name   10 after the logo slot
-       tag pill     104 × 28, 1.5px stroke (smaller than the comp's 112 × 34
-                    by client request), 38 from the card's right edge
-     title           69px Pixelta, 6 below the meta row, 31 from the left edge
+     chip         top-left, always shown: the client's logo and the study's
+                  name in burgundy on a frosted light pill, so the card can be
+                  identified at a glance without a caption under it.
+     description  bottom band, HIDDEN by default. A pointer that can hover
+                  reveals it on hover; a keyboard reveals it on focus. Touch
+                  never sees it — a tap opens the case study, which says the
+                  same thing at length.
 
    Every card shows a still the moment it renders, whatever the input: the
    poster (one frame of the walkthrough, ~30-50 KB of WebP) is a plain <img>
-   under the <video>. It used to be skipped for mouse users, who were meant to
-   see flat maroon until they hovered — but a `preload="none"` video draws
-   nothing, so on arrival the grid read as four empty blocks and the client had
-   to hover each one to find out what it was. The maroon is now only the
-   backing colour while the WebP decodes.
+   under the <video>. The maroon behind it is only the backing colour while the
+   WebP decodes.
 
    The preview has two modes, which differ only in what the video does:
 
      inview   plays by itself while the thumbnail is mostly on screen and
-              pauses when it leaves, on every device (it used to wait for a
-              hover on desktop; the client wanted it playing on arrival).
+              pauses when it leaves, on every device.
      still    reduced motion, or data saver on: never plays; the poster is the
               whole picture.
+
+   It also pauses while a case study is open in the pop-up (CaseStudyModal):
+   the cards are hidden behind it, and the pop-up's hero plays the same file.
 
    The <video> sits on top and is transparent until it has a decoded frame, so
    the poster stays visible while a video is still fetching and there is no
@@ -45,33 +43,19 @@ import { useInView } from '@/lib/useInView'
 
 // The radius carries `!` because global.css's focus-visible rule is unlayered
 // and would otherwise flatten the card's corners to 4px while it has focus.
-// `@container` lets the title size itself off the card's own width (TITLE).
 const CARD =
-  '@container group flex h-full flex-col rounded-[var(--radius-card)]! bg-[var(--color-surface)] ' +
-  'p-[0.5625rem] pb-[1.375rem] no-underline shadow-sm transition-[box-shadow,transform] ' +
-  'duration-300 ease-[var(--ease-brand)]'
+  'group relative block aspect-video overflow-hidden rounded-[var(--radius-card)]! ' +
+  'bg-[var(--color-maroon)] no-underline shadow-sm transition-shadow duration-300 ease-[var(--ease-brand)]'
 
-/* The title follows the viewport width (--text-works-title), but on a wide,
-   short screen the grid is capped by height (WorksGrid GRID_FIT) and the cards
-   are narrower than the viewport implies — "TMU-KPOP revamp" then wrapped to
-   two lines at 1920x1080 and pushed the grid past the screen. Capping it at
-   12.9% of the card's content width keeps the longest title on one line on
-   desktop (it needs ~13.3%) and is exactly the full 69px at the 1728x1117
-   reference, so there, on phones and at 1440 the viewport-based size still
-   wins unchanged. It is not a no-wrap guarantee: the title also has a left
-   inset, so on the narrowest phones (~320px) the longest titles still take two
-   lines, as they did before at the 2.25rem floor. */
-const TITLE = 'text-[length:min(var(--text-works-title),12.9cqi)]'
+/* The frosted backing shared by the chip and the description band. */
+const FROST = 'bg-[var(--card-chip-bg)] backdrop-blur-md'
 
 function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
   const comingSoon = study.status === 'coming-soon'
   return (
-    <div
-      ref={thumbRef}
-      className="relative aspect-[601/299] w-full overflow-hidden rounded-[var(--radius-card)] bg-[var(--color-maroon)]"
-    >
+    <div ref={thumbRef} data-card-thumb="" className="absolute inset-0">
       {/* Shore-Up has no walkthrough — the static screenshot sits behind a
-          maroon scrim so the card still reads as the comp's flat rectangle. */}
+          maroon scrim so the card still reads as a flat block. */}
       {comingSoon && study.poster && (
         <img
           src={study.poster}
@@ -113,8 +97,7 @@ function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
       )}
 
       {/* No pill, no stroke: the words themselves, big, in Pixelta. The face
-          has no ellipsis, quote or dash glyph, so plain letters only. Sized off
-          the card title so it scales with the rest of the card. */}
+          has no ellipsis, quote or dash glyph, so plain letters only. */}
       {comingSoon && (
         <span className="absolute inset-0 grid place-items-center px-[0.5rem]">
           <span className="font-display whitespace-nowrap text-[length:var(--text-works-title)] leading-none text-[var(--color-surface)]">
@@ -126,45 +109,49 @@ function Thumbnail({ study, thumbRef, videoRef, mode, near }) {
   )
 }
 
-function CardBody({ study }) {
+/** Top-left: the client's logo and the study's name. The name is the card
+ *  link's accessible name, so it is real text, not an image. */
+function Chip({ study }) {
   return (
-    <>
-      {/* Client + tag. Padding is asymmetric because it is in the comp; on
-          phones the right side matches the left instead, because those 18px
-          are what the client name needs to fit. */}
-      <div className="mt-[0.5rem] flex h-10 items-center justify-between gap-3 pl-[0.6875rem] pr-[0.6875rem] sm:pr-[1.8125rem]">
-        <span className="flex min-w-0 items-center gap-[0.625rem]">
-          <img
-            src={study.logo}
-            alt=""
-            width="40"
-            height="40"
-            className="h-10 w-10 shrink-0 object-contain"
-          />
-          {/* Two lines rather than an ellipsis: on a narrow phone
-              "WITM: Designathon" is wider than the room left by the logo and
-              the pill, and two short lines still sit inside the 40px row. */}
-          <span className="line-clamp-2 text-[length:var(--text-works-meta)] font-semibold leading-tight text-[var(--color-ink-muted)]">
-            {study.client}
-          </span>
-        </span>
+    <span
+      data-card-chip=""
+      className={`absolute left-[0.875rem] top-[0.875rem] inline-flex max-w-[calc(100%-1.75rem)] items-center gap-[0.5rem] rounded-[var(--radius-pill)] py-[0.3rem] pl-[0.35rem] pr-[0.85rem] ${FROST}`}
+    >
+      <img
+        src={study.logo}
+        alt=""
+        width="40"
+        height="40"
+        className="h-[1.5rem] w-[1.5rem] shrink-0 object-contain"
+      />
+      <span
+        data-card-name=""
+        className="truncate text-[length:var(--text-works-meta)] font-semibold leading-none text-[var(--color-maroon)]"
+      >
+        {study.metaTitle}
+      </span>
+    </span>
+  )
+}
 
-        {/* Every tag is the same pill — one fixed width, height and type size —
-            whatever the word inside, so the four cards read as a set. A touch
-            narrower on phones (still clear of the longest word, "WEB DESIGN"),
-            which also goes to the client name. */}
-        <span className="inline-flex h-[1.75rem] w-[5.75rem] sm:w-[6.5rem] shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--radius-pill)] border-[1.5px] border-[var(--color-ink)] text-[0.6875rem] font-semibold tracking-[0.04em] text-[var(--color-ink)]">
-          {study.tag}
-        </span>
-      </div>
-
-      {/* Pixelta. "Heyso..." is three literal periods — the face has no
-          ellipsis, quote or dash glyph, and anything missing falls back
-          silently to another font. */}
-      <h2 className={`font-display mt-[0.375rem] pl-[1.375rem] ${TITLE} leading-none text-[var(--color-ink)]`}>
-        {study.title}
-      </h2>
-    </>
+/** Bottom band: the one-line description. Hidden until hover (pointers that
+ *  can hover) or keyboard focus; aria-hidden because it repeats, in short,
+ *  what the case study opens with. */
+function Description({ study }) {
+  return (
+    <span
+      data-card-blurb=""
+      aria-hidden="true"
+      className={
+        'absolute inset-x-[0.875rem] bottom-[0.875rem] rounded-[1rem] px-[1rem] py-[0.75rem] ' +
+        'text-[length:var(--text-works-meta)] font-medium leading-snug text-[var(--color-maroon)] ' +
+        `${FROST} translate-y-2 opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-brand)] ` +
+        '[@media(hover:hover)]:group-hover:translate-y-0 [@media(hover:hover)]:group-hover:opacity-100 ' +
+        'group-focus-visible:translate-y-0 group-focus-visible:opacity-100 motion-reduce:translate-y-0'
+      }
+    >
+      {study.blurb}
+    </span>
   )
 }
 
@@ -175,6 +162,8 @@ export function WorkCard({ study }) {
   const saveData = useSaveData()
   const comingSoon = study.status === 'coming-soon'
   const mode = reduced || saveData ? 'still' : 'inview'
+  // A case study open in the pop-up covers the grid (see CaseStudyModal).
+  const covered = Boolean(useLocation().state?.caseStudy)
 
   // Two observers on the thumbnail: one latches as it comes within a screen
   // of the viewport (start fetching metadata), one tracks whether at least
@@ -189,15 +178,15 @@ export function WorkCard({ study }) {
     [nearRef, viewRef],
   )
 
-  // Play while in view, pause when not.
+  // Play while in view (and not covered by the pop-up), pause otherwise.
   useEffect(() => {
     const el = videoRef.current
     if (!el || mode !== 'inview') return
     // play() rejects if the browser declines (Low Power Mode, data saver); the
     // poster is then what stays on screen.
-    if (inView) el.play().catch(() => {})
+    if (inView && !covered) el.play().catch(() => {})
     else el.pause()
-  }, [mode, inView])
+  }, [mode, inView, covered])
 
   // Switching to still (reduced motion or data saver turned on) must stop
   // whatever is already playing, and go back to the poster's frame (0.5s): a
@@ -213,13 +202,12 @@ export function WorkCard({ study }) {
   const thumb = (
     <Thumbnail study={study} thumbRef={thumbRef} videoRef={videoRef} mode={mode} near={near} />
   )
-  const body = <CardBody study={study} />
 
   if (comingSoon) {
     return (
-      <article className={CARD} aria-label={`${study.title} — coming soon`}>
+      <article data-card="" className={`${CARD} cursor-default`} aria-label={`${study.metaTitle} — coming soon`}>
         {thumb}
-        {body}
+        <Chip study={study} />
       </article>
     )
   }
@@ -227,10 +215,12 @@ export function WorkCard({ study }) {
   return (
     <Link
       to={`/works/${study.slug}`}
+      data-card=""
       className={`${CARD} hover:shadow-md focus-visible:shadow-md`}
     >
       {thumb}
-      {body}
+      <Chip study={study} />
+      <Description study={study} />
     </Link>
   )
 }

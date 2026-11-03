@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { posterForVideo } from '@/data/caseStudies'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { useSaveData } from '@/lib/useSaveData'
+import { useCaseStudyHost } from '@/lib/caseStudyHost'
 
 /* ---------------------------------------------------------------------------
    Building blocks every case study shares, so the articles read as one system:
@@ -200,19 +201,30 @@ export function Tags({ tags }) {
  * once this marker is on screen.
  */
 export function Outro({ next }) {
+  // In the pop-up the next study swaps in place (CaseStudyModal); on the
+  // study's own page it is a link to the next page.
+  const { onSelect } = useCaseStudyHost()
+  const cls =
+    'group mt-[var(--cs-gap-outro)] flex w-full cursor-pointer items-end justify-between gap-[var(--cs-5)] border-0 border-t-[1.5px] border-solid border-[var(--color-ink-muted)] bg-transparent px-0 pb-0 pt-[var(--cs-4)] text-left no-underline'
+  const inner = next ? (
+    <>
+      <span className="text-[length:var(--text-eyebrow)] font-bold tracking-[0.1em] text-[var(--color-ink-muted)] uppercase">
+        Next case study
+      </span>
+      <span className="font-display text-right text-[length:var(--text-h2)] leading-[1.1] text-[var(--color-ink)] transition-opacity duration-200 group-hover:opacity-60">
+        {next.title}
+      </span>
+    </>
+  ) : null
   return (
     <>
-      {next ? (
-        <Link
-          to={`/works/${next.slug}`}
-          className="group mt-[var(--cs-gap-outro)] flex items-end justify-between gap-[var(--cs-5)] border-t-[1.5px] border-[var(--color-ink-muted)] pt-[var(--cs-4)] no-underline"
-        >
-          <span className="text-[length:var(--text-eyebrow)] font-bold tracking-[0.1em] text-[var(--color-ink-muted)] uppercase">
-            Next case study
-          </span>
-          <span className="font-display text-right text-[length:var(--text-h2)] leading-[1.1] text-[var(--color-ink)] transition-opacity duration-200 group-hover:opacity-60">
-            {next.title}
-          </span>
+      {next && onSelect ? (
+        <button type="button" data-cs-next="" onClick={() => onSelect(next.slug)} className={cls}>
+          {inner}
+        </button>
+      ) : next ? (
+        <Link to={`/works/${next.slug}`} data-cs-next="" className={cls}>
+          {inner}
         </Link>
       ) : null}
       <div data-cs-end aria-hidden="true" className="h-px w-full" />

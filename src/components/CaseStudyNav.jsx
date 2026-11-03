@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { scrollToSection, useActiveSection, useScrollProgress } from '@/lib/sectionScroll'
+import { useCaseStudyHost } from '@/lib/caseStudyHost'
 import pikaGif from '@assets/brand/animation/pika-sleeping.gif'
 
 /* The sleeping cat sits in the bottom of the panel in the comp. Its GIF canvas
@@ -55,12 +56,21 @@ function Pika({ width }) {
   )
 }
 
+/** Back to the works grid: a link to /works on the case study's own page, and
+ *  the pop-up's close in CaseStudyModal (the grid is right behind it). */
 function HomeButton({ className = '' }) {
+  const { onClose } = useCaseStudyHost()
+  const cls = `inline-flex shrink-0 cursor-pointer items-center gap-[0.45em] rounded-[var(--radius-pill)] border-[2.5px] border-[var(--color-surface)] bg-transparent px-[0.85em] py-[0.5em] text-[length:var(--text-eyebrow)] font-bold tracking-[0.08em] text-[var(--color-surface)] no-underline transition-colors duration-200 hover:bg-[var(--color-surface)] hover:text-[var(--color-ink)] ${className}`
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={cls}>
+        <Chevron />
+        HOME
+      </button>
+    )
+  }
   return (
-    <Link
-      to="/works"
-      className={`inline-flex shrink-0 items-center gap-[0.45em] rounded-[var(--radius-pill)] border-[2.5px] border-[var(--color-surface)] px-[0.85em] py-[0.5em] text-[length:var(--text-eyebrow)] font-bold tracking-[0.08em] text-[var(--color-surface)] no-underline transition-colors duration-200 hover:bg-[var(--color-surface)] hover:text-[var(--color-ink)] ${className}`}
-    >
+    <Link to="/works" className={cls}>
       <Chevron />
       HOME
     </Link>
@@ -85,6 +95,7 @@ function HomeButton({ className = '' }) {
  */
 export function CaseStudyNav({ sections, ids }) {
   const reduced = useReducedMotion()
+  const { root } = useCaseStudyHost()
   const observed = useActiveSection(ids)
   const progress = useScrollProgress()
 
@@ -148,7 +159,7 @@ export function CaseStudyNav({ sections, ids }) {
   const go = (event, id) => {
     event.preventDefault()
     setPinned(id)
-    scrollToSection(id, { reduced })
+    scrollToSection(id, { reduced, root })
   }
 
   // On the desktop panel a label wraps at the panel's fixed width (as

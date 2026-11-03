@@ -55,6 +55,9 @@
      are both 14px — between --text-eyebrow and --text-body, so neither fits. */
   --text-works-title: clamp(2.25rem, 4vw, 4.3125rem);
   --text-works-meta: clamp(0.8125rem, 0.81vw, 0.875rem);
+  /* The frosted backing behind a card's name chip and hover description: the
+     nav pill's recipe, light enough that the thumbnail still reads through. */
+  --card-chip-bg: color-mix(in srgb, var(--color-surface) 82%, transparent);
 
   /* --- layout ------------------------------------------------------------ */
   --page-gutter: clamp(1.25rem, 3.7vw, 4rem);

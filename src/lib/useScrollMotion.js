@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useReducedMotion } from './useReducedMotion'
+import { useCaseStudyHost } from './caseStudyHost'
 
 const clamp = (v) => Math.min(1, Math.max(0, v))
 const easeOut = (t) => 1 - (1 - t) ** 3
@@ -16,10 +17,15 @@ const easeOut = (t) => 1 - (1 - t) ** 3
  * 0.5) — for parallax that keeps drifting after the entrance has landed.
  *
  * Reduced motion pins `--p` at 1: the composition sits in its final layout.
+ *
+ * In the case-study pop-up "the viewport" is the pop-up's scroller (the
+ * host's `root`, see caseStudyHost.js): positions are read against its box
+ * and its own scroll events drive the update.
  */
 export function useScrollMotion({ end = 0.3 } = {}) {
   const ref = useRef(null)
   const reduced = useReducedMotion()
+  const { root } = useCaseStudyHost()
 
   useEffect(() => {
     const el = ref.current
@@ -35,10 +41,11 @@ export function useScrollMotion({ end = 0.3 } = {}) {
     const write = () => {
       frame = 0
       const r = el.getBoundingClientRect()
-      const vh = window.innerHeight
-      const t = (vh - r.top) / (vh * (1 - end))
+      const vh = root ? root.clientHeight : window.innerHeight
+      const top = root ? r.top - root.getBoundingClientRect().top : r.top
+      const t = (vh - top) / (vh * (1 - end))
       el.style.setProperty('--p', easeOut(clamp(t)).toFixed(4))
-      const pass = clamp((vh - r.top) / (vh + r.height))
+      const pass = clamp((vh - top) / (vh + r.height))
       el.style.setProperty('--t', pass.toFixed(4))
       el.style.setProperty('--q', (pass - 0.5).toFixed(4))
     }
@@ -46,14 +53,15 @@ export function useScrollMotion({ end = 0.3 } = {}) {
       if (!frame) frame = requestAnimationFrame(write)
     }
     write()
-    window.addEventListener('scroll', schedule, { passive: true })
+    const target = root ?? window
+    target.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     return () => {
       cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', schedule)
+      target.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
-  }, [end, reduced])
+  }, [end, reduced, root])
 
   return ref
 }

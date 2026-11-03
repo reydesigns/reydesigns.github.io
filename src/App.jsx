@@ -1,24 +1,23 @@
 import { Suspense, lazy, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { SmoothScroll } from '@/lib/SmoothScroll'
-import { noteRoute } from '@/lib/cardMorph'
+import { loadCaseStudy } from '@/lib/caseStudyChunk'
+import { CaseStudyModal } from '@/components/CaseStudyModal'
 import { Landing } from '@/pages/Landing'
 import { Works } from '@/pages/Works'
 import { Funzies } from '@/pages/Funzies'
 import { Me } from '@/pages/Me'
 
-/* The case studies are the one route worth splitting out: three articles,
-   their figures' code and case-study.css, none of which a phone opening `/`
-   should wait for. The other pages are a few hundred bytes each and stay in
-   the entry chunk, where they render with no gap on a direct load. */
-const loadCaseStudy = () => import('@/pages/CaseStudy')
+/* The case studies are the one route worth splitting out (caseStudyChunk.js).
+   The other pages are a few hundred bytes each and stay in the entry chunk,
+   where they render with no gap on a direct load. */
 const CaseStudy = lazy(() => loadCaseStudy().then((m) => ({ default: m.CaseStudy })))
 
 /**
  * Fetch the case-study chunk once the first page has fully loaded and the
  * browser is idle, so it never competes with that page's own images, and so
- * opening a study later doesn't wait on the network — the card -> case study
- * morph measures the new page's hero two frames after navigating.
+ * opening a study later doesn't wait on the network — a card opens its study
+ * in the pop-up (CaseStudyModal), which renders from this same chunk.
  */
 function PrefetchCaseStudy() {
   useEffect(() => {
@@ -39,8 +38,7 @@ function PrefetchCaseStudy() {
 }
 
 /**
- * Every route starts at the top, and any shared-element transition that is
- * still running when the destination changes gets torn down.
+ * Every route starts at the top.
  *
  * This matters more than it used to: `/` is two screens tall, so without it a
  * visitor who scrolled to the works grid and opened a case study would land a
@@ -52,7 +50,6 @@ function RouteEffects() {
   const { pathname } = useLocation()
 
   useLayoutEffect(() => {
-    noteRoute(pathname)
     const lenis = window.__lenis
     if (lenis) lenis.scrollTo(0, { immediate: true, force: true })
     else window.scrollTo(0, 0)
@@ -81,6 +78,9 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        {/* Over any page: opens when a works card puts a study in history
+            state, without changing the address. */}
+        <CaseStudyModal />
       </SmoothScroll>
     </BrowserRouter>
   )
