@@ -87,6 +87,12 @@
   /* --- layout ------------------------------------------------------------ */
   --page-gutter: clamp(1.25rem, 3.7vw, 4rem);
   --radius-card: 10px;
+  /* Every window (the case-study, Design, Vinyl Player and Binary Bloom
+     pop-ups): a soft drop shadow, a tight contact shade under a long, soft
+     fall-off below. */
+  --window-shadow:
+    0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
+    0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
   --radius-pill: 999px;
   /* The nav pill: a soft, iOS-style rounded rectangle. */
   --radius-nav: 22px;

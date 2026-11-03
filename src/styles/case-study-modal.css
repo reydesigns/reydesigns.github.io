@@ -60,9 +60,7 @@
   /* The containing block for the study's fixed section nav (see the
      component's notes): any transform does it. */
   transform: translateZ(0);
-  box-shadow:
-    0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
-    0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
+  box-shadow: var(--window-shadow);
   animation: cs-modal-in 380ms var(--ease-brand) both;
 }
 .cs-modal[data-size='full'] .cs-modal__frame {

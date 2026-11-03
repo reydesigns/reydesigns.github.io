@@ -24,8 +24,7 @@ import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
  * Assets/site-design/images/works-page.png; it heads the "next case study"
  * link and the coming-soon shell. Card order matches the comp: HeySo and TMU
  * on the top row, then Lipton and Shore-Up. The grid itself reads WORKS_GRID
- * (below), which puts the Vinyl Player beside Lipton and so moves Shore-Up
- * down to a third row, under Lipton.
+ * (below), which adds the two toys as a third row under all four.
  *
  * The Works card shows only `logo` and `metaTitle` (its top-left chip) and,
  * on hover, `blurb`. The four marks only ever existed inside the comp, so they
@@ -108,12 +107,10 @@ export const BINARY_BLOOM = {
   status: 'toy',
 }
 
-/** The Works grid's cards, in order: the Vinyl Player sits beside Lipton on
- *  the second row, which moves Shore-Up down to the third, under Lipton, and
- *  Binary Bloom fills the place beside it. */
-export const WORKS_GRID = CASE_STUDIES.flatMap((c) =>
-  c.slug === 'lipton' ? [c, VINYL_PLAYER] : c.slug === 'shore-up' ? [c, BINARY_BLOOM] : [c],
-)
+/** The Works grid's cards, in order: the four case studies first (HeySo
+ *  beside TMU K-POP, then Lipton beside Shore-Up), and under them the two
+ *  toys side by side, the Vinyl Player and Binary Bloom. */
+export const WORKS_GRID = [...CASE_STUDIES, VINYL_PLAYER, BINARY_BLOOM]
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)
 

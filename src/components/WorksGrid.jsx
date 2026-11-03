@@ -8,9 +8,8 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
 
 /* ---------------------------------------------------------------------------
    The two-column card grid on its own: no Layout, no nav, no page chrome.
-   (WORKS_GRID: four case studies and two toys: the Vinyl Player, which sits
-   beside Lipton and puts Shore-Up on a third row, and Binary Bloom beside
-   Shore-Up.)
+   (WORKS_GRID: the four case studies in two rows, then the two toys, the
+   Vinyl Player and Binary Bloom, side by side in a third.)
 
    It is rendered twice: as the second screen of the landing page (under the
    hero, on every width), and as the whole of the `/works` route. Both have to

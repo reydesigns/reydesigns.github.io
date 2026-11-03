@@ -4,15 +4,16 @@
  *   node scripts/checks/flowers.mjs            (dev server on :5173)
  *   SHOTS=/some/dir node scripts/checks/flowers.mjs   also saves screenshots
  *
- * Desktop: the card sits beside Shore-Up and draws; a click opens the
- * pop-up, titled Binary Bloom with no close button to see, the flower on a
- * dark square with its botanical name in the top corner, and a plain list
- * of plants (the chosen one burgundy); hovering one flower blooms that
- * flower alone, and it closes again after the pointer leaves; Enter opens
- * them all, one after another; the digits keep changing; picking one of the
- * three swatches recolours the drawing; every plant draws; Escape closes and
- * focus goes back to the card. Then a phone (a tap blooms the flower under
- * it) and reduced motion (nothing moves).
+ * Desktop: the card sits beside the Vinyl Player, under the case studies,
+ * and draws; a click opens the pop-up, titled Binary Bloom under a title bar
+ * with red and green dots, the flower on a dark square with its botanical
+ * name in the top corner, and a plain list of plants (the chosen one
+ * burgundy); hovering one flower blooms that flower alone, and it closes
+ * again after the pointer leaves; Enter opens them all, one after another;
+ * the digits keep changing; picking one of the three swatches recolours the
+ * drawing; every plant draws; Escape closes and focus goes back to the card.
+ * Then a phone (a tap blooms the flower under it) and reduced motion
+ * (nothing moves).
  */
 import { launch, openPage, sleep, check, done } from '../lib/browser.mjs'
 
@@ -99,7 +100,7 @@ const browser = await launch({ gpu: true })
   const order = await page.evaluate(() =>
     [...document.querySelectorAll('[data-card-name]')].map((n) => n.textContent.trim()),
   )
-  check('card sits beside Shore-Up', order.at(-1) === 'Binary Bloom' && order.at(-2) === 'Shore-Up', order.join(' | '))
+  check('card sits beside the Vinyl Player, under the case studies', order.at(-1) === 'Binary Bloom' && order.at(-2) === 'Vinyl Player' && order.at(-3) === 'Shore-Up', order.join(' | '))
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)
@@ -147,15 +148,19 @@ const browser = await launch({ gpu: true })
   const head = await page.evaluate(() => ({
     title: document.querySelector('#fl-title')?.textContent,
     hint: document.querySelector('.fl-hint')?.textContent,
-    closeShown: (() => {
-      const b = document.querySelector('.fl-close')
-      const r = b?.getBoundingClientRect()
-      return !!r && r.width > 2 && r.height > 2
+    // The title bar, as on the Vinyl Player: red and green dots on top.
+    dots: [...document.querySelectorAll('.fl-window > .vp-bar .vp-dot')].map((b) => {
+      const r = b.getBoundingClientRect()
+      return `${b.getAttribute('aria-label')}:${r.width > 8 && r.height > 8}`
+    }),
+    barOnTop: (() => {
+      const bar = document.querySelector('.fl-window > .vp-bar')?.getBoundingClientRect()
+      const frame = document.querySelector('.fl-frame')?.getBoundingClientRect()
+      return !!bar && !!frame && bar.bottom <= frame.top + 1
     })(),
-    oldClose: !!document.querySelector('.fl-frame .vp-close'),
   }))
   check('titled Binary Bloom, with the new hint', head.title === 'Binary Bloom' && head.hint === 'Hover to bring it to life', JSON.stringify(head))
-  check('no close button to see', !head.closeShown && !head.oldClose)
+  check('a title bar with the red and green dots', head.barOnTop && head.dots.join(' ') === 'Close:true Maximize:true', JSON.stringify(head))
   const label = await page.evaluate(() => {
     const sq = document.querySelector('.fl-stage .fl-square').getBoundingClientRect()
     const el = document.querySelector('.fl-latin')

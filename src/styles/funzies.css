@@ -640,9 +640,7 @@
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--color-bg);
-  box-shadow:
-    0 2px 6px color-mix(in srgb, var(--color-ink) 12%, transparent),
-    0 30px 70px -20px color-mix(in srgb, var(--color-ink) 45%, transparent);
+  box-shadow: var(--window-shadow);
   animation: fz-pop-in 380ms var(--ease-brand) both;
 }
 .fz-pop[data-size='full'] .fz-pop__window {

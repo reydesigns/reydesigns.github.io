@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { createFlowerView } from '@/lib/flowers/render'
 import { SPECIES, speciesByKey } from '@/lib/flowers/species'
 import { setCursorHost } from '@/components/CustomCursor'
-import { useMediaQuery, HOVER } from '@/lib/useMediaQuery'
+import { SizeGlyph } from '@/components/CaseStudyModal'
+import { useMediaQuery, HOVER, SM } from '@/lib/useMediaQuery'
 import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 
@@ -27,13 +29,17 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
    The pop-up follows VinylPlayerModal's: a native <dialog> (Escape, focus
    trap and the top layer come free), the page behind held still, the custom
    cursor moved inside, a short animated close, and focus handed back to the
-   card. It borrows the Vinyl Player's dialog styles, so the two toys open
-   and close alike, but shows no close button: Escape or a click outside
-   closes it, and the button is there only for a keyboard, seen when it has
-   focus.
+   card. It borrows the Vinyl Player's dialog styles and its title bar, so
+   the two toys look, open and close alike: red closes, green maximizes the
+   window to the screen and back (a phone, always full screen, has only the
+   red one). Escape or a click outside closes it too.
 --------------------------------------------------------------------------- */
 
 const CLOSE_MS = 180
+// Maximize / minimize: the window's move between its two boxes (a FLIP), as
+// the Vinyl Player and the case-study window do it.
+const RESIZE_MS = 320
+const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const DEFAULT_SPECIES = 'spider-lily'
 const DEFAULT_SWATCH = 1 // burgundy
 
@@ -166,15 +172,20 @@ export function FlowerThumb({ paused = false }) {
  */
 export function FlowerModal({ open, onClose, returnFocus }) {
   const ref = useRef(null)
+  const frameRef = useRef(null)
   const downOnBackdrop = useRef(false)
   const closingRef = useRef(false)
   const [closing, setClosing] = useState(false)
+  const [size, setSize] = useState('window')
+  const phone = !useMediaQuery(SM, true)
+  const reduced = useReducedMotion()
 
   useEffect(() => {
     const dialog = ref.current
     if (!open || !dialog) return undefined
     closingRef.current = false
     setClosing(false)
+    setSize('window')
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
     // Lenis and the page's own scroll both hold still behind the pop-up, and
@@ -192,7 +203,24 @@ export function FlowerModal({ open, onClose, returnFocus }) {
     }
   }, [open])
 
-  const reduced = useReducedMotion()
+  const toggle = useCallback(() => {
+    const frame = frameRef.current
+    const before = frame?.getBoundingClientRect()
+    flushSync(() => setSize((s) => (s === 'full' ? 'window' : 'full')))
+    if (!frame || !before || reduced) return
+    const after = frame.getBoundingClientRect()
+    if (!after.width || !after.height) return
+    frame.animate(
+      [
+        {
+          transformOrigin: '0 0',
+          transform: `translate(${before.left - after.left}px, ${before.top - after.top}px) scale(${before.width / after.width}, ${before.height / after.height})`,
+        },
+        { transformOrigin: '0 0', transform: 'translate(0px, 0px) scale(1, 1)' },
+      ],
+      { duration: RESIZE_MS, easing: RESIZE_EASE },
+    )
+  }, [reduced])
 
   const finishClose = useCallback(() => {
     if (ref.current?.open) ref.current.close()
@@ -216,6 +244,7 @@ export function FlowerModal({ open, onClose, returnFocus }) {
     <dialog
       ref={ref}
       className="vp-pop fl-pop"
+      data-size={phone ? undefined : size}
       data-closing={closing || undefined}
       data-lenis-prevent
       aria-labelledby="fl-title"
@@ -235,13 +264,35 @@ export function FlowerModal({ open, onClose, returnFocus }) {
         if (e.target === e.currentTarget && downOnBackdrop.current) close()
       }}
     >
-      <FlowerGenerator onClose={close} reduced={reduced} />
+      <div ref={frameRef} className="fl-window">
+        {/* The title bar, as on the Vinyl Player and the case-study window. */}
+        <div className="vp-bar">
+          <div className="vp-bar__controls">
+            <button type="button" className="vp-dot vp-dot--close" onClick={close} aria-label="Close" title="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+            {!phone && (
+              <button
+                type="button"
+                data-fl-toggle=""
+                className="vp-dot vp-dot--size"
+                onClick={toggle}
+                aria-label={size === 'full' ? 'Minimize' : 'Maximize'}
+                title={size === 'full' ? 'Minimize' : 'Maximize'}
+              >
+                <SizeGlyph full={size === 'full'} />
+              </button>
+            )}
+          </div>
+        </div>
+        <FlowerGenerator reduced={reduced} />
+      </div>
     </dialog>
   )
 }
 
 /** The generator itself: the controls on the left, the flower on the right. */
-function FlowerGenerator({ onClose, reduced }) {
+function FlowerGenerator({ reduced }) {
   const [speciesKey, setSpeciesKey] = useState(DEFAULT_SPECIES)
   const [swatch, setSwatch] = useState(DEFAULT_SWATCH)
   const [allOpen, setAllOpen] = useState(false)
@@ -353,11 +404,6 @@ function FlowerGenerator({ onClose, reduced }) {
             {species.latin}
           </span>
         </span>
-      </button>
-
-      {/* Last, so the pop-up does not open with focus on it. */}
-      <button type="button" className="fl-close" onClick={onClose}>
-        Close
       </button>
     </div>
   )
