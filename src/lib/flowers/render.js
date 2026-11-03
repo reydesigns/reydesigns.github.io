@@ -33,8 +33,8 @@ import { speciesByKey } from './species'
         drawn again onto two small canvases, scaled up soft, and added on
         top, so a bloom lights up.
 
-   No WebGL: a few thousand small paths a frame on a small bitmap, a thousand
-   or so glyphs, and three scaled copies.
+   No WebGL: a few thousand small paths a frame on a small bitmap, a few
+   thousand tiny glyphs, and three scaled copies.
 --------------------------------------------------------------------------- */
 
 const OPEN_S = 1.5 // seconds for a bud to open fully
@@ -47,8 +47,8 @@ const LINE_A = 0.8 // and its strength, before the dither
 const DITHER = 0.5 // how far every other bitmap pixel is knocked back
 
 const BEAT = [0.05, 0.12] // seconds between glitches, at random within
-const DENSITY = 0.4 // share of the plant's cells holding a digit, in bud
-const DENSITY_BLOOM = 0.3 // more, in full bloom
+const DENSITY = 0.5 // share of the plant's cells holding a digit, in bud
+const DENSITY_BLOOM = 0.35 // more, in full bloom
 const DIGIT_A = 0.38 // a digit's strength, in bud
 const DIGIT_A_BLOOM = 0.45 // more, in full bloom
 const SHADOW_A = 0.2 // the shadow digits, in the deepest shade
@@ -283,9 +283,13 @@ export function createFlowerView(canvas, opts = {}) {
     glow2.width = Math.max(1, Math.ceil(w / 8))
     glow2.height = Math.max(1, Math.ceil(h / 8))
 
-    font = clamp(Math.min(w, h) / 62, 7, 10.5)
-    cw = Math.round(font * 0.92)
-    ch = Math.round(font * 1.2)
+    // tiny digits, many of them: the grid snapped to device pixels so each
+    // glyph lands crisp. A 1x screen cannot draw a digit in under five or so
+    // pixels, so there they stay a touch bigger
+    font = dpr >= 1.5 ? clamp(Math.min(w, h) / 150, 3.5, 4.5) : clamp(Math.min(w, h) / 110, 5.5, 6)
+    const snap = (v) => Math.max(1, Math.round(v * dpr)) / dpr
+    cw = snap(font * 0.92)
+    ch = snap(font * 1.2)
     cols = Math.ceil(w / cw) + 1
     rows = Math.ceil(h / ch) + 1
     const n = cols * rows
@@ -448,16 +452,26 @@ export function createFlowerView(canvas, opts = {}) {
           it.j = j
           it.d = depth
 
-          // the cells under the quad, sampled on a 3 x 3 grid across it
+          // the cells under the quad, sampled finely enough across it that a
+          // big quad on the small grid leaves no cell out
           const nl = Math.hypot(nx, ny, nz) || 1
           const lit = clamp(((nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]) / nl) * facing)
           const dark = clamp((1 - lit) * 0.85 + (facing < 0 ? 0.25 : 0))
-          for (const fu of SAMPLES) {
+          const step = Math.min(cw, ch) * 0.7
+          const along = Math.max(Math.hypot(s.sx[b] - s.sx[a], s.sy[b] - s.sy[a]), Math.hypot(s.sx[cc] - s.sx[d], s.sy[cc] - s.sy[d]))
+          const across = Math.max(Math.hypot(s.sx[d] - s.sx[a], s.sy[d] - s.sy[a]), Math.hypot(s.sx[cc] - s.sx[b], s.sy[cc] - s.sy[b]))
+          const nu_ = clamp(Math.ceil(along / step), 3, 24)
+          const nv_ = clamp(Math.ceil(across / step), 3, 24)
+          for (let su = 0; su < nu_; su += 1) {
+            const fu = (su + 0.5) / nu_
             const lx = mix(s.sx[a], s.sx[b], fu)
             const ly = mix(s.sy[a], s.sy[b], fu)
             const rx = mix(s.sx[d], s.sx[cc], fu)
             const ry = mix(s.sy[d], s.sy[cc], fu)
-            for (const fv of SAMPLES) touch(mix(lx, rx, fv), mix(ly, ry, fv), depth, s.group, dark)
+            for (let sv = 0; sv < nv_; sv += 1) {
+              const fv = (sv + 0.5) / nv_
+              touch(mix(lx, rx, fv), mix(ly, ry, fv), depth, s.group, dark)
+            }
           }
         }
       }
@@ -687,10 +701,12 @@ export function createFlowerView(canvas, opts = {}) {
       if (shade[i] >= 0) shadows += 1
     }
     if (!covered.length) return
+    // how hard each pass looks for a cell, in step with how many there are
+    const tries = Math.max(400, covered.length >> 1)
 
     // delete some, a few at a time along a row
     let cut = Math.round(count * (0.04 + rand() * 0.08))
-    for (let tries = 0; cut > 0 && tries < 400; tries += 1) {
+    for (let t = 0; cut > 0 && t < tries; t += 1) {
       const i = covered[Math.floor(rand() * covered.length)]
       if (digit[i] < 0) continue
       const run = 1 + Math.floor(rand() * rand() * 5)
@@ -703,8 +719,9 @@ export function createFlowerView(canvas, opts = {}) {
       }
     }
     // write some in, in runs along a row, until the plant is as full as it should be
-    let budget = Math.ceil(Math.max(6, count * 0.14))
-    for (let tries = 0; count < target && budget > 0 && tries < 400; tries += 1) {
+    // (a third of what is missing at most, so an empty plant fills in a few beats)
+    let budget = Math.ceil(Math.max(6, count * 0.14, (target - count) * 0.35))
+    for (let t = 0; count < target && budget > 0 && t < tries; t += 1) {
       const i = covered[Math.floor(rand() * covered.length)]
       if (rand() > density(i) * 1.6) continue
       const run = 1 + Math.floor(rand() * rand() * 7)
@@ -728,7 +745,7 @@ export function createFlowerView(canvas, opts = {}) {
       const i = covered[Math.floor(rand() * covered.length)]
       if (shade[i] >= 0) shade[i] = -1
     }
-    for (let tries = 0; shadows < shadowTarget && tries < 120; tries += 1) {
+    for (let t = 0; shadows < shadowTarget && t < tries; t += 1) {
       const i = covered[Math.floor(rand() * covered.length)]
       if (shade[i] >= 0 || cellD[i] <= SHADE_FROM || rand() > shadeDepth(i)) continue
       shade[i] = rand() < 0.5 ? 0 : 1
@@ -970,6 +987,3 @@ export function createFlowerView(canvas, opts = {}) {
     },
   }
 }
-
-/** Where across a quad its covered cells are sampled, each way. */
-const SAMPLES = [1 / 6, 1 / 2, 5 / 6]
