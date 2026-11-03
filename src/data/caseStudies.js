@@ -94,9 +94,26 @@ export const VINYL_PLAYER = {
   status: 'toy',
 }
 
+/**
+ * ASCII Flowers: the second toy. Its card opens a pop-up (FlowerGenerator)
+ * where a line-drawn flower, seen from above, blooms under the pointer and
+ * sheds ASCII pollen. Kept out of CASE_STUDIES for the same reasons as the
+ * Vinyl Player.
+ */
+export const ASCII_FLOWERS = {
+  slug: 'ascii-flowers',
+  title: 'ASCII Flowers',
+  metaTitle: 'ASCII Flowers',
+  tag: 'INTERACTIVE',
+  status: 'toy',
+}
+
 /** The Works grid's cards, in order: the Vinyl Player sits beside Lipton on
- *  the second row, which moves Shore-Up down to the third, under Lipton. */
-export const WORKS_GRID = CASE_STUDIES.flatMap((c) => (c.slug === 'lipton' ? [c, VINYL_PLAYER] : [c]))
+ *  the second row, which moves Shore-Up down to the third, under Lipton, and
+ *  ASCII Flowers fills the place beside it. */
+export const WORKS_GRID = CASE_STUDIES.flatMap((c) =>
+  c.slug === 'lipton' ? [c, VINYL_PLAYER] : c.slug === 'shore-up' ? [c, ASCII_FLOWERS] : [c],
+)
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)
 

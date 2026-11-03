@@ -29,17 +29,19 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 export const isMediaAbort = (r) =>
   r.resourceType() === 'media' && r.failure()?.errorText === 'net::ERR_ABORTED'
 
-export function launch() {
+/* SwiftShader (software GL) is what lets the landing page's WebGL drawings
+   start in a headless browser, but it rasterises everything in software: a
+   pop-up over the Works grid paints at well under 1 fps. A check that needs
+   no WebGL and does need frames (the ASCII Flowers canvas) passes
+   `{ gpu: true }` to use the machine's GPU instead. */
+export function launch({ gpu = false } = {}) {
   return puppeteer.launch({
     executablePath: CHROME,
     headless: true,
     protocolTimeout: 180000,
-    args: [
-      '--hide-scrollbars',
-      '--use-gl=angle',
-      '--use-angle=swiftshader',
-      '--enable-unsafe-swiftshader',
-    ],
+    args: gpu
+      ? ['--hide-scrollbars']
+      : ['--hide-scrollbars', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   })
 }
 

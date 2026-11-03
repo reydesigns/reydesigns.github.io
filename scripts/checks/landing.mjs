@@ -168,7 +168,7 @@ try {
     const foot = document.querySelector('footer').getBoundingClientRect()
     return { pillTop: pill.top, lastBottom: last?.bottom, footBottom: foot.bottom, cards: cards.length }
   })
-  check('phone: five cards', clear.cards === 5, clear.cards)
+  check('phone: six cards', clear.cards === 6, clear.cards)
   check('phone: last card above the pill', clear.lastBottom != null && clear.lastBottom <= clear.pillTop,
     `card bottom ${Math.round(clear.lastBottom)} pill top ${Math.round(clear.pillTop)}`)
   check('phone: footer on screen at the end', clear.footBottom <= 844 + 1, Math.round(clear.footBottom))

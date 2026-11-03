@@ -55,8 +55,9 @@ await part('cards', async (browser) => {
       ratio: el.getBoundingClientRect().width / el.getBoundingClientRect().height,
       blurb: el.querySelector('[data-card-blurb]') ? Number(getComputedStyle(el.querySelector('[data-card-blurb]')).opacity) : null,
     })))
-  // Four studies and the Vinyl Player (which opens its own pop-up, not a study).
-  check('five cards', cards.length === 5, cards.length)
+  // Four studies and two toys, the Vinyl Player and ASCII Flowers (each opens
+  // its own pop-up, not a study).
+  check('six cards', cards.length === 6, cards.length)
   check('cards are 16:9', cards.every((c) => Math.abs(c.ratio - 16 / 9) < 0.02), cards.map((c) => c.ratio.toFixed(3)).join(' '))
   check('descriptions hidden by default', cards.filter((c) => c.tag === 'A').every((c) => c.blurb === 0))
   check('Shore-Up is not a link', !!(await page.$('article[data-card][aria-label^="Shore-Up"]')))
