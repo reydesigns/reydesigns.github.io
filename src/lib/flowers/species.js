@@ -7,6 +7,7 @@ import {
   arc,
   around,
   at,
+  bezier,
   bump,
   comb,
   cross,
@@ -24,16 +25,16 @@ import {
 } from './geometry'
 
 /* ---------------------------------------------------------------------------
-   The four flowers. Each is a `build(scene, o)` that lays out every part for
-   a bloom `o` (0 a closed bud, 1 fully open) and a camera that looks down on
-   it from above and a little to the side.
+   The four plants. Each carries `count` flowers that bloom one by one, under
+   the pointer: a spider lily's five florets, a bunch of three tulips, three
+   orchid flowers down a spike, eight lily of the valley bells.
 
-   Every part has a closed pose and an open pose, and the bloom eases between
-   them part by part, outer whorls first: a tulip's outer tepals lean out
-   before the inner ones, a spider lily's florets open one after another,
-   lily of the valley's bells open from the bottom of the stem up.
+   `build(scene, b)` lays out every part, with `b[k]` the bloom of flower k
+   (0 a closed bud, 1 fully open). Within a flower the bloom still runs part
+   by part, outer whorls first: a tulip's outer tepals lean out before its
+   inner ones, an orchid's sepals part before its petals and lip.
 
-   A build must make the same parts in the same order whatever `o` is: the
+   A build must make the same parts in the same order whatever `b` is: the
    scene pools them by call order, and the pollen holds on to them by index.
 --------------------------------------------------------------------------- */
 
@@ -52,47 +53,32 @@ const wLip = (u) =>
   Math.max(0.16, 1.0 * bump(u, 0.28, 0.24), 0.62 * bump(u, 0.7, 0.22)) * mix(0.5, 1, smoothstep(0, 0.12, u)) *
   (1 - smoothstep(0.86, 1, u) * 0.9)
 
-/* --- tulip --------------------------------------------------------------- */
+/* --- tulip: a bunch of three ---------------------------------------------- */
 
-function tulip(scene, o) {
+/** Where each tulip's head sits, which way it leans, and how big it is. */
+const TULIPS = [
+  { head: [0.05, 0, 0.4], lean: [0.04, 0, 0.12], size: 1 },
+  { head: [-1.2, -0.3, -0.5], lean: [-0.3, 0, -0.16], size: 0.9 },
+  { head: [1.15, -0.55, -0.7], lean: [0.28, 0, -0.2], size: 0.84 },
+]
+const TULIP_BASE = [0.02, -3.5, 0.06]
+
+/** One tulip head, opening from `origin` along `axis`. */
+function tulipHead(scene, origin, axis, o, size, seed) {
   const outer = stage(o, 0, 0.72)
   const inner = stage(o, 0.16, 0.84)
-  const frame = perp(UP)
+  const frame = perp(axis)
+  const at3 = (r, R, h) => add(origin, comb(R, r * size, axis, h * size))
 
-  // stem and two long, arching, keeled leaves
-  tube(scene, {
-    path: (u) => [0.16 * u * u, -0.06 - 3.2 * u, 0.1 * u],
-    radius: (u) => 0.055 + 0.012 * u,
-    nu: 8,
-    nv: 10,
-  })
-  for (let k = 0; k < 2; k += 1) {
-    const phi = k ? 0.35 : Math.PI + 0.55
-    petal(scene, {
-      origin: [0.14, -3.05, 0.08],
-      axis: UP,
-      radial: around(UP, phi, frame),
-      len: k ? 2.5 : 2.85,
-      wid: 0.36,
-      ang: (u) => 1.42 - (k ? 1.75 : 1.5) * Math.pow(u, 1.35),
-      width: wLeaf,
-      cup: 0.6,
-      twist: k ? 0.35 : -0.3,
-      nu: 16,
-      veins: VEINS_LEAF,
-      pollen: 0,
-    })
-  }
-
-  // pistil and six stamens, seen in the cup once it opens
-  tube(scene, { path: (u) => [0, u * 0.36, 0], radius: () => 0.07, nu: 3, nv: 10, capped: true })
+  // pistil, with its three-lobed stigma, and six stamens: seen once it opens
+  tube(scene, { path: (u) => at3(0, axis, u * 0.36), radius: () => 0.07 * size, nu: 3, nv: 10, capped: true })
   for (let k = 0; k < 3; k += 1) {
     petal(scene, {
-      origin: [0, 0.36, 0],
-      axis: UP,
-      radial: around(UP, (k * TAU) / 3 + 0.4, frame),
-      len: 0.14,
-      wid: 0.075,
+      origin: at3(0, axis, 0.36),
+      axis,
+      radial: around(axis, (k * TAU) / 3 + 0.4, frame),
+      len: 0.14 * size,
+      wid: 0.075 * size,
       ang: (u) => 0.7 - 1.4 * u,
       width: wSepal,
       cup: 0.4,
@@ -103,25 +89,26 @@ function tulip(scene, o) {
     })
   }
   for (let k = 0; k < 6; k += 1) {
-    const R = around(UP, (k * TAU) / 6 + 0.1, frame)
-    const pts = spine(comb(R, 0.06, UP, 0.02), UP, R, 0.34, (u) => 1.35 - 0.35 * u, 4)
-    scene.line(pts, { w: 1 })
+    const R = around(axis, (k * TAU) / 6 + 0.1, frame)
+    const pts = spine(at3(0.06, R, 0.02), axis, R, 0.34 * size, (u) => 1.35 - 0.35 * u, 4)
+    scene.line(pts)
     const tip = pts[pts.length - 1]
-    scene.line([add(tip, [0, -0.02, 0]), add(tip, [0, 0.08, 0])], { ww: 0.032, alpha: 0.85 })
+    scene.line([add(tip, scale(axis, -0.02 * size)), add(tip, scale(axis, 0.08 * size))], { ww: 0.034 * size })
   }
 
   // three outer tepals, then three inner, overlapping like a real tulip
   for (let whorl = 0; whorl < 2; whorl += 1) {
     const t = whorl ? inner : outer
     for (let k = 0; k < 3; k += 1) {
-      const phi = (k * TAU) / 3 + (whorl ? Math.PI / 3 : 0) + 0.2
-      const lean = jitter(k + whorl * 3) * 0.08
+      const phi = (k * TAU) / 3 + (whorl ? Math.PI / 3 : 0) + 0.2 + seed
+      const lean = jitter(k + whorl * 3 + seed * 10) * 0.08
+      const R = around(axis, phi, frame)
       petal(scene, {
-        origin: comb(around(UP, phi, frame), whorl ? 0.05 : 0.09, UP, whorl ? 0.03 : 0),
-        axis: UP,
-        radial: around(UP, phi, frame),
-        len: whorl ? 1.18 : 1.28,
-        wid: (whorl ? 0.5 : 0.58) * mix(0.52, 1, t),
+        origin: at3(whorl ? 0.05 : 0.09, R, whorl ? 0.03 : 0),
+        axis,
+        radial: R,
+        len: (whorl ? 1.18 : 1.28) * size,
+        wid: (whorl ? 0.5 : 0.58) * size * mix(0.52, 1, t),
         ang: (u) => mix((whorl ? 1.2 : 1.05) + lean * 0.5, whorl ? 0.72 : 0.5 + lean, t) + mix(whorl ? 1.0 : 1.15, 0.52, t) * u,
         width: wTulip,
         cup: mix(0.6, 0.5, t),
@@ -132,11 +119,45 @@ function tulip(scene, o) {
   }
 }
 
-/* --- spider lily (Lycoris radiata) --------------------------------------- */
+function tulip(scene, b) {
+  const frame = perp(UP)
+  // three long, arching, keeled leaves from the foot of the bunch
+  for (let k = 0; k < 3; k += 1) {
+    petal(scene, {
+      origin: TULIP_BASE,
+      axis: UP,
+      radial: around(UP, [Math.PI + 0.55, 0.35, 2.3][k], frame),
+      len: [2.85, 2.5, 2.3][k],
+      wid: 0.36,
+      ang: (u) => 1.42 - [1.5, 1.75, 1.6][k] * Math.pow(u, 1.35),
+      width: wLeaf,
+      cup: 0.6,
+      twist: [-0.3, 0.35, 0.2][k],
+      nu: 16,
+      veins: VEINS_LEAF,
+      pollen: 0,
+    })
+  }
+  // a stem to each head, leaving the foot upright and curving into the head
+  const axes = TULIPS.map((t) => norm(add(UP, t.lean)))
+  TULIPS.forEach((t, k) => {
+    const top = add(t.head, scale(axes[k], -0.04))
+    const pull = add(top, scale(axes[k], -(top[1] - TULIP_BASE[1]) * 0.55))
+    tube(scene, { path: bezier(TULIP_BASE, pull, top), radius: (u) => (0.05 + 0.012 * u) * t.size, nu: 10, nv: 8 })
+  })
+  TULIPS.forEach((t, k) => {
+    scene.group(k)
+    tulipHead(scene, t.head, axes[k], b[k], t.size, k * 0.7)
+    scene.head(k, add(t.head, scale(axes[k], 0.6 * t.size)), 0.95 * t.size)
+  })
+  scene.group(-1)
+}
+
+/* --- spider lily (Lycoris radiata): an umbel of five florets --------------- */
 
 const FLORETS = 5
 
-function spiderLily(scene, o) {
+function spiderLily(scene, b) {
   // a bare scape: the leaves come after the flowers
   tube(scene, {
     path: (u) => [0.12 * Math.sin(u * 2), -3.6 + u * 3.55, 0.06 * u],
@@ -146,16 +167,17 @@ function spiderLily(scene, o) {
   })
   const head = [0, 0, 0]
   for (let k = 0; k < FLORETS; k += 1) {
-    const f = stage(o, (k % 3) * 0.1 + (k > 2 ? 0.05 : 0), 0.7)
+    const f = b[k]
     const phi = (k * TAU) / FLORETS + 0.3 + (jitter(k) - 0.5) * 0.35
     const tilt = 1.2 + (jitter(k + 9) - 0.5) * 0.3
     const out = [Math.cos(phi), 0, Math.sin(phi)]
     const A = norm(comb(out, Math.sin(tilt), UP, Math.cos(tilt)))
     const base = add(head, comb(out, 0.6, UP, 0.1))
-    scene.line([head, comb(out, 0.3, UP, 0.12), base], { w: 1.1 })
+    scene.line([head, comb(out, 0.3, UP, 0.12), base])
     const frame = perp(A)
+    scene.group(k)
 
-    // six narrow, wavy tepals that sweep out and curl right back
+    // six narrow, wavy tepals that sweep out and curl back
     for (let m = 0; m < 6; m += 1) {
       const psi = (m * TAU) / 6 + k * 0.5
       const j = jitter(k * 7 + m)
@@ -183,75 +205,37 @@ function spiderLily(scene, o) {
       const style = m === 6
       const len = mix(0.3, (style ? 1.95 : 1.62) + j * 0.2, f)
       const pts = spine(base, A, around(A, style ? psi + 0.4 : psi, frame), len, (u) => mix(1.5, 0.42 + j * 0.2 + 1.05 * u * u, f), 9)
-      scene.line(pts, { w: style ? 0.9 : 1 })
-      if (!style) scene.dot(pts[pts.length - 1], 0.02)
+      scene.line(pts)
+      if (!style) scene.dot(pts[pts.length - 1], 0.022)
     }
+    scene.head(k, add(base, scale(A, 0.3)), 0.75)
+    scene.group(-1)
   }
 }
 
-/* --- orchid (Phalaenopsis) ----------------------------------------------- */
+/* --- orchid (Phalaenopsis): three flowers down an arching spike ------------ */
 
-function orchid(scene, o) {
+/** One flower: its centre `C`, the way its face looks `N0`, its size. */
+function orchidFlower(scene, C, N0, size, o) {
   const sep = stage(o, 0, 0.7)
   const pet = stage(o, 0.12, 0.75)
   const lip = stage(o, 0.25, 0.75)
-
-  // the face of the flower looks up, and a little towards us
-  const N0 = norm([0.05, 0.78, 0.62])
   const right = norm(cross(UP, N0))
   const up = norm(cross(N0, right))
-  const C = [0, 0, 0]
   const dir = (phi) => norm(comb(right, Math.cos(phi), up, Math.sin(phi)))
-
-  // two broad leaves at the foot, the arching spike, and buds at its tip
-  for (let k = 0; k < 2; k += 1) {
-    petal(scene, {
-      origin: [-0.35, -2.75, -0.5],
-      axis: UP,
-      radial: norm(k ? [1, 0, 0.55] : [-1, 0, 0.35]),
-      len: k ? 2.2 : 1.9,
-      wid: 0.62,
-      ang: (u) => 0.55 - 0.85 * u,
-      width: wBroad,
-      cup: 0.32,
-      twist: k ? 0.2 : -0.2,
-      nu: 14,
-      veins: VEINS_LEAF,
-      pollen: 0,
-    })
-  }
-  const spike = arc([-0.45, -2.75, -0.55], norm([1, 0, 0.2]), 4.6, (u) => 1.42 - 1.85 * Math.pow(u, 1.5))
-  tube(scene, { path: spike, radius: (u) => 0.048 - 0.014 * u, nu: 14, nv: 10 })
-  const node = spike(0.62)
-  scene.line([node, comb(node, 0.6, C, 0.4), add(C, scale(N0, -0.12))], { w: 1.2 })
-  for (let k = 0; k < 2; k += 1) {
-    const p = spike(k ? 0.98 : 0.84)
-    const size = k ? 0.13 : 0.19
-    const hang = norm([0.4, -1, 0.3])
-    revolve(scene, {
-      origin: p,
-      axis: hang,
-      len: size * Math.PI,
-      ang: (u) => -0.15 + Math.PI * 1.05 * u,
-      nu: 8,
-      nv: 14,
-      pollen: 0.3,
-    })
-  }
 
   const blade = (phi, t, opts) =>
     petal(scene, {
-      origin: add(C, scale(N0, opts.lift ?? 0)),
+      origin: add(C, scale(N0, (opts.lift ?? 0) * size)),
       axis: N0,
       radial: dir(phi),
-      len: mix(0.42, opts.len, t),
-      wid: mix(opts.wid * 0.85, opts.wid, t),
+      len: mix(0.42, opts.len, t) * size,
+      wid: mix(opts.wid * 0.85, opts.wid, t) * size,
       ang: (u) => mix(0.95, opts.a0, t) + mix(1.7, opts.k1, t) * u,
       width: opts.width,
       cup: mix(1.15, opts.cup, t),
       twist: opts.twist ?? 0,
       veins: VEINS_FINE,
-      spots: opts.spots,
     })
 
   // three sepals behind, two broad petals, then the lip in front
@@ -262,11 +246,11 @@ function orchid(scene, o) {
   blade(Math.PI - 0.2, pet, { len: 1.1, wid: 0.64, a0: 0.2, k1: -0.36, width: wWing, cup: 0.12, lift: 0.02, twist: -0.12 })
 
   const lipS = petal(scene, {
-    origin: add(C, scale(N0, 0.08)),
+    origin: add(C, scale(N0, 0.08 * size)),
     axis: N0,
     radial: dir(-Math.PI / 2),
-    len: mix(0.25, 0.74, lip),
-    wid: mix(0.15, 0.4, lip),
+    len: mix(0.25, 0.74, lip) * size,
+    wid: mix(0.15, 0.4, lip) * size,
     ang: (u) => mix(1.2, 0.62, lip) - mix(0, 0.95, lip) * u,
     width: wLip,
     cup: (u) => mix(1.2, 1.55 * (1 - smoothstep(0.12, 0.55, u)) + 0.15, lip),
@@ -281,23 +265,75 @@ function orchid(scene, o) {
     const pts = []
     for (let k = 0; k <= 6; k += 1) {
       const t = k / 6
-      pts.push(add(tip, comb(right, side * 0.15 * t * lip, N0, 0.09 * t * t * lip, up, -0.05 * Math.sin(t * 2.4) * lip)))
+      pts.push(add(tip, comb(right, side * 0.15 * t * lip * size, N0, 0.09 * t * t * lip * size, up, -0.05 * Math.sin(t * 2.4) * lip * size)))
     }
-    scene.line(pts, { w: 1 })
+    scene.line(pts)
   }
-  scene.dot(add(at(lipS, 2, 3), scale(N0, 0.03)), 0.05 * lip, { fill: 'paper', ring: true })
+  scene.dot(add(at(lipS, 2, 3), scale(N0, 0.03 * size)), 0.05 * lip * size, { ring: true })
 
   // the column, standing out of the middle
   tube(scene, {
-    path: (u) => add(C, comb(N0, 0.04 + u * 0.24, up, 0.06 + u * 0.02)),
-    radius: (u) => 0.065 - 0.015 * u,
+    path: (u) => add(C, comb(N0, (0.04 + u * 0.24) * size, up, (0.06 + u * 0.02) * size)),
+    radius: (u) => (0.065 - 0.015 * u) * size,
     nu: 4,
     nv: 10,
     capped: true,
   })
 }
 
-/** Freckles in the lip's throat: [i, j, fu, fv, r]. */
+/** Along the spike, the size, and the way each flower faces. */
+const ORCHIDS = [
+  { s: 0.48, size: 1, face: [0.02, 0.78, 0.62], drop: [0, -0.22, 0.5] },
+  { s: 0.66, size: 0.84, face: [0.2, 0.8, 0.56], drop: [0.05, -0.24, 0.42] },
+  { s: 0.81, size: 0.7, face: [0.36, 0.78, 0.5], drop: [0.08, -0.22, 0.34] },
+]
+
+function orchid(scene, b) {
+  // two broad leaves at the foot, and the spike arching up and over
+  for (let k = 0; k < 2; k += 1) {
+    petal(scene, {
+      origin: [-0.85, -2.75, -0.5],
+      axis: UP,
+      radial: norm(k ? [1, 0, 0.55] : [-1, 0, 0.35]),
+      len: k ? 2.2 : 1.9,
+      wid: 0.62,
+      ang: (u) => 0.55 - 0.85 * u,
+      width: wBroad,
+      cup: 0.32,
+      twist: k ? 0.2 : -0.2,
+      nu: 14,
+      veins: VEINS_LEAF,
+      pollen: 0,
+    })
+  }
+  const spike = arc([-0.95, -2.75, -0.55], norm([1, 0, 0.22]), 5.8, (u) => 1.42 - 1.95 * Math.pow(u, 1.4))
+  tube(scene, { path: spike, radius: (u) => 0.048 - 0.016 * u, nu: 16, nv: 10 })
+  // two buds still closed at the tip
+  for (let k = 0; k < 2; k += 1) {
+    const size = k ? 0.12 : 0.17
+    revolve(scene, {
+      origin: spike(k ? 0.99 : 0.92),
+      axis: norm([0.4, -1, 0.3]),
+      len: size * Math.PI,
+      ang: (u) => -0.15 + Math.PI * 1.05 * u,
+      nu: 8,
+      nv: 14,
+      pollen: 0.3,
+    })
+  }
+  ORCHIDS.forEach((f, k) => {
+    const node = spike(f.s)
+    const C = add(node, scale(f.drop, f.size))
+    const N0 = norm(f.face)
+    scene.line([node, add(node, scale(f.drop, 0.5 * f.size)), add(C, scale(N0, -0.12 * f.size))])
+    scene.group(k)
+    orchidFlower(scene, C, N0, f.size, b[k])
+    scene.head(k, C, 1.0 * f.size)
+    scene.group(-1)
+  })
+}
+
+/** Freckles in the lip's throat: [i, j, fu, fv, r], r in world units (specks, so never scaled). */
 const LIP_SPOTS = [
   [3, 2, 0.4, 0.6, 0.016],
   [3, 4, 0.3, 0.3, 0.014],
@@ -309,11 +345,11 @@ const LIP_SPOTS = [
   [2, 3, 0.5, 0.5, 0.012],
 ].map(([i, j, fu, fv, r]) => ({ i, j, fu, fv, r }))
 
-/* --- lily of the valley (Convallaria majalis) ---------------------------- */
+/* --- lily of the valley (Convallaria majalis): eight bells ---------------- */
 
 const BELLS = 8
 
-function lilyOfTheValley(scene, o) {
+function lilyOfTheValley(scene, b) {
   const frame = perp(UP)
   // two broad leaves sheathing the stem
   for (let k = 0; k < 2; k += 1) {
@@ -342,15 +378,15 @@ function lilyOfTheValley(scene, o) {
   for (let k = 0; k < BELLS; k += 1) {
     const s = mix(0.36, 0.97, k / (BELLS - 1))
     const p = stem(s)
-    const size = mix(1, 0.42, Math.pow(k / (BELLS - 1), 1.2))
-    // the last two never open: buds at the tip
-    const f = k >= BELLS - 2 ? 0.12 * stage(o, 0.5, 0.5) : stage(o, k * 0.07, 0.6)
+    const size = mix(1, 0.5, Math.pow(k / (BELLS - 1), 1.2))
+    const f = b[k]
     const sd = k % 2 ? 1 : -1
     const out = norm(comb(side, sd, h, 0.25))
     const end = add(p, comb(out, 0.22 * size, UP, -0.16 * size))
-    scene.line([p, add(p, comb(out, 0.14 * size, UP, 0.02)), end], { w: 1 })
+    scene.line([p, add(p, comb(out, 0.14 * size, UP, 0.02)), end])
     const axis = norm(comb(UP, -1, out, 0.35 + 0.25 * f))
     const r = 0.21 * size
+    scene.group(k)
     revolve(scene, {
       origin: end,
       axis,
@@ -362,9 +398,11 @@ function lilyOfTheValley(scene, o) {
       lobePhase: k * 0.3,
       nu: 12,
       nv: 24,
-      veins: f > 0.2 ? BELL_RIBS : null,
-      pollen: f,
+      veins: BELL_RIBS,
+      pollen: 1,
     })
+    scene.head(k, add(end, scale(axis, 0.3 * size)), 0.42 * size)
+    scene.group(-1)
   }
 }
 
@@ -374,15 +412,17 @@ const BELL_RIBS = [0, 4, 8, 12, 16, 20].map((j) => ({ j: j + 0.5, from: 0.3, to:
 /* --- the catalogue ------------------------------------------------------- */
 
 /**
- * `camera`: `pitch` is how far above the horizon the eye is (radians, π/2 is
- * straight down), `yaw` turns the flower, `dist` is in world units. The view
- * is framed to the flower's full bloom, so it never outgrows its box.
+ * `count`: how many flowers bloom one by one. `camera`: `pitch` is how far
+ * above the horizon the eye is (radians, π/2 is straight down), `yaw` turns
+ * the plant, `dist` is in world units. The view is framed to the plant in
+ * full bloom, so it never outgrows its box.
  */
 export const SPECIES = [
   {
     key: 'spider-lily',
     name: 'Spider Lily',
     latin: 'Lycoris radiata',
+    count: FLORETS,
     build: spiderLily,
     camera: { pitch: 1.1, yaw: 0.2, dist: 12 },
   },
@@ -390,20 +430,23 @@ export const SPECIES = [
     key: 'tulip',
     name: 'Tulip',
     latin: 'Tulipa gesneriana',
+    count: TULIPS.length,
     build: tulip,
-    camera: { pitch: 1.1, yaw: -0.35, dist: 12 },
+    camera: { pitch: 1.05, yaw: -0.35, dist: 12 },
   },
   {
     key: 'orchid',
     name: 'Orchid',
     latin: 'Phalaenopsis amabilis',
+    count: ORCHIDS.length,
     build: orchid,
-    camera: { pitch: 0.78, yaw: 0.1, dist: 12 },
+    camera: { pitch: 0.82, yaw: 0.1, dist: 12 },
   },
   {
     key: 'lily-of-the-valley',
     name: 'Lily of the Valley',
     latin: 'Convallaria majalis',
+    count: BELLS,
     build: lilyOfTheValley,
     camera: { pitch: 0.86, yaw: 0.05, dist: 12 },
   },

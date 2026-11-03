@@ -191,10 +191,8 @@
   --vp-led-on: #ff6a3d;
 
   /* --- ASCII Flowers (the second Works toy) ------------------------------- */
-  /* The line art's ink: a neutral near-black, so the flower reads as a pen
-     drawing and the colour is all in the pollen. */
-  --fl-line: #161314;
-  /* The pollen palette, 3 x 3, all from the site's own colours: the burgundy
+  /* The palette for the drawing and its pollen (one colour for both), 3 x 3,
+     all from the site's own colours: the burgundy
      family on the first two rows (ink, maroon and the equaliser's wine; muted
      ink, rose and blush), the greys on the third (the record's sheen, the
      window dot's grey, the nav pill). Plain #rrggbb, because a canvas reads

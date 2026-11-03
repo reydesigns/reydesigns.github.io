@@ -5,13 +5,18 @@
 
      surface  a grid of points, `nu` along the part (base to tip) by `nv`
               across it. A petal, a leaf, a sepal, a bell, a stem. The
-              renderer fills each little quad, outlines the grid's free edges
-              and draws a silhouette wherever the surface turns away from the
-              eye, so a curled petal shows its fold.
+              renderer outlines the grid's free edges and draws a silhouette
+              wherever the surface turns away from the eye, so a curled petal
+              shows its fold.
      line     a polyline: a stamen's filament, an orchid lip's tendril.
      dot      a small round mark: an anther, a callus.
 
-   The builders here are pure maths; species.js composes them into flowers,
+   A plant can carry several flowers, each blooming on its own. A build marks
+   the parts of flower k with `scene.group(k)` (leaves and stems are group -1)
+   and says where the flower is with `scene.head(k, centre, radius)`, which the
+   renderer uses to find the flower under the pointer.
+
+   The builders here are pure maths; species.js composes them into plants,
    and render.js projects and paints them. Surfaces are pooled by call order
    (see Scene), so a flower rebuilt every frame as it blooms allocates nothing
    after its first frame.
@@ -79,12 +84,27 @@ export class Scene {
     this.ns = 0
     this.nl = 0
     this.nd = 0
+    this.g = -1
+    this.heads = []
   }
 
   begin() {
     this.ns = 0
     this.nl = 0
     this.nd = 0
+    this.g = -1
+  }
+
+  /** The parts made from here on belong to flower `k` (-1: the plant). */
+  group(k) {
+    this.g = k
+  }
+
+  /** Flower `k` sits at `p` and reaches about `r` from it when open. */
+  head(k, p, r) {
+    const h = this.heads[k] || (this.heads[k] = { p: null, r: 0 })
+    h.p = p
+    h.r = r
   }
 
   /** The next pooled surface, sized nu × nv (re-made only if its size changes). */
@@ -99,9 +119,8 @@ export class Scene {
         sx: new Float32Array(nu * nv),
         sy: new Float32Array(nu * nv),
         sd: new Float32Array(nu * nv),
-        // one per quad; a closed surface has nv quads round, an open one nv - 1
+        // which way each quad faces; a closed surface has nv quads round, an open one nv - 1
         face: new Int8Array((nu - 1) * nv),
-        tone: new Uint8Array((nu - 1) * nv),
       }
       this.surfaces[this.ns] = s
     }
@@ -110,7 +129,7 @@ export class Scene {
     s.veins = null
     s.spots = null
     s.pollen = 0
-    s.shade = 1
+    s.group = this.g
     this.ns += 1
     return s
   }
@@ -121,6 +140,7 @@ export class Scene {
     l.w = w
     l.ww = ww
     l.alpha = alpha
+    l.group = this.g
     this.nl += 1
     return l
   }
@@ -131,6 +151,7 @@ export class Scene {
     d.r = r
     d.fill = fill
     d.ring = ring
+    d.group = this.g
     this.nd += 1
     return d
   }
@@ -302,7 +323,6 @@ export function tube(scene, o) {
     }
   }
   s.edges = o.capped ? EDGES_RIM : EDGES_TUBE
-  s.shade = 0.8
   return s
 }
 
@@ -325,6 +345,18 @@ export function arc(origin, h, len, ang, steps = 48) {
     return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]
   }
   return path
+}
+
+/** A quadratic Bézier from `a` to `b`, pulled towards `c`. */
+export function bezier(a, c, b) {
+  return (u) => {
+    const v = 1 - u
+    return [
+      v * v * a[0] + 2 * v * u * c[0] + u * u * b[0],
+      v * v * a[1] + 2 * v * u * c[1] + u * u * b[1],
+      v * v * a[2] + 2 * v * u * c[2] + u * u * b[2],
+    ]
+  }
 }
 
 /** Points along a spine in the plane of `R` and `A` (like a petal's midline). */

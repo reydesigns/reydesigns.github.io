@@ -10,16 +10,18 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
 /* ---------------------------------------------------------------------------
    ASCII Flowers: the Works card that opens a little flower generator.
 
-   A flower drawn in black line from above (a 3D model, painted as line art
-   by lib/flowers/render.js), with ASCII characters drifting up off its petals
-   like pollen. Hover it and it blooms; move away and it closes back into a
-   bud. On the left, a plain list of the four flowers and a 3 x 3 palette for
-   the pollen, all in the site's burgundies and greys.
+   A plant drawn from above in one hairline (a 3D model, painted as line art
+   by lib/flowers/render.js), with ASCII codes drifting up off its petals like
+   pollen. Its flowers bloom one at a time: each opens while the pointer is on
+   it, stays a moment after it leaves, then closes back into a bud. On the
+   left, a plain list of the four plants and a 3 x 3 palette, all in the
+   site's burgundies and greys, that colours both the drawing and the pollen.
 
-   Touch and keyboard bloom it by tapping or pressing the flower instead
-   (Enter or Space), and it stays open until tapped again. Reduced motion
-   keeps the flower and its pollen but holds them still: a bloom happens at
-   once, and nothing drifts or sways.
+   Touch opens and closes a flower with a tap on it. The keyboard has the
+   whole drawing as one button: Enter or Space opens every flower, one after
+   another, and again closes them. Reduced motion keeps the drawing and its
+   pollen but holds them still: a bloom happens at once, and nothing drifts
+   or sways.
 
    The pop-up follows VinylPlayerModal's: a native <dialog> (Escape, focus
    trap and the top layer come free), the page behind held still, the custom
@@ -53,10 +55,15 @@ const swatchHex = (n) => cssVar(`--fl-swatch-${n}`, '#440000')
 
 /**
  * A FlowerView on a canvas for as long as the component is mounted, kept in
- * step with the props. `running` starts and stops its animation loop.
+ * step with the props. `running` starts and stops its animation loop; `rest`
+ * is how open the flowers sit when nothing asks them to bloom; `onOpen(n)`
+ * hears how many flowers are open. The drawing hides what is behind each
+ * petal by painting it in the background of the box the canvas sits in.
  */
-function useFlowerView(canvasRef, { species, swatch, bloom, reduced, running, framing, sway }) {
+function useFlowerView(canvasRef, { species, swatch, rest = 0, reduced, running, framing, sway, onOpen }) {
   const viewRef = useRef(null)
+  const onOpenRef = useRef(onOpen)
+  onOpenRef.current = onOpen
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current
@@ -64,12 +71,12 @@ function useFlowerView(canvasRef, { species, swatch, bloom, reduced, running, fr
     const view = createFlowerView(canvas, {
       species,
       color: swatchHex(swatch),
-      ink: cssVar('--fl-line', '#161314'),
-      paper: cssVar('--color-surface', '#ffffff'),
-      bloom,
+      paper: getComputedStyle(canvas.parentElement).backgroundColor,
+      rest,
       reduced,
       framing,
       sway,
+      onOpen: (n) => onOpenRef.current?.(n),
     })
     viewRef.current = view
     view.resize()
@@ -86,7 +93,7 @@ function useFlowerView(canvasRef, { species, swatch, bloom, reduced, running, fr
 
   useEffect(() => viewRef.current?.setSpecies(species), [species])
   useEffect(() => viewRef.current?.setColor(swatchHex(swatch)), [swatch])
-  useEffect(() => viewRef.current?.setBloom(bloom), [bloom])
+  useEffect(() => viewRef.current?.setRest(rest), [rest])
   useEffect(() => viewRef.current?.setReduced(reduced), [reduced])
   useEffect(() => {
     const view = viewRef.current
@@ -101,14 +108,15 @@ function useFlowerView(canvasRef, { species, swatch, bloom, reduced, running, fr
 
 /* --- the card ------------------------------------------------------------ */
 
-const CARD_REST = 0.45 // a spider lily half open, until the card is hovered
+const CARD_REST = 0.45 // the spider lily's florets half open, until the card is hovered
 
 /**
- * The Works card's thumbnail: a spider lily, half open, shedding pollen while
- * at least half the card is on screen (the rule the other cards' videos play
- * by; otherwise it holds still on its last frame). Hovering or focusing the card opens it fully, a
- * taste of what the pop-up does. It stops while anything covers the grid:
- * a pop-up on this page (`paused`) or a case study (as WorkCard's videos do).
+ * The Works card's thumbnail: a spider lily, its florets half open, shedding
+ * pollen while at least half the card is on screen (the rule the other
+ * cards' videos play by; otherwise it holds still on its last frame).
+ * Hovering or focusing the card opens the florets one after another, a taste
+ * of what the pop-up does. It stops while anything covers the grid: a pop-up
+ * on this page (`paused`) or a case study (as WorkCard's videos do).
  */
 export function FlowerThumb({ paused = false }) {
   const reduced = useReducedMotion()
@@ -136,15 +144,16 @@ export function FlowerThumb({ paused = false }) {
     }
   }, [])
 
-  useFlowerView(canvasRef, {
+  const viewRef = useFlowerView(canvasRef, {
     species: DEFAULT_SPECIES,
     swatch: DEFAULT_SWATCH,
-    bloom: hot ? 1 : CARD_REST,
+    rest: CARD_REST,
     reduced,
     running: inView && !paused && !covered,
     framing: 0.84,
     sway: 0.6,
   })
+  useEffect(() => viewRef.current?.setAll(hot), [hot, viewRef])
 
   return (
     <div ref={boxRef} className="fl-card absolute inset-0">
@@ -239,8 +248,8 @@ export function FlowerModal({ open, onClose, returnFocus }) {
 function FlowerGenerator({ onClose, reduced }) {
   const [speciesKey, setSpeciesKey] = useState(DEFAULT_SPECIES)
   const [swatch, setSwatch] = useState(DEFAULT_SWATCH)
-  const [hovering, setHovering] = useState(false)
-  const [pinned, setPinned] = useState(false)
+  const [allOpen, setAllOpen] = useState(false)
+  const [openCount, setOpenCount] = useState(0)
   const canHover = useMediaQuery(HOVER, true)
   const canvasRef = useRef(null)
   const pointerType = useRef('')
@@ -250,16 +259,19 @@ function FlowerGenerator({ onClose, reduced }) {
   const viewRef = useFlowerView(canvasRef, {
     species: speciesKey,
     swatch,
-    bloom: hovering || pinned ? 1 : 0,
     reduced,
     running: true,
     framing: 0.84,
     sway: 1,
+    onOpen: setOpenCount,
   })
+  // A new plant starts in bud.
+  useEffect(() => setAllOpen(false), [speciesKey])
 
-  const lean = (e) => {
-    const r = e.currentTarget.getBoundingClientRect()
-    viewRef.current?.lean(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1)
+  /** The event's point over the canvas, in CSS pixels. */
+  const local = (e) => {
+    const r = canvasRef.current.getBoundingClientRect()
+    return [e.clientX - r.left, e.clientY - r.top]
   }
 
   return (
@@ -274,7 +286,7 @@ function FlowerGenerator({ onClose, reduced }) {
         <h2 id="fl-title" className="fl-title font-display">
           ASCII Flowers
         </h2>
-        <p className="fl-hint">{canHover ? 'Hover the flower to bloom it' : 'Tap the flower to bloom it'}</p>
+        <p className="fl-hint">{canHover ? 'Hover a flower to bloom it' : 'Tap a flower to bloom it'}</p>
       </div>
 
       <div className="fl-controls">
@@ -315,31 +327,34 @@ function FlowerGenerator({ onClose, reduced }) {
         </fieldset>
       </div>
 
-      {/* The flower. A mouse blooms it by hovering; a tap, Enter or Space
-          toggles it open and shut. */}
+      {/* The drawing. A mouse blooms whichever flower it is on; a tap opens
+          or closes the flower under it; Enter or Space opens every flower,
+          one after another, and closes them again. */}
       <button
         type="button"
         className="fl-stage"
-        aria-pressed={pinned}
-        aria-label={`Bloom the ${species.name.toLowerCase()}`}
-        onPointerEnter={(e) => {
-          if (e.pointerType === 'mouse') setHovering(true)
-        }}
-        onPointerLeave={(e) => {
-          if (e.pointerType === 'mouse') setHovering(false)
-          viewRef.current?.lean(0, 0)
-        }}
+        aria-pressed={allOpen}
+        aria-label={`Bloom the ${species.name.toLowerCase()} flowers`}
+        data-open={openCount}
         onPointerMove={(e) => {
-          if (e.pointerType === 'mouse') lean(e)
+          if (e.pointerType === 'mouse') viewRef.current?.pointer(...local(e))
         }}
+        onPointerLeave={() => viewRef.current?.pointer(null)}
         onPointerDown={(e) => {
           pointerType.current = e.pointerType
         }}
         onClick={(e) => {
-          // A mouse click is not a toggle: hovering already blooms it.
-          const mouse = pointerType.current === 'mouse' && e.detail !== 0
+          const type = pointerType.current
           pointerType.current = ''
-          if (!mouse) setPinned((p) => !p)
+          // the keyboard (a click with no pointer behind it): every flower
+          if (e.detail === 0) {
+            const next = !allOpen
+            setAllOpen(next)
+            viewRef.current?.setAll(next)
+            return
+          }
+          // a mouse needs no click: hovering already blooms
+          if (type !== 'mouse') viewRef.current?.tap(...local(e))
         }}
       >
         <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
