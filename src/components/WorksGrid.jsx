@@ -12,9 +12,10 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
    be the same pixels, which is why the grid geometry lives here and not in
    either page.
 
-   Grid geometry from Assets/site-design/images/works-page.png at 1728px:
-   two 619px columns, 75px apart, 26px between rows — i.e. a 1313px block,
-   centred.
+   Grid geometry: two columns with a tight 1.5rem gap both ways (client
+   request — bigger cards, less space between them; the comp's works-page.png
+   had 619px cards 75px apart). The block is centred, up to 100rem wide, and on
+   wide screens as big as the viewport's height allows (GRID_FIT).
 
    Opening a study in the pop-up (CaseStudyModal) is wired up here, at the
    grid, rather than inside WorkCard: a plain click is intercepted on its way
@@ -40,12 +41,15 @@ const SECTION =
 /* On wide screens the 2x2 grid must fit in one viewport between the top bar
    and the nav pill. A card is a 16:9 thumbnail and nothing else, so its height
    follows its width, and the grid's width is capped by the viewport's height:
-   two rows of ((W − 75px) / 2) × 9/16 plus the 26px row gap have to fit in
+   two rows of ((W − 24px) / 2) × 9/16 plus the 24px row gap have to fit in
    100dvh less ~252px of chrome (top bar, section padding, nav-pill clearance),
-   which solves to W ≈ 177.8dvh − 26.2rem. At the 1728x1117 reference that is
-   wider than the comp's 1313px, so the comp's width wins; the height cap only
-   bites on viewports shorter than ~900px. */
-const GRID_FIT = 'lg:max-w-[min(82.0625rem,calc(177.8dvh-26.2rem))]'
+   which solves to W ≈ 177.8dvh − 29.2rem. The 252px is generous, though —
+   measured, the grid can take another ~25px of height and still clear the
+   top bar and the pill by 20px+ — so the cap is W = 177.8dvh − 27.9rem: the
+   grid is about one viewport less 240px tall. On laptop screens that height
+   cap is what sizes the cards (≈758px wide at 1728x1117, 565px at 1440x900);
+   very tall or wide screens stop at the 100rem ceiling or the page gutters. */
+const GRID_FIT = 'lg:max-w-[min(100rem,calc(177.8dvh-27.9rem))]'
 
 export function WorksGrid({ className = '', ...rest }) {
   const openCaseStudy = useOpenCaseStudy()
@@ -88,7 +92,7 @@ export function WorksGrid({ className = '', ...rest }) {
         onClickCapture={onClick}
         onPointerOver={warm}
         onFocus={warm}
-        className={`grid w-full max-w-[82.0625rem] ${GRID_FIT} grid-cols-1 gap-x-[4.6875rem] gap-y-[1.625rem] lg:grid-cols-2`}
+        className={`grid w-full max-w-[100rem] ${GRID_FIT} grid-cols-1 gap-[1.5rem] lg:grid-cols-2`}
       >
         {CASE_STUDIES.map((study) => (
           <li key={study.slug} className="min-w-0">
