@@ -1,21 +1,49 @@
 /* ---------------------------------------------------------------------------
-   Design page (once Funzies): the headline and intro over the wall — the
-   pinboard of projects and, on wide screens, the sticker sheet and the room
-   beside it. One column holds them all, so the headline's left edge is the
-   board's; from 80rem it widens to fit the board and room in a row, using
-   nearly the whole width on large screens.
+   Design page (once Funzies). Up to 80rem one column: the headline and
+   intro, the pinboard of projects, then the room and its sticker sheet.
+
+   From 80rem the page is a grid of two columns using nearly the whole width:
+   on the left the intro, the "Click on me" hint and the board; down the
+   right the room, centred on the intro (Funzies measures its height into
+   --fz-intro-h), and under it the sheet, as wide as the column. The room is
+   as large as the column allows, but never taller than the intro and the
+   space above it, so it never reaches up into the top bar.
 --------------------------------------------------------------------------- */
 
 .fz-page {
+  --fz-pad-top: clamp(2rem, 5vw, 5rem);
   width: min(60rem, 100% - 2 * var(--page-gutter));
   margin-inline: auto;
-  padding-top: clamp(2rem, 5vw, 5rem);
+  padding-top: var(--fz-pad-top);
   /* Clear the fixed nav pill (NavDock publishes --dock-clear). */
   padding-bottom: max(4rem, var(--dock-clear, 7rem));
 }
 @media (min-width: 80rem) {
   .fz-page {
+    --fz-side-w: clamp(22rem, 34vw, 38rem);
+    --fz-room: min(var(--fz-side-w), var(--fz-intro-h, 20rem) + 2 * var(--fz-pad-top) - 1.5rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--fz-side-w);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      'intro side'
+      'hint  side'
+      'board side';
+    align-items: start;
+    column-gap: clamp(2rem, 3.5vw, 4rem);
     width: min(110rem, 100% - 2 * var(--page-gutter));
+  }
+  .fz-intro {
+    grid-area: intro;
+  }
+  .fz-hint {
+    grid-area: hint;
+  }
+  .fz-board {
+    grid-area: board;
+  }
+  .fz-side {
+    grid-area: side;
   }
 }
 
@@ -110,11 +138,11 @@
   54%, 80% { transform: rotate(-8deg) translateY(-0.06em); }
 }
 
-/* --- the wall: the board, the sticker sheet, the room -------------------- */
+/* --- the board ---------------------------------------------------------- */
 /* "Click on me" over the board: the case studies' eyebrow (size, weight,
-   tracking, ink at 40%). */
+   tracking, ink at 40%), close under the intro so the first row sits high. */
 .fz-hint {
-  margin: clamp(2rem, 3.5vw, 3.5rem) 0 0.6rem;
+  margin: clamp(1.5rem, 2.4vw, 2.5rem) 0 0.6rem;
   font-size: var(--text-eyebrow);
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -122,76 +150,25 @@
   color: var(--color-ink);
   opacity: 0.4;
 }
-
-/* Up to 80rem the board comes first and the room and its sheet follow it,
-   centred. From 80rem the wall is one tight grid: the board's four columns,
-   then the room in a fifth, as large as the page allows. The board shares
-   the wall's tracks (subgrid), so the sheet can lie across the free end of
-   its second row, columns 3 and 4, beside the last print.
-
-   The room is taller than the board's two rows, so it is taken out of the
-   flow (absolute, in its grid area) to keep from stretching them: the wall
-   is made at least as tall as the room, the board centred in it, and the
-   room centred on the board. */
-.fz-wall {
-  --fz-col-gap: clamp(1.25rem, 3vw, 2.25rem);
-  --fz-row-gap: clamp(2.5rem, 5vw, 4rem);
-  --fz-room-w: clamp(26rem, 44vw, 46rem);
-  display: grid;
-  gap: clamp(2.5rem, 5vw, 4rem);
-  justify-items: center;
-}
 .fz-board {
   width: 100%;
 }
-@media (min-width: 80rem) {
-  .fz-wall {
-    --fz-col-gap: clamp(0.75rem, 1.1vw, 1.25rem);
-    --fz-row-gap: clamp(1.5rem, 2.2vw, 2.25rem);
-    position: relative;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) var(--fz-room-w);
-    grid-template-rows: auto auto;
-    align-content: center;
-    min-height: var(--fz-room-w);
-    column-gap: var(--fz-col-gap);
-    row-gap: var(--fz-row-gap);
-    align-items: center;
-    justify-items: stretch;
-    /* The room for the prints' nudges, which the list keeps below 80rem. */
-    padding: 0.75rem 0.5rem 1.75rem 0;
-  }
-  .fz-board,
-  .fz-board__list {
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-template-rows: subgrid;
-  }
-  .fz-board {
-    grid-column: 1 / 5;
-    grid-row: 1 / 3;
-  }
-  .fz-board__list {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-    padding: 0;
-  }
-}
 
-/* The board: a loose grid, four prints to a row (two on a phone). The cards
-   themselves are tipped and nudged (FunzieCard), so it reads as pinned up
-   by hand; the padding keeps their offsets inside the board. */
+/* A loose grid, three prints to a row (two on a phone), so each is large.
+   The cards themselves are tipped and nudged (FunzieCard), so it reads as
+   pinned up by hand; the padding keeps their offsets inside the board. */
 .fz-board__list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: var(--fz-col-gap);
-  row-gap: var(--fz-row-gap);
+  column-gap: clamp(1.25rem, 2.6vw, 2.5rem);
+  row-gap: clamp(2rem, 4vw, 3.5rem);
   margin: 0;
   padding: 0.75rem 0.5rem 1.75rem;
   list-style: none;
 }
 @media (min-width: 48rem) {
   .fz-board__list {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 .fz-board__item {
@@ -394,6 +371,14 @@
   width: calc(var(--w) * var(--u));
   height: calc(var(--h) * var(--u));
 }
+/* The column the room and its sheet stand in: under the board up to 80rem,
+   both centred; from 80rem down the page's right side. */
+.fz-side {
+  display: grid;
+  justify-items: center;
+  gap: clamp(2rem, 4vw, 3rem);
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
 /* The room's cell: a square, which StickerRoom measures for its scale. */
 .fz-area-room {
   width: min(100%, 28rem);
@@ -411,21 +396,21 @@
   bottom: auto;
 }
 @media (min-width: 80rem) {
-  /* The room, large, in the wall's last column, centred on both rows. */
-  .fz-room.fz-area-room {
-    position: absolute;
-    grid-column: 5;
-    grid-row: 1 / 3;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    translate: 0 -50%;
+  .fz-side {
+    justify-items: stretch;
+    gap: clamp(1rem, 1.6vw, 1.75rem);
+    margin-top: 0;
   }
-  /* The sheet fills the board's free corner: row 2, columns 3 and 4, with
-     a little more foot so the hint clears the bottom row of stickers. */
+  /* The room, centred on the intro: pulled up by half of whatever it is
+     taller than the intro (or pushed down by half of what it is shorter). */
+  .fz-room.fz-area-room {
+    justify-self: center;
+    width: var(--fz-room);
+    margin-top: calc((var(--fz-intro-h, 20rem) - var(--fz-room)) / 2);
+  }
+  /* The sheet under it, the column's full width, on its tall page, with a
+     little more foot so the hint clears the bottom row of stickers. */
   .fz-sheet.fz-area-stk {
-    grid-column: 3 / 5;
-    grid-row: 2;
     width: 100%;
     height: calc((var(--sheet-h) + 36) * var(--u));
   }

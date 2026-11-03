@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { Layout } from '@/components/Layout'
 import { NavDock } from '@/components/NavDock'
 import { BlinkingFace } from '@/components/BlinkingFace'
@@ -13,12 +13,15 @@ import '@/styles/funzies.css'
  * Design (the page once called Funzies; /funzies redirects here) — side
  * projects, pinned to a board.
  *
- * The headline and intro, then the wall: the projects as photo prints pinned
- * to a messy board, four to a row (two on a phone), each fanning out its
- * other pictures on hover and opening its window on a click (FunziePopup).
- * On wide screens the isometric room sits to the right of the board, level
- * with its middle, with its sticker sheet pinned upright to the room's left
- * (StickerRoom); narrower, the room and sheet follow the board.
+ * The headline and intro, then the projects as photo prints pinned to a
+ * messy board, three to a row (two on a phone), each fanning out its other
+ * pictures on hover and opening its window on a click (FunziePopup).
+ *
+ * On wide screens a column down the right holds the isometric room, centred
+ * on the headline and intro, and under it its sticker sheet, as large as the
+ * space beside the board (StickerRoom). The intro's height is measured into
+ * --fz-intro-h for the room to centre on (funzies.css). Narrower, the room
+ * and sheet follow the board.
  */
 export function Funzies() {
   useDocumentMeta({ title: 'Design', description: 'Side projects and playful experiments by Shreya Rudrapatna.' })
@@ -26,10 +29,20 @@ export function Funzies() {
   const onOpen = useCallback((item) => setOpen(item), [])
   const onClose = useCallback(() => setOpen(null), [])
 
+  const pageRef = useRef(null)
+  const introRef = useRef(null)
+  useLayoutEffect(() => {
+    const intro = introRef.current
+    const page = pageRef.current
+    const ro = new ResizeObserver(() => page.style.setProperty('--fz-intro-h', `${intro.offsetHeight}px`))
+    ro.observe(intro)
+    return () => ro.disconnect()
+  }, [])
+
   return (
     <Layout>
-      <div className="fz-page">
-        <header className="fz-intro">
+      <div ref={pageRef} className="fz-page">
+        <header ref={introRef} className="fz-intro">
           <h1 className="fz-headline font-display">
             a look at my
             <br />
@@ -50,18 +63,19 @@ export function Funzies() {
         {/* A nudge that the prints open, set like the case studies' section
             eyebrows (OBJECTIVE, …), over the board's top-left corner. */}
         <p className="fz-hint">Click on me</p>
-        <div className="fz-wall">
-          <section className="fz-board" aria-label="Projects">
-            <ul className="fz-board__list">
-              {FUNZIES.map((item, i) => (
-                <li key={item.id} className="fz-board__item">
-                  <FunzieCard item={item} index={i} onOpen={onOpen} />
-                </li>
-              ))}
-            </ul>
-          </section>
+        <section className="fz-board" aria-label="Projects">
+          <ul className="fz-board__list">
+            {FUNZIES.map((item, i) => (
+              <li key={item.id} className="fz-board__item">
+                <FunzieCard item={item} index={i} onOpen={onOpen} />
+              </li>
+            ))}
+          </ul>
+        </section>
 
-          {/* The isometric pixel-art room, and the sheet of stickers to decorate it. */}
+        {/* The isometric pixel-art room, and under it the sheet of stickers
+            to decorate it. */}
+        <div className="fz-side">
           <StickerRoom roomClassName="fz-area-room" sheetClassName="fz-area-stk" />
         </div>
       </div>

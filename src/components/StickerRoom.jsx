@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, BLOCK_W, BLOCK_H, STICKERS } from '@/data/stickers'
+import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, SIDE_W, SIDE_H, STICKERS } from '@/data/stickers'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 
 const BY_ID = Object.fromEntries(STICKERS.map((s) => [s.id, s]))
@@ -90,13 +90,14 @@ function Sticker({ s, x, y, className = '', style, onPointerDown, onClick, onKey
  * sticks one at its spot in the room; on a placed one, Enter/Space/Delete
  * peels it back off and the arrow keys nudge it.
  *
- * The sheet always lies across, pinned to the wall: on wide screens in the
- * board's free corner, left of the room (funzies.css); otherwise under it.
+ * The sheet hangs under the room, pinned to the wall: on wide screens a tall
+ * page filling the space under the room beside the board (funzies.css);
+ * otherwise a long strip.
  *
  * Room and sheet each have their own scale, measured from their own box: an
  * art pixel is the room cell's side / FRAME CSS px, and the sheet's width /
- * (its page's width + 2 * SHEET_PAD). Beside the room the page is the
- * squarer block (BLOCK_W x BLOCK_H), so the stickers come out bigger. A sticker carried off the sheet takes on the
+ * (its page's width + 2 * SHEET_PAD). On wide screens the page is the tall
+ * one (SIDE_W x SIDE_H), so the stickers come out big. A sticker carried off the sheet takes on the
  * room's scale as it lifts, held at the same point under the pointer. Rugs stay under everything else;
  * otherwise the last sticker down is on top. Every visit starts with them all
  * on the sheet; "Put them back" returns them without a reload.
@@ -105,11 +106,11 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
   const roomRef = useRef(null)
   const spaceRef = useRef(null)
   const sheetRef = useRef(null)
-  // Wide enough for the room to stand beside the board, right of the sheet
-  // (funzies.css, same query): the hint points that way.
+  // Wide enough for the room and its sheet to stand beside the board
+  // (funzies.css, same query): the sheet's page is then the tall one that
+  // fills the space under the room; otherwise the long strip.
   const beside = useMediaQuery('(min-width: 80rem)')
-  // The sheet's page: the squarer block beside the room, the long strip under it.
-  const page = beside ? { w: BLOCK_W, h: BLOCK_H, at: 'block' } : { w: SHEET_W, h: SHEET_H, at: 'sheet' }
+  const page = beside ? { w: SIDE_W, h: SIDE_H, at: 'side' } : { w: SHEET_W, h: SHEET_H, at: 'sheet' }
   const [scale, setScale] = useState(0)
   const [sheetScale, setSheetScale] = useState(0)
   const [placed, setPlaced] = useState({})
@@ -356,7 +357,7 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
           </button>
         ) : (
           <p className="fz-sheet__hint" aria-hidden="true">
-            {beside ? 'Peel + stick →' : 'Peel + stick ↑'}
+            Peel + stick ↑
           </p>
         )}
       </section>
