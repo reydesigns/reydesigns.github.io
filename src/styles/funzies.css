@@ -377,11 +377,19 @@
 }
 /* The column the sheet and its room stand in, the sheet first: under the
    board up to 80rem, both centred; from 80rem down the page's right side. */
+/* The sheet hangs low, just clear of the room's roof: what would be the gap
+   between the two (--fz-sheet-drop) is taken above the sheet instead, so the
+   room stays where it was and the sheet comes down to it. */
 .fz-side {
+  --fz-sheet-drop: clamp(2rem, 4vw, 3rem);
+  --fz-sheet-gap: 0.5rem;
   display: grid;
   justify-items: center;
-  gap: clamp(2rem, 4vw, 3rem);
+  gap: var(--fz-sheet-gap);
   margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+.fz-side > .fz-sheet {
+  margin-top: calc(var(--fz-sheet-drop) - var(--fz-sheet-gap));
 }
 /* The room's cell: a square, which StickerRoom measures for its scale. */
 .fz-area-room {
@@ -402,9 +410,9 @@
 @media (min-width: 80rem) {
   .fz-side {
     /* One track, the column's own width, whatever the room's cell is. */
+    --fz-sheet-drop: clamp(2rem, 3.4vw, 3.75rem);
     grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
-    gap: clamp(2rem, 3.4vw, 3.75rem);
     margin-top: 0;
   }
   /* The room, under the sheet. */
