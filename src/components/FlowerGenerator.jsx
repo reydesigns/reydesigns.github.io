@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import { createFlowerView } from '@/lib/flowers/render'
 import { SPECIES, speciesByKey } from '@/lib/flowers/species'
+import { holdScroll } from '@/lib/scrollLock'
 import { setCursorHost } from '@/components/CustomCursor'
 import { SizeGlyph } from '@/components/CaseStudyModal'
 import { useMediaQuery, HOVER, SM } from '@/lib/useMediaQuery'
@@ -188,18 +189,11 @@ export function FlowerModal({ open, onClose, returnFocus }) {
     setSize('window')
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
-    // Lenis and the page's own scroll both hold still behind the pop-up, and
-    // are left as they were found (the landing sequence can hold Lenis).
-    const lenis = window.__lenis
-    const wasStopped = lenis ? lenis.isStopped : true
-    lenis?.stop()
-    const root = document.documentElement
-    const overflow = root.style.overflow
-    root.style.overflow = 'hidden'
+    // Lenis and the page's own scroll both hold still behind the pop-up.
+    const release = holdScroll()
     return () => {
       setCursorHost(null)
-      root.style.overflow = overflow
-      if (lenis && !wasStopped && window.__lenis === lenis) lenis.start()
+      release()
     }
   }, [open])
 

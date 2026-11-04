@@ -30,8 +30,11 @@ import { useReducedMotion } from './useReducedMotion'
 
    * Nothing locks the page. There is no `lenis.stop()`, no overflow toggle, no
      timer and no visibility handler; Lenis' own `lock` only holds the wheel off
-     for the 1.1s of the glide and lets go when it lands. A visitor can never
-     end up on a page that will not scroll.
+     for the 1.1s of the glide and lets go when it lands, and a wheel or key
+     upwards in that time ends the glide at once, so going back up is never
+     held off either. A visitor can never end up on a page that will not
+     scroll. (Pop-ups do hold the page still, through scrollLock.js, which
+     counts holds and frees a page left held with nothing open.)
 
    * Our own glide trips the scroll watcher on every frame, and the nav's
      "works" starts one from y≈0, inside the re-arm band — without a guard it
@@ -150,12 +153,35 @@ export function useScrollSequence({ glide, worksRef }) {
       if (y < vh * 0.1) goStage('hero')
     }
 
+    /* The reader changes their mind mid-glide: a wheel or key upwards while
+       it is still in flight ends it where it is, so that very scroll takes
+       the page back up instead of being held off until the glide lands
+       (Lenis' lock drops every wheel for its 1.1s). Listened for in the
+       capture phase, ahead of Lenis' own wheel listener, which then sees no
+       lock and scrolls. */
+    const UP_KEYS = new Set(['ArrowUp', 'PageUp', 'Home'])
+    const onInput = (e) => {
+      const l = lenis()
+      if (!selfScrollRef.current || !l?.isLocked) return
+      const up = e.type === 'wheel' ? e.deltaY < 0 : UP_KEYS.has(e.key) || (e.key === ' ' && e.shiftKey)
+      if (!up) return
+      selfScrollRef.current = false
+      l.scrollTo(window.scrollY, { immediate: true, force: true })
+      mark('glide-yield')
+    }
+
     // Without the glide, start from wherever the page already is. With it, a
     // first read could fire a glide nobody scrolled for (e.g. on a resize
     // that turns the glide on part way down), so it waits for a real scroll.
     if (!glide) onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    window.addEventListener('wheel', onInput, { capture: true, passive: true })
+    window.addEventListener('keydown', onInput, true)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('wheel', onInput, { capture: true, passive: true })
+      window.removeEventListener('keydown', onInput, true)
+    }
   }, [glide, goStage, toWorks, worksRef])
 
   return { stage, toWorks }

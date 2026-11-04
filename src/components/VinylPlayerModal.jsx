@@ -28,6 +28,7 @@ import {
   sleeveSlots,
 } from '@/components/VinylStack'
 import { setCursorHost } from '@/components/CustomCursor'
+import { holdScroll } from '@/lib/scrollLock'
 import { SizeGlyph } from '@/components/CaseStudyModal'
 import { SongRecs } from '@/components/SongRecs'
 import { RECS_ON } from '@/lib/songRecs'
@@ -1605,20 +1606,12 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
     prepareVinylAudio()
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
-    // Remember whether Lenis was already stopped (the landing sequence can
-    // hold it), and leave it that way on close.
-    const lenis = window.__lenis
-    const wasStopped = lenis ? lenis.isStopped : true
-    lenis?.stop()
-    // The page behind holds still whether or not Lenis is running (it is not
-    // under reduced motion): the same overflow its stopped state sets.
-    const root = document.documentElement
-    const overflow = root.style.overflow
-    root.style.overflow = 'hidden'
+    // The page behind holds still, Lenis or not (there is none under reduced
+    // motion), until the last pop-up holding it lets go (scrollLock.js).
+    const release = holdScroll()
     return () => {
       setCursorHost(null)
-      root.style.overflow = overflow
-      if (lenis && !wasStopped && window.__lenis === lenis) lenis.start()
+      release()
       // Gone without closing (the route changed under it): silence anyway.
       stopVinylAudio(0)
     }

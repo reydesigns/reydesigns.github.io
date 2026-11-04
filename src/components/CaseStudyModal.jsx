@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { holdScroll } from '@/lib/scrollLock'
 import { setCursorHost } from './CustomCursor'
 import { getCaseStudy } from '@/data/caseStudies'
 import { CaseStudyHostContext } from '@/lib/caseStudyHost'
@@ -179,17 +180,11 @@ export function CaseStudyModal() {
     scrollRef.current?.focus({ preventScroll: true })
     setCursorHost(dialog)
 
-    const lenis = window.__lenis
-    const wasStopped = Boolean(lenis?.isStopped)
-    lenis?.stop()
-    const html = document.documentElement
-    const overflow = html.style.overflow
-    if (!lenis) html.style.overflow = 'hidden'
+    const release = holdScroll()
 
     return () => {
       setCursorHost(null)
-      if (lenis && !wasStopped) lenis.start()
-      if (!lenis) html.style.overflow = overflow
+      release()
       if (dialog.open) dialog.close()
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
       pushed = false

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { holdScroll } from '@/lib/scrollLock'
 import { setCursorHost } from './CustomCursor'
 import { SizeGlyph } from './CaseStudyModal'
 import { picturesOf } from '@/data/funzies'
@@ -47,10 +48,10 @@ export function FunziePopup({ item, onClose }) {
     setIndex(0)
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
-    window.__lenis?.stop()
+    const release = holdScroll()
     return () => {
       setCursorHost(null)
-      window.__lenis?.start()
+      release()
     }
   }, [item])
 
