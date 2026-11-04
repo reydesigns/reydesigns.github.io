@@ -5,10 +5,10 @@
 -- src/lib/supabase.js, once, for both.)
 --
 -- One row holds the count. Nobody can read or write the table itself; the
--- site calls count_visit(), which adds one for a browser's first visit
--- (`first`, which the site keeps track of in that browser) and returns the
--- count either way. It adds at most 60 a minute, so a script hammering it
--- can only inflate the count slowly.
+-- site calls count_visit(), which adds one when `first` is true (a new visit:
+-- the site counts each tab opened on it once, reloads and page changes in
+-- that tab aside) and returns the count either way. It adds at most 60 a
+-- minute, so a script hammering it can only inflate the count slowly.
 --
 -- Visitors from before the counter existed were never recorded anywhere, so
 -- they cannot be recovered. To start from a number you know from elsewhere:

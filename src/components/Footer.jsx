@@ -15,9 +15,9 @@ const FOOT_TEXT =
  *
  * Three parts on one line: REYDESIGNS @ 2026 (with the sleeping cat) on the
  * left, MADE /W THE HELP OF ICED CAPPS centred on the screen, and on the
- * right the visitor counter, WEBSITE STALKERS: ##. The left and centre are
- * static; the counter scrambles into place (ScrambleText) every time the
- * footer comes into view, once the count is in. Between times its text is
+ * right the visit counter, WEBSITE STALKERS: ## (every visit: visits.js).
+ * The left and centre are static; the counter scrambles into place
+ * (ScrambleText) every time the footer comes into view, once the count is in. Between times its text is
  * laid out invisibly, so nothing shifts when it plays. With no count to show
  * (visits.js), the right is simply empty. On a phone the centre line drops
  * to a second row.
