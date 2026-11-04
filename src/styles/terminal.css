@@ -1,19 +1,51 @@
 /* ---------------------------------------------------------------------------
-   Terminal window (Terminal.jsx): macOS-style title bar over a dark screen,
-   monospace output, and a block cursor blinking on the prompt line.
+   Terminal (Terminal.jsx): a pane of frosted glass made up as a Python REPL.
+   A translucent white window with a bright hairline edge, blurring the two
+   soft glows set behind it (.term-glass__glow) so the glass reads; a macOS
+   title bar; the prompts in monospace; and what each call prints laid out
+   as the site's own type: a header in the landing headline's light Inter at
+   its size, a grey bold subheader, and body text.
 --------------------------------------------------------------------------- */
+.term-glass {
+  position: relative;
+  isolation: isolate;
+}
+.term-glass__glow {
+  position: absolute;
+  z-index: -1;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(48px);
+  pointer-events: none;
+}
+/* Inside the pane's box: their blur still spills softly past its edges, but
+   a blur never widens the page, where a box would on a phone. */
+.term-glass__glow--a {
+  top: 4%;
+  left: 0;
+  background: var(--term-glow-a);
+}
+.term-glass__glow--b {
+  right: 0;
+  bottom: 6%;
+  background: var(--term-glow-b);
+}
+
 .term {
   margin: 0;
-  border-radius: 0.75rem;
+  border-radius: 1rem;
   overflow: hidden;
-  background: var(--term-bg);
+  background: var(--term-glass);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
   color: var(--term-text);
-  font-family: var(--font-mono);
-  font-size: clamp(0.8125rem, 0.9vw, 0.9375rem);
-  line-height: 1.6;
+  font-family: var(--font-brand);
+  border: 1px solid var(--term-edge);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-ink) 20%, transparent),
-    0 24px 50px -20px color-mix(in srgb, var(--color-ink) 50%, transparent);
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    0 1px 2px color-mix(in srgb, var(--color-ink) 8%, transparent),
+    0 28px 60px -30px color-mix(in srgb, var(--color-ink) 45%, transparent);
 }
 .term__bar {
   position: relative;
@@ -22,9 +54,8 @@
   justify-content: center;
   min-height: 2.25rem;
   padding: 0 0.9rem;
-  background: var(--term-bar);
-  /* The bar and the screen are the same burgundy: a hairline divides them. */
-  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--term-text) 14%, transparent);
+  background: var(--term-glass-bar);
+  border-bottom: 1px solid var(--term-edge);
 }
 .term__dots {
   position: absolute;
@@ -41,25 +72,54 @@
 .term__dot--yellow { background: var(--term-dot-yellow); }
 .term__dot--green { background: var(--fz-dot-green); }
 .term__title {
-  color: var(--term-muted);
-  font-size: 0.85em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
   overflow: hidden;
+  padding-inline: 3.5rem;
+  color: var(--term-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-inline: 3.5rem;
+}
+.term__py {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
 }
 .term__screen {
-  padding: clamp(1rem, 2vw, 1.5rem) clamp(1rem, 2.2vw, 1.75rem) clamp(1.25rem, 2.4vw, 1.75rem);
+  padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1.25rem, 2.6vw, 2.25rem) clamp(1.5rem, 2.6vw, 2.25rem);
 }
-.term__line,
-.term__out {
+
+/* --- the prompts ---------------------------------------------------------- */
+.term__line {
   margin: 0;
-}
-.term__out {
-  margin-block: 0.6em;
+  font-family: var(--font-mono);
+  font-size: clamp(0.8125rem, 0.9vw, 0.9375rem);
+  line-height: 1.6;
+  color: var(--term-cmd);
+  /* A long call (shreya.tell_me_about_this_portfolio()) is one unbroken
+     word: on a phone it breaks where it must, as a terminal wraps it,
+     instead of widening the page. */
+  overflow-wrap: anywhere;
 }
 .term__prompt {
+  font-weight: 700;
   color: var(--term-prompt);
+}
+.term__kw {
+  font-weight: 600;
+  color: var(--term-kw);
+}
+.term__fn {
+  color: var(--term-fn);
+}
+.term__str {
+  color: var(--term-str);
+}
+.term__cmd + .term__cmd {
+  margin-top: 0.15em;
 }
 .term__cursor {
   display: inline-block;
@@ -70,87 +130,62 @@
   animation: type-caret-blink 1.05s steps(1, end) infinite;
 }
 
-/* --- Python REPL ------------------------------------------------------------ */
-.term__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45em;
-}
-.term__py {
-  flex: none;
-  width: 1.15em;
-  height: 1.15em;
-}
-.term__banner {
-  color: var(--term-muted);
-  margin-bottom: 0.9em;
-}
-.term__prompt {
-  font-weight: 700;
-}
-.term__kw {
-  color: var(--term-kw);
-}
-.term__fn {
-  color: var(--term-fn);
-}
-.term__comment {
-  color: var(--term-muted);
-  font-style: italic;
-}
-/* Output sits a step in, like the REPL's printed block. */
+/* --- what each call prints: header, subheader, body ------------------------- */
 .term__out {
-  border-left: 2px solid color-mix(in srgb, var(--term-py-blue) 55%, transparent);
-  padding-inline-start: 0.9em;
+  margin: clamp(0.5rem, 1vw, 0.875rem) 0 clamp(1.75rem, 3.2vw, 2.75rem);
 }
-.term__out p {
+/* The landing headline's regular words: light Inter, its size and leading. */
+.term__head {
   margin: 0;
+  font-size: var(--text-landing-headline);
+  font-weight: 300;
+  line-height: 0.96;
+  letter-spacing: -0.01em;
+  color: var(--term-text);
 }
-.term__cmd + .term__cmd {
-  margin-top: 0.15em;
+.term__sub {
+  margin: clamp(0.75rem, 1.4vw, 1.125rem) 0 0;
+  font-size: clamp(1rem, 1.3vw, 1.3125rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--term-muted);
 }
-.term__str {
-  color: #f2b880;
-}
-.term__list {
-  margin: 0;
+/* Several subheaders in a row (the facts): a plain list, closer together. */
+.term__subs {
+  margin: clamp(0.75rem, 1.4vw, 1.125rem) 0 0;
   padding: 0;
   list-style: none;
 }
-.term__list li::before {
-  content: '• ';
-  color: var(--term-prompt);
+.term__subs > .term__sub {
+  margin: 0;
+}
+.term__subs > .term__sub + .term__sub {
+  margin-top: 0.4em;
+}
+.term__body {
+  margin: 0.5rem 0 0;
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--term-text);
+}
+.term__body strong {
+  font-weight: 700;
 }
 .term__link {
-  color: var(--term-prompt);
+  color: var(--term-text);
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 .term__link:hover,
 .term__link:focus-visible {
-  color: var(--term-text);
+  color: var(--term-fn);
 }
 
-/* Near-square and a touch taller than wide (Me page), once it has a column
-   of its own. Its height is a min-height off the width, so longer output
-   still grows the window rather than being clipped by overflow: hidden. */
-.term--tall {
-  display: flex;
-  flex-direction: column;
-}
-.term--tall .term__screen {
-  flex: 1;
-}
-@media (min-width: 48rem) {
-  .term--tall {
-    container-type: inline-size;
+/* Browsers without backdrop blur get a plainer, more opaque pane, so the
+   text keeps its contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .term {
+    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   }
-  .term--tall .term__screen {
-    min-height: calc(120cqw - 2.25rem);
-  }
-}
-/* Key phrases in the output: heavier, and a shade brighter than the text. */
-.term__out strong {
-  font-weight: 700;
-  color: #ffffff;
 }

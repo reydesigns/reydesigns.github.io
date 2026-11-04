@@ -160,16 +160,23 @@
   /* The popup's header is Pixelta at 40px. */
   --fz-pop-title: 2.5rem;
 
-  /* --- Terminal (Me page): a Python REPL, burgundy like the Funzies windows:
-     the title bar and the screen are both the one burgundy, split by a hairline
-     (terminal.css). ------------------------------------------------------ */
-  --term-bg: var(--color-maroon);
-  --term-bar: var(--color-maroon);
-  --term-text: #f3e7e4;
-  --term-muted: #b8928d;
-  --term-prompt: #ffd43b;
-  --term-kw: #79b0e6;
-  --term-fn: #9fd88b;
+  /* --- Terminal (Me page): a Python REPL made of frosted glass, a
+     translucent white pane over two soft glows (terminal.css), with ink text
+     and syntax colours dark enough to read on it. ------------------------- */
+  --term-glass: color-mix(in srgb, var(--color-surface) 45%, transparent);
+  --term-glass-bar: color-mix(in srgb, var(--color-surface) 35%, transparent);
+  --term-edge: rgb(255 255 255 / 0.75);
+  --term-glow-a: color-mix(in srgb, #b4566a 40%, transparent);
+  --term-glow-b: color-mix(in srgb, #f2b880 50%, transparent);
+  --term-text: var(--color-ink);
+  --term-cmd: var(--color-ink-muted);
+  /* The grey of the subheaders (and the title): the Works captions' neutral
+     grey, about 5:1 on the glass. */
+  --term-muted: var(--card-blurb-ink);
+  --term-prompt: var(--color-ink);
+  --term-kw: #2f6690;
+  --term-fn: #7a1a30;
+  --term-str: #94500f;
   --term-py-blue: #4b8bbe;
   --term-py-yellow: #ffd43b;
   --term-dot-yellow: #febc2e;
@@ -265,9 +272,9 @@
   --fl-chosen: #7a1a30;
   /* The botanical name in the square's corner: a calligraphic serif italic. */
   --font-botanical: 'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif;
-  /* A cursive script for "why" and "how" in the landing headline
-     (.hero-script). */
-  --font-script: 'Parisienne', 'Snell Roundhand', cursive;
+  /* A cursive script for "why", "how" and "obvious" in the landing headline
+     (.hero-script) and "Shreya" in the Me headline. */
+  --font-script: 'Runethia', 'Parisienne', 'Snell Roundhand', cursive;
   /* The three colours for the drawing, its digits and its glow: burgundy,
      grey and brown, each taken light enough to read on the dark square.
      Burgundy is the equaliser's middle step, grey the window dot's grey,

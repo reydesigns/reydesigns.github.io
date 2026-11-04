@@ -1,36 +1,41 @@
 import '@/styles/terminal.css'
 
 /**
- * A terminal window running a Python REPL: traffic-light title bar, the
- * interpreter's banner, then the session passed as children — `Cmd` lines
- * and the `Out` blocks they print — and a block cursor blinking at the last
- * prompt for as long as the page is open.
+ * A pane of frosted glass made up as a Python terminal: traffic-light title
+ * bar, then the session passed as children — `Cmd` lines typed at the
+ * `>>>` prompt, each followed by the `Out` block it "prints" — and a block
+ * cursor blinking at the last prompt for as long as the page is open.
+ *
+ * Only the prompts are monospace. What each call prints is laid out like the
+ * rest of the site, as a header (`Head`), a grey bold subheader (`Sub`) and
+ * body text (`Body`).
  */
 export function Terminal({ title = 'python3 — shreya@reydesigns', children, className = '' }) {
   return (
-    <figure className={`term ${className}`} aria-label="Terminal">
-      <div className="term__bar">
-        <span className="term__dots" aria-hidden="true">
-          <span className="term__dot term__dot--red" />
-          <span className="term__dot term__dot--yellow" />
-          <span className="term__dot term__dot--green" />
-        </span>
-        <span className="term__title">
-          <PyMark /> {title}
-        </span>
-      </div>
-      <div className="term__screen">
-        <p className="term__line term__banner">
-          Python 3.13.0 (main, Oct 2026) [Clang 17.0] on darwin
-          <br />
-          Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
-        </p>
-        {children}
-        <p className="term__line">
-          <Prompt /> <span className="term__cursor" aria-hidden="true" />
-        </p>
-      </div>
-    </figure>
+    <div className={`term-glass ${className}`}>
+      {/* Soft colour for the glass to blur: without something behind it,
+          frosted glass on a flat page reads as plain white. */}
+      <span className="term-glass__glow term-glass__glow--a" aria-hidden="true" />
+      <span className="term-glass__glow term-glass__glow--b" aria-hidden="true" />
+      <figure className="term" aria-label="Terminal">
+        <div className="term__bar">
+          <span className="term__dots" aria-hidden="true">
+            <span className="term__dot term__dot--red" />
+            <span className="term__dot term__dot--yellow" />
+            <span className="term__dot term__dot--green" />
+          </span>
+          <span className="term__title">
+            <PyMark /> {title}
+          </span>
+        </div>
+        <div className="term__screen">
+          {children}
+          <p className="term__line">
+            <Prompt /> <span className="term__cursor" aria-hidden="true" />
+          </p>
+        </div>
+      </figure>
+    </div>
   )
 }
 
@@ -42,6 +47,12 @@ export const Cmd = ({ children }) => (
 )
 /** What the statement before it printed. */
 export const Out = ({ children }) => <div className="term__out">{children}</div>
+/** The printed section's header: the landing headline's light Inter, at its size. */
+export const Head = ({ children }) => <h2 className="term__head">{children}</h2>
+/** Its subheader: grey and bold. */
+export const Sub = ({ children, as: Tag = 'p' }) => <Tag className="term__sub">{children}</Tag>
+/** Its body text, set like the rest of the site's. */
+export const Body = ({ children }) => <p className="term__body">{children}</p>
 /** A keyword. */
 export const K = ({ children }) => <span className="term__kw">{children}</span>
 /** A function name. */

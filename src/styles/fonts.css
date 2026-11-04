@@ -10,8 +10,11 @@
                  Has NO quote or dash glyphs (" ' “ ” ‘ ’ – — …), so any quote
                  set in Pixelta silently falls back. Keep quotes in Inter.
 
+   A cursive script, Runethia (--font-script), sets a few words: "why",
+   "how" and "obvious" on the landing page and "Shreya" on the Me page.
+
    Three deliberate exceptions keep their own faces: the Me page's terminal
-   is monospace (it is a Python REPL), the TMU K-POP case study's live
+   types its Python prompts in monospace, the TMU K-POP case study's live
    mockups and chart use Bebas Neue (they recreate the club's own site), and
    Binary Bloom sets each flower's botanical name in Cormorant Garamond
    italic, the way a botanical plate labels its specimen.
@@ -67,8 +70,22 @@
   src: url('../../Assets/brand/fonts/cormorant-garamond/cormorant-garamond-italic-500-latin.woff2') format('woff2');
 }
 
+/* Runethia (Sronstudio), a calligraphy script, latin only, subset from the
+   1001fonts demo: "why", "how" and "obvious" in the landing headline
+   (.hero-script) and "Shreya" in the Me page's headline. The demo is FOR
+   PERSONAL USE ONLY (Assets/brand/fonts/runethia/LICENSE-NOTE.txt); public
+   or commercial use needs the paid licence from sronstudio.com. */
+@font-face {
+  font-family: 'Runethia';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../Assets/brand/fonts/runethia/runethia-latin.woff2') format('woff2');
+}
+
 /* Parisienne (OFL, from @fontsource/parisienne 5.3.0), a cursive script,
-   latin only: "why" and "how" in the landing headline (.hero-script). */
+   latin only: the fallback behind Runethia in --font-script, and what the
+   headline's script words were set in before it. */
 @font-face {
   font-family: 'Parisienne';
   font-style: normal;

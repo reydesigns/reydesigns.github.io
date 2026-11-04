@@ -33,10 +33,10 @@ import { useScrollSequence } from '@/lib/useScrollSequence'
  * The headline is Inter except for three words. Its last word types and
  * backspaces through who the solution should feel obvious to, in Pixelta:
  * the client moved the pixel face onto the changing word alone so the one
- * thing that moves is the one thing that looks different. "why" and "how"
- * are set in Parisienne, a cursive script (.hero-script), with no quotation
- * marks, and no full stop after "how". The typed full stop at the end stays
- * in Inter.
+ * thing that moves is the one thing that looks different. "why", "how" and
+ * "obvious" are set in Runethia, a calligraphy script (.hero-script),
+ * "obvious" slanted to italic as well, with no quotation marks, and no full
+ * stop after "how". The typed full stop at the end stays in Inter.
  *
  * The copy is all lowercase, written that way rather than transformed, so the
  * accessible name reads the same as the screen (client, round 3).
@@ -176,7 +176,7 @@ export function Landing() {
                 <br />
                 that way, your solution feels
                 <br />
-                obvious to every{' '}
+                <span className="hero-script hero-script--italic">obvious</span> to every{' '}
               </span>
               <WordCycle words={AUDIENCES} after="." wordClassName="font-display text-[1.1em]" />
             </h1>

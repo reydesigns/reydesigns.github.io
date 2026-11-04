@@ -289,6 +289,13 @@ html.lenis body {
   line-height: calc(0.96 / 1.22);
   letter-spacing: 0;
 }
+/* "obvious": the same script, slanted further. Runethia has no italic, so
+   the browser slants the upright. It has no tail to clear the next line
+   with, so it sits on the line instead of being lifted. */
+.hero-script--italic {
+  top: 0;
+  font-style: italic;
+}
 .hero-drawing {
   aspect-ratio: 1;
 }

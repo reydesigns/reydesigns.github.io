@@ -31,13 +31,18 @@
   flex-direction: column;
   gap: clamp(2rem, 4vw, 2.5rem);
   align-self: stretch;
+  /* A grid item, so it would otherwise never shrink below its widest line. */
+  min-width: 0;
 }
 
-/* The cat's lane above the fridge door; the gap is what drops the prints. */
+/* The cat's lane above the fridge door; the gap is what drops the prints.
+   It keeps to the top, level with the timeline, however long the terminal
+   beside it runs. */
 .me-side {
   display: flex;
   flex-direction: column;
   gap: clamp(1rem, 2.5vw, 2rem);
+  align-self: start;
 }
 
 /* Same face, size and leading as the Funzies headline (.fz-headline). */
@@ -46,6 +51,16 @@
   line-height: 0.95;
   color: var(--color-ink);
   margin: 0;
+}
+/* "Shreya" in the script (Runethia, like the landing's "why" and "how"),
+   a size up so it stands as tall as the pixel letters beside it, with the
+   line height scaled down to match, so the headline's leading is unchanged. */
+.me-headline__name {
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: 1.1em;
+  line-height: calc(0.95 / 1.1);
+  letter-spacing: 0;
 }
 
 /* --- experience timeline (ExperienceTimeline.jsx) -------------------------
@@ -76,9 +91,7 @@
   position: relative;
   display: grid;
   grid-template-columns: var(--tl-dot) 3.25rem 1fr;
-  grid-template-areas:
-    'dot logo name'
-    'dot logo when';
+  grid-template-areas: 'dot logo time';
   column-gap: 0.875rem;
   align-items: center;
 }
@@ -101,20 +114,14 @@
   /* A ring of page colour so the rule stops short of each dot. */
   box-shadow: 0 0 0 3px var(--color-bg);
 }
-.me-tl__name {
-  grid-area: name;
-  align-self: end;
+/* How long she spent there ("6M", "2Y"), the only text on the line. */
+.me-tl__time {
+  grid-area: time;
   font-size: var(--text-works-meta);
   font-weight: 600;
+  letter-spacing: 0.04em;
   line-height: 1.25;
   color: var(--color-ink);
-}
-.me-tl__when {
-  grid-area: when;
-  align-self: start;
-  font-size: var(--text-eyebrow);
-  line-height: 1.4;
-  color: var(--color-ink-muted);
 }
 
 @media (min-width: 48rem) {
@@ -136,20 +143,14 @@
   }
   .me-tl__stop {
     grid-template-columns: 1fr;
-    grid-template-areas: 'logo' 'dot' 'name' 'when';
+    grid-template-areas: 'logo' 'dot' 'time';
     row-gap: 0.625rem;
     align-content: start;
     justify-items: center;
     text-align: center;
   }
-  /* A long name wraps; the others stay level with its first line. */
-  .me-tl__name {
-    align-self: start;
+  .me-tl__time {
     margin-top: -0.25rem;
     font-size: var(--text-eyebrow);
-  }
-  .me-tl__when {
-    margin-top: -0.625rem;
-    font-size: 0.6875rem;
   }
 }
