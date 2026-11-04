@@ -745,6 +745,19 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Shore-Up's rhythm. Its sections are short (Problem is one question), so the
+   full section break left each one floating; here it is tighter, about 53px
+   instead of 91 at 1440, and the sub-heading gap comes down with it so a
+   sub-heading still opens a smaller beat than a section. The near gap is
+   restated so it is worked out from the new section gap.
+--------------------------------------------------------------------------- */
+.su-article {
+  --cs-gap-section: calc(var(--cs-7) + var(--cs-2)); /* 40–60 */
+  --cs-gap-sub: calc(var(--cs-6) + var(--cs-2)); /* 32–40 */
+  --cs-gap-section-near: calc((var(--cs-gap-facts) + var(--cs-gap-section)) / 2); /* 36–56 */
+}
+
+/* ---------------------------------------------------------------------------
    Shore-Up: the four UN goals, the official icon tiles in a row (two by two
    on a phone), each with the targets the app answers to in circles of the
    goal's own colour at its top-right, as in the team's slide. The circles

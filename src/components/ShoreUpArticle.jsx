@@ -85,7 +85,7 @@ function DemoVideo({ src, poster, label }) {
 
 export function ShoreUpArticle({ next }) {
   return (
-    <article className={ARTICLE}>
+    <article className={`${ARTICLE} su-article`}>
       <CaseHero src={globeVideo} aspect="16 / 9" label="The Shore-Up globe, turning, with beach clean-ups pinned around the world" />
 
       <ClientLine logo={shoreUpLogo}>Hackathon project</ClientLine>
