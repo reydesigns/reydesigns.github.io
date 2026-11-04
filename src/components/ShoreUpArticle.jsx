@@ -103,7 +103,7 @@ export function ShoreUpArticle({ next }) {
           cells={[
             ['My role', ['UX Researcher', 'UI Designer', 'Brand Designer']],
             ['Duration', ['1 Day Sprint', '6 Hours']],
-            ['Team', ['Myself', 'Daniel Chahine']],
+            ['Team', ['Me', 'Daniel Chahine']],
             ['Tools', ['Figma', 'Claude Code', 'Google Slides']],
           ]}
         />
@@ -148,7 +148,8 @@ export function ShoreUpArticle({ next }) {
 
         <h3 className={HEAD}>UN Sustainable Development Goals</h3>
         <P>
-          The hackathon was built around the UN’s 17 <Ref href={UN_GOALS}>Sustainable Development Goals</Ref>.
+          A key requirement of the hackathon was to build a product that upholds the UN’s 17{' '}
+          <Ref href={UN_GOALS}>Sustainable Development Goals</Ref>.
           Shore-Up targets four of them: 3, 6, 11 and 14.
         </P>
         <figure className="cs-figure su-goals">

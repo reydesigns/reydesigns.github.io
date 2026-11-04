@@ -10,26 +10,58 @@
   position: relative;
   isolation: isolate;
 }
+/* Each glow is a lopsided oval, not a disc: two offset gradients of its
+   colour in one blob whose outline slowly changes, so the colour moves in
+   soft waves behind the glass. */
 .term-glass__glow {
   position: absolute;
   z-index: -1;
-  width: 62%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(48px);
+  width: 64%;
+  aspect-ratio: 1.55;
+  border-radius: 62% 38% 55% 45% / 46% 58% 42% 54%;
+  filter: blur(34px);
   pointer-events: none;
+  animation: term-glow-wave 16s ease-in-out infinite alternate;
 }
-/* Inside the pane's box: their blur still spills softly past its edges, but
-   a blur never widens the page, where a box would on a phone. */
+/* Inside the pane's box, with room for the wave's turn and swell: their blur
+   spills softly past its edges, but a blur never widens the page, where a
+   box poking out would on a phone. */
 .term-glass__glow--a {
-  top: 4%;
-  left: 0;
-  background: var(--term-glow-a);
+  top: 6%;
+  left: 2%;
+  background:
+    radial-gradient(ellipse 60% 70% at 32% 42%, var(--term-glow-a), transparent 72%),
+    radial-gradient(ellipse 55% 45% at 72% 64%, var(--term-glow-a), transparent 70%);
+  transform: rotate(-12deg);
 }
 .term-glass__glow--b {
-  right: 0;
-  bottom: 6%;
-  background: var(--term-glow-b);
+  right: 6%;
+  bottom: 8%;
+  background:
+    radial-gradient(ellipse 62% 68% at 64% 56%, var(--term-glow-b), transparent 72%),
+    radial-gradient(ellipse 50% 46% at 28% 34%, var(--term-glow-b), transparent 70%);
+  transform: rotate(10deg);
+  animation-duration: 19s;
+  animation-delay: -7s;
+}
+@keyframes term-glow-wave {
+  0% {
+    border-radius: 62% 38% 55% 45% / 46% 58% 42% 54%;
+    scale: 1 1;
+  }
+  50% {
+    border-radius: 40% 60% 42% 58% / 60% 40% 62% 38%;
+    scale: 1.06 0.94;
+  }
+  100% {
+    border-radius: 55% 45% 66% 34% / 38% 62% 45% 55%;
+    scale: 0.96 1.05;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term-glass__glow {
+    animation: none;
+  }
 }
 
 .term {
@@ -89,7 +121,7 @@
   height: 1.15em;
 }
 .term__screen {
-  padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1.25rem, 2.6vw, 2.25rem) clamp(1.5rem, 2.6vw, 2.25rem);
+  padding: clamp(1.25rem, 2.4vw, 2rem) clamp(1.25rem, 2.6vw, 2.25rem) clamp(1rem, 1.8vw, 1.5rem);
 }
 
 /* --- the prompts ---------------------------------------------------------- */
@@ -133,6 +165,10 @@
 /* --- what each call prints: header, subheader, body ------------------------- */
 .term__out {
   margin: clamp(0.5rem, 1vw, 0.875rem) 0 clamp(1.75rem, 3.2vw, 2.75rem);
+}
+/* The last thing printed sits close over the closing prompt. */
+.term__out:nth-last-child(2) {
+  margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
 }
 /* The landing headline's regular words, light Inter, at the page's h1 size
    (the headline's own size ran the window too long). */

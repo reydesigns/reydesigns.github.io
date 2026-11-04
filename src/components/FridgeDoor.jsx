@@ -24,7 +24,8 @@ const PICKUP_PX = 4
  *
  * Placement is in percentages of the door, so it scales as one piece.
  *
- * An easter egg: the Spider-Man magnet can be picked up and moved. Let go of
+ * An easter egg, hinted at by the spidey sense flickering over the Spider-Man
+ * magnet's head: the magnet can be picked up and moved. Let go of
  * it anywhere off the two top prints and, with nothing holding them, they
  * fall down the page and come to rest just above the footer, and where they
  * hung the door reads "UH OH YOU DROPPED SOMETHING!". Let go of it still on
@@ -200,7 +201,9 @@ export function FridgeDoor({ className = '' }) {
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
-      />
+      >
+        <SpideySense />
+      </Magnet>
       <Magnet id="cat" className="fridge__magnet--cat" />
     </div>
   )
@@ -217,10 +220,32 @@ function Print({ photo, className, innerRef }) {
 /** The box is the magnet's visible size; the canvas hangs over every edge,
     as the landing page's drawings do, since the camera frames the art at
     ~65%. */
-function Magnet({ id, className, innerRef, ...events }) {
+function Magnet({ id, className, innerRef, children, ...events }) {
   return (
     <div ref={innerRef} className={`fridge__magnet ${className}`} {...events}>
       <Drawing3DLazy {...MAGNETS[id]} depth={1} className="absolute inset-[-25%]" />
+      {children}
     </div>
+  )
+}
+
+/* Spidey sense: comic lightning squiggles fanning out over the Spider-Man
+   magnet's head, flickering on a loop, the hint that it can be picked up.
+   Each is a zigzag from the head outwards, in a 100 x 50 box whose foot is
+   the top of the head; they flash one after another (fridge.css). */
+const SENSE = [
+  'M50 46 L47 34 L53 26 L48 14 L52 4',
+  'M40 46 L31 38 L34 30 L23 24 L24 15',
+  'M60 46 L69 38 L66 30 L77 24 L76 15',
+  'M31 48 L20 46 L19 39 L8 37 L4 30',
+  'M69 48 L80 46 L81 39 L92 37 L96 30',
+]
+function SpideySense() {
+  return (
+    <svg className="fridge__sense" viewBox="0 0 100 50" aria-hidden="true" focusable="false">
+      {SENSE.map((d, i) => (
+        <path key={d} d={d} style={{ '--i': i }} />
+      ))}
+    </svg>
   )
 }

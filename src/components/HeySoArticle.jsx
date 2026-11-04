@@ -355,7 +355,7 @@ export function HeySoArticle({ next }) {
           cells={[
             ['My role', ['Product Designer', 'Researcher', 'Brand Designer']],
             ['Duration', ['1 Day Sprint', '13 Hours']],
-            ['Team', ['Stella', 'Miguel', 'Curtis']],
+            ['Team', ['Me', 'Stella', 'Miguel', 'Curtis']],
             ['Tools', ['Figma', 'FigJam']],
           ]}
         />

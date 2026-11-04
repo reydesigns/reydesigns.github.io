@@ -131,3 +131,63 @@
   width: 19%;
   transform: rotate(6deg);
 }
+
+/* Spidey sense over the Spider-Man magnet (FridgeDoor's SpideySense): the
+   squiggles stand on the top of its head and flash outwards one after
+   another, on a loop, for as long as the magnet waits to be moved. Held, or
+   once the prints have fallen, the hint has done its job and goes. Under
+   reduced motion they stay up, still. */
+.fridge__sense {
+  position: absolute;
+  left: -4%;
+  bottom: 88%;
+  width: 108%;
+  overflow: visible;
+  pointer-events: none !important;
+}
+.fridge__sense path {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-box: view-box;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: fridge-sense 2.6s ease-out infinite;
+  animation-delay: calc(var(--i) * 110ms);
+}
+@keyframes fridge-sense {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  14% {
+    opacity: 0.35;
+  }
+  20% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+.fridge__magnet--spidey[data-held] .fridge__sense,
+.fridge[data-dropped] .fridge__sense {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fridge__sense path {
+    opacity: 0.85;
+    animation: none;
+  }
+}

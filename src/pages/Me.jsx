@@ -38,8 +38,9 @@ export function Me() {
                 <Head>how i design</Head>
                 <Sub>The art of understanding</Sub>
                 <Body>
-                  The way I design is through the art of understanding. Sure, I can solve your problems, but what makes
-                  me different from other designers is that I value the process of <strong>research and data</strong>.
+                  The way I design is through the art of understanding. Sure, I can design articulate interfaces, but
+                  what makes me different from other designers is that I value the process of{' '}
+                  <strong>research and data</strong>.
                 </Body>
               </Out>
               <Cmd>
@@ -61,7 +62,6 @@ export function Me() {
               </Cmd>
               <Out>
                 <Head>work with me</Head>
-                <Sub>Say hello!</Sub>
                 <Body>
                   Email me at{' '}
                   <a className="term__link" href="mailto:shreyarudrapatna@gmail.com">
