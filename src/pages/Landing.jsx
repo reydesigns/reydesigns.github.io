@@ -125,6 +125,7 @@ export function Landing() {
                 <div className="hero-drawing hero-drawing--cat pointer-events-none absolute right-[calc(100%_-_6vw)] bottom-[-95%] z-[2]">
                   <Drawing3DLazy
                     {...STRAWBERRY_CAT}
+                    eager
                     onHoverChange={cat.onHoverChange}
                     onTap={cat.onTap}
                     className="pointer-events-auto absolute inset-[-25%]"
@@ -140,6 +141,7 @@ export function Landing() {
                 <div className="hero-drawing hero-drawing--self pointer-events-none absolute left-[calc(100%_-_9vw)] top-[-12%] z-[2]">
                   <Drawing3DLazy
                     {...SELF_PORTRAIT}
+                    eager
                     onHoverChange={self.onHoverChange}
                     onTap={self.onTap}
                     className="pointer-events-auto absolute inset-[-25%]"

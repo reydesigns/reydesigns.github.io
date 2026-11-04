@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { useReducedMotion } from '@/lib/useReducedMotion'
-import { boxBlur, buildToyMaps, toyMaterial } from '@/lib/toyStyle'
+import { toyMaterial } from '@/lib/toyStyle'
+import { DEFAULT_DEPTH, DEFAULT_SEGMENTS, prepareDrawing, releaseDrawing } from '@/lib/drawingPrep'
 import style from '@/data/style_config.json'
 
 /**
@@ -15,7 +16,8 @@ import style from '@/data/style_config.json'
  *  - no title / subtitle / "Face front" / "Spin" chrome
  *  - transparent (the originals already used alpha:true, so this is free)
  *  - zoom disabled, so the wheel keeps scrolling the page instead of dollying
- *  - initialised lazily on first intersection, and torn down on unmount
+ *  - started as soon as it mounts (Drawing3DLazy decides when), and torn
+ *    down on unmount
  *  - turns to follow the pointer only while the pointer is over it, so the
  *    two drawings on the page react one at a time, never together
  *  - draggable, and springs back into its resting pose the moment it is let go
@@ -23,7 +25,11 @@ import style from '@/data/style_config.json'
  *    when it is tapped on a touch screen (`onTap`), for the speech bubbles
  *
  * The mesh is built by displacing a plane with a 16-bit height map packed into
- * the red and green channels of height.png.
+ * the red and green channels of height.png. That, and the gloss maps, are
+ * worked out in a worker (drawing.worker.js) so the page never freezes for
+ * them; this file wraps the worker's arrays in three.js objects, compiles the
+ * shaders without blocking, and calls `onReady` once the first frame is on
+ * the canvas.
  *
  * Its finish — the glossy "designer toy" look — comes from
  * src/data/style_config.json (see restyle/README.md). With `enabled: false`
@@ -59,31 +65,37 @@ export function Drawing3D({
   meta,
   className = '',
   label = '',
-  depth = 0.85,
-  maxSegments = style.geometry.maxSegments,
+  depth = DEFAULT_DEPTH,
+  maxSegments = DEFAULT_SEGMENTS,
   onHoverChange,
   onTap,
+  onReady,
 }) {
   const mountRef = useRef(null)
   const reduced = useReducedMotion()
   // The callbacks are read through a ref so a new function from the parent
   // never tears down and rebuilds the WebGL scene.
-  const callbacks = useRef({ onHoverChange, onTap })
+  const callbacks = useRef({ onHoverChange, onTap, onReady })
   useEffect(() => {
-    callbacks.current = { onHoverChange, onTap }
-  }, [onHoverChange, onTap])
+    callbacks.current = { onHoverChange, onTap, onReady }
+  }, [onHoverChange, onTap, onReady])
 
   useEffect(() => {
     const mount = mountRef.current
     if (!mount) return undefined
 
-    let renderer, scene, camera, geo, bgeo, disposed = false
+    let renderer, scene, camera, disposed = false
     const cleanupFns = []
+    // Every geometry, material and texture made here, for the cleanup.
+    const owned = []
+    const own = (x) => (owned.push(x), x)
+    // The worker may already be on it: Drawing3DLazy starts the build as soon
+    // as the drawing mounts, before this chunk has even downloaded.
+    const build = prepareDrawing({ textures, meta, depth, maxSegments })
+    build.catch(() => {})
 
     const init = () => {
       if (disposed) return
-      const SC = 1 / 260
-
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.setClearAlpha(0)
@@ -117,7 +129,7 @@ export function Drawing3D({
           scene.add(d)
         }
         const pmrem = new THREE.PMREMGenerator(renderer)
-        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+        scene.environment = own(pmrem.fromScene(new RoomEnvironment(), 0.04).texture)
         scene.environmentIntensity = style.render.environmentIntensity
         pmrem.dispose()
       } else {
@@ -132,121 +144,96 @@ export function Drawing3D({
         scene.add(key, rim, backL)
       }
 
+      // Not in the scene until its shaders are compiled (see show()).
       const charm = new THREE.Group()
-      scene.add(charm)
-
-      const loader = new THREE.TextureLoader()
       const maxAniso = renderer.capabilities.getMaxAnisotropy()
-      const backTex = loader.load(textures.back)
-      // An sRGB-encoded PNG. Untagged, three reads it as linear and
-      // re-encodes on output, which washes the colours out.
-      backTex.colorSpace = THREE.SRGBColorSpace
-      backTex.magFilter = THREE.NearestFilter
-      backTex.anisotropy = maxAniso
 
-      const loadImage = (src) =>
-        new Promise((resolve, reject) => {
-          const im = new Image()
-          im.onload = () => resolve(im)
-          im.onerror = reject
-          im.src = src
+      /** An RGBA texture from the worker's pixels (row 0 at the top). */
+      const texture = ({ data, w, h }, colorSpace) => {
+        const t = own(new THREE.DataTexture(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), w, h))
+        // As a CanvasTexture would be: flipped to three's uv origin, smooth,
+        // mipmapped.
+        t.flipY = true
+        t.magFilter = THREE.LinearFilter
+        t.minFilter = THREE.LinearMipmapLinearFilter
+        t.generateMipmaps = true
+        t.colorSpace = colorSpace
+        t.needsUpdate = true
+        return t
+      }
+
+      build
+        .then(({ mesh, tex }) => {
+          if (disposed) return undefined
+          releaseDrawing({ textures, depth, maxSegments })
+
+          // The front and back shells share the uvs and the triangles.
+          const uv = new THREE.BufferAttribute(mesh.uv, 2)
+          const index = new THREE.BufferAttribute(mesh.index, 1)
+          const shell = ({ position, normal }) => {
+            const g = own(new THREE.BufferGeometry())
+            g.setIndex(index)
+            g.setAttribute('position', new THREE.BufferAttribute(position, 3))
+            g.setAttribute('normal', new THREE.BufferAttribute(normal, 3))
+            g.setAttribute('uv', uv)
+            return g
+          }
+
+          const map = (k, cs) => texture({ data: tex.maps[k], w: tex.w, h: tex.h }, cs)
+          let frontMat
+          if (style.enabled) {
+            const maps = {
+              map: map('map', THREE.SRGBColorSpace),
+              coat: map('coat', THREE.NoColorSpace),
+              coatRough: map('coatRough', THREE.NoColorSpace),
+              sheen: map('sheen', THREE.SRGBColorSpace),
+              glow: map('glow', THREE.SRGBColorSpace),
+            }
+            maps.map.anisotropy = maxAniso
+            frontMat = own(toyMaterial(maps))
+          } else {
+            const colorTex = map('map', THREE.SRGBColorSpace)
+            colorTex.anisotropy = maxAniso
+            // Matte Lambert rather than Standard: even rough, Standard's
+            // specular laid a grey veil over the dark colours (the strawberry,
+            // the hair). Lambert's diffuse term is the same, so the relief
+            // still shades.
+            frontMat = own(new THREE.MeshLambertMaterial({ map: colorTex, alphaTest: 0.5, side: THREE.DoubleSide }))
+          }
+
+          // Back face: a blurred copy of the height field (built in the
+          // worker), so the front artwork doesn't read through from behind.
+          const backTex = texture(tex.back, THREE.SRGBColorSpace)
+          backTex.magFilter = THREE.NearestFilter
+          backTex.anisotropy = maxAniso
+          const B = style.backFace
+          const backMat = own(
+            style.enabled
+              ? new THREE.MeshPhysicalMaterial({
+                  map: backTex,
+                  roughness: B.roughness,
+                  clearcoat: B.clearcoat,
+                  clearcoatRoughness: B.clearcoatRoughness,
+                  alphaTest: 0.5,
+                  side: THREE.DoubleSide,
+                })
+              : new THREE.MeshLambertMaterial({ map: backTex, alphaTest: 0.5, side: THREE.DoubleSide }),
+          )
+          charm.add(new THREE.Mesh(shell(mesh.front), frontMat), new THREE.Mesh(shell(mesh.back), backMat))
+
+          // Compiling the glossy material's shaders took ~200 ms of frozen
+          // page when it happened inside the first render. compileAsync hands
+          // it to the GPU process (KHR_parallel_shader_compile) and resolves
+          // once it is done, so the first frame doesn't wait on it.
+          return renderer.compileAsync(charm, camera, scene).then(() => charm)
         })
-
-      Promise.all([loadImage(textures.color), loadImage(textures.height)]).then(([colorImg, img]) => {
-        if (disposed) return
-        // The source height maps are ~800x820. Meshing one vertex per pixel
-        // would be ~650k vertices per model — the originals could afford that
-        // as a fullscreen showcase, but these are small corner decorations and
-        // there are two of them. Downsample to `maxSegments` on the long edge,
-        // which also makes the blur below cheap enough not to jank the main
-        // thread on init.
-        const scale = Math.min(1, maxSegments / Math.max(img.width, img.height))
-        const cw = Math.max(2, Math.round(img.width * scale))
-        const ch = Math.max(2, Math.round(img.height * scale))
-        const c = document.createElement('canvas')
-        c.width = cw
-        c.height = ch
-        const cx = c.getContext('2d', { willReadFrequently: true })
-        cx.drawImage(img, 0, 0, cw, ch)
-        const px = cx.getImageData(0, 0, cw, ch).data
-
-        geo = new THREE.PlaneGeometry(meta.w * SC, meta.h * SC, cw - 1, ch - 1)
-        const pos = geo.attributes.position
-        // 16-bit height packed across the red and green channels
-        const hv = new Float32Array(cw * ch)
-        for (let i = 0; i < hv.length; i += 1) hv[i] = (px[i * 4] * 256 + px[i * 4 + 1]) / 65535
-        const G = style.geometry
-        if (style.enabled) {
-          // Rounder, softer forms: blur the relief so no step in the height
-          // map shows as a facet, and optionally puff it up (`chunky`).
-          boxBlur(hv, cw, ch, G.smoothRadius, G.smoothPasses)
-          if (G.chunky) for (let i = 0; i < hv.length; i += 1) hv[i] = hv[i] ** G.chunkyGamma * G.chunkyDepth
-        }
-        // Close the seam. The front and back are separate shells, and along
-        // the outline they used to stop at different depths, leaving a slit
-        // you could see through when the drawing turned. Taper the height to
-        // zero at the outline (where alphaTest cuts) with a round profile, so
-        // both shells meet there and the edge reads as a puffy rim.
-        const ac = document.createElement('canvas')
-        ac.width = cw
-        ac.height = ch
-        const acx = ac.getContext('2d', { willReadFrequently: true })
-        acx.drawImage(colorImg, 0, 0, cw, ch)
-        const apx = acx.getImageData(0, 0, cw, ch).data
-        const am = new Float32Array(cw * ch)
-        for (let i = 0; i < am.length; i += 1) am[i] = apx[i * 4 + 3] / 255
-        boxBlur(am, cw, ch, G.edgeRadius, 2)
-        for (let i = 0; i < hv.length; i += 1) {
-          const f = Math.min(1, Math.max(0, (am[i] - 0.55) / 0.45))
-          hv[i] *= Math.sqrt(1 - (1 - f) * (1 - f))
-        }
-        for (let i = 0; i < pos.count; i += 1) pos.setZ(i, hv[i] * meta.maxH * SC * depth)
-        geo.computeVertexNormals()
-
-        let frontMat
-        if (style.enabled) {
-          const maps = buildToyMaps(colorImg, style)
-          maps.map.anisotropy = maxAniso
-          frontMat = toyMaterial(maps)
-        } else {
-          const colorTex = new THREE.Texture(colorImg)
-          colorTex.colorSpace = THREE.SRGBColorSpace
-          colorTex.anisotropy = maxAniso
-          colorTex.needsUpdate = true
-          // Matte Lambert rather than Standard: even rough, Standard's
-          // specular laid a grey veil over the dark colours (the strawberry,
-          // the hair). Lambert's diffuse term is the same, so the relief
-          // still shades.
-          frontMat = new THREE.MeshLambertMaterial({ map: colorTex, alphaTest: 0.5, side: THREE.DoubleSide })
-        }
-        const front = new THREE.Mesh(geo, frontMat)
-
-        // Back face: a blurred copy of the height field, so the front artwork
-        // doesn't read through from behind.
-        const n = cw * ch
-        const hz = new Float32Array(n)
-        for (let i = 0; i < n; i += 1) hz[i] = pos.getZ(i)
-        const a = boxBlur(Float32Array.from(hz), cw, ch, Math.max(2, Math.round(10 * (cw / 795))), 3)
-        bgeo = geo.clone()
-        const bpos = bgeo.attributes.position
-        for (let i = 0; i < n; i += 1) bpos.setZ(i, -0.35 * Math.min(a[i], hz[i] * 2))
-        bgeo.computeVertexNormals()
-        const B = style.backFace
-        const back = new THREE.Mesh(
-          bgeo,
-          style.enabled
-            ? new THREE.MeshPhysicalMaterial({
-                map: backTex,
-                roughness: B.roughness,
-                clearcoat: B.clearcoat,
-                clearcoatRoughness: B.clearcoatRoughness,
-                alphaTest: 0.5,
-                side: THREE.DoubleSide,
-              })
-            : new THREE.MeshLambertMaterial({ map: backTex, alphaTest: 0.5, side: THREE.DoubleSide }),
-        )
-        charm.add(front, back)
-      })
+        .then((ready) => {
+          if (ready && !disposed) show(ready)
+        })
+        .catch((err) => {
+          // The still in Drawing3DLazy stays up; nothing else to do.
+          if (!disposed) console.warn('Drawing3D: could not build the drawing', err)
+        })
 
       let baseDist = 7
       const resize = () => {
@@ -360,69 +347,77 @@ export function Drawing3D({
 
       let velY = 0
       let velX = 0
-      // Timer replaces the deprecated Clock (r183). It isn't connected to the
-      // document, so like the Clock it keeps counting while the tab is hidden.
-      const timer = new THREE.Timer()
-      renderer.setAnimationLoop((time) => {
-        const t = timer.update(time).getElapsed()
+      /**
+       * Puts the finished drawing on screen and starts it moving. The first
+       * frame is drawn at once, at rest (no sway, no bob: both start at
+       * zero), which is exactly the pose of the still underneath, so
+       * Drawing3DLazy can fade one into the other.
+       */
+      const show = (charm) => {
+        scene.add(charm)
+        // Timer replaces the deprecated Clock (r183). It isn't connected to
+        // the document, so like the Clock it keeps counting while the tab is
+        // hidden. Made here so the sway starts from zero on the first frame.
+        const timer = new THREE.Timer()
+        const frame = (time) => {
+          const t = timer.update(time).getElapsed()
 
-        let aimY = 0
-        let aimX = 0
-        if (!reduced && hovering && !drag) {
-          // Measured from this drawing's own centre, in units of half its box,
-          // so the turn follows the cursor across the model itself. Outside
-          // the hit zone (over the transparent margin) it rests.
-          const r = mount.getBoundingClientRect()
-          const dx = (pointerX - (r.left + r.width / 2)) / r.width
-          const dy = (pointerY - (r.top + r.height / 2)) / r.height
-          if (Math.abs(dx) <= HIT_ZONE && Math.abs(dy) <= HIT_ZONE) {
-            aimY = (dx / HIT_ZONE) * TRACK_Y
-            // Screen y grows downwards; a positive x-rotation tips the face up.
-            aimX = -(dy / HIT_ZONE) * TRACK_X
+          let aimY = 0
+          let aimX = 0
+          if (!reduced && hovering && !drag) {
+            // Measured from this drawing's own centre, in units of half its
+            // box, so the turn follows the cursor across the model itself.
+            // Outside the hit zone (over the transparent margin) it rests.
+            const r = mount.getBoundingClientRect()
+            const dx = (pointerX - (r.left + r.width / 2)) / r.width
+            const dy = (pointerY - (r.top + r.height / 2)) / r.height
+            if (Math.abs(dx) <= HIT_ZONE && Math.abs(dy) <= HIT_ZONE) {
+              aimY = (dx / HIT_ZONE) * TRACK_Y
+              // Screen y grows downwards; a positive x-rotation tips the face up.
+              aimX = -(dy / HIT_ZONE) * TRACK_X
+            }
           }
-        }
 
-        const sway = !reduced && !drag
-        const ty = (sway ? Math.sin(t * 0.7) * SWAY_Y : 0) + aimY + dragY
-        const tx = (sway ? Math.sin(t * 0.5) * SWAY_X : 0) + aimX + dragX
-        velY = (velY + (ty - charm.rotation.y) * STIFFNESS) * FRICTION
-        velX = (velX + (tx - charm.rotation.x) * STIFFNESS) * FRICTION
-        charm.rotation.y += velY
-        charm.rotation.x += velX
-        if (!reduced) charm.position.y = Math.sin(t * 1.2) * 0.03
-        renderer.render(scene, camera)
-      })
+          const sway = !reduced && !drag
+          const ty = (sway ? Math.sin(t * 0.7) * SWAY_Y : 0) + aimY + dragY
+          const tx = (sway ? Math.sin(t * 0.5) * SWAY_X : 0) + aimX + dragX
+          velY = (velY + (ty - charm.rotation.y) * STIFFNESS) * FRICTION
+          velX = (velX + (tx - charm.rotation.x) * STIFFNESS) * FRICTION
+          charm.rotation.y += velY
+          charm.rotation.x += velX
+          if (!reduced) charm.position.y = Math.sin(t * 1.2) * 0.03
+          renderer.render(scene, camera)
+        }
+        frame(performance.now())
+        renderer.setAnimationLoop(frame)
+        callbacks.current.onReady?.()
+      }
     }
 
-    // Only spin up WebGL once the corner is actually on screen.
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          io.disconnect()
-          init()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    io.observe(mount)
+    // Its own task, so two drawings mounting together don't make one long
+    // one (each WebGL context and studio room is tens of ms). Drawing3DLazy
+    // decides when the drawing mounts.
+    const start = setTimeout(() => {
+      try {
+        init()
+      } catch (err) {
+        // No WebGL (blocked, or the GPU process gone): the still stays, and
+        // the worker's arrays have nowhere to go.
+        releaseDrawing({ textures, depth, maxSegments })
+        console.warn('Drawing3D: WebGL unavailable', err)
+      }
+    })
 
     return () => {
       disposed = true
-      io.disconnect()
+      clearTimeout(start)
       cleanupFns.forEach((fn) => fn())
       if (renderer) {
         renderer.setAnimationLoop(null)
         renderer.domElement.remove()
         renderer.dispose()
       }
-      geo?.dispose()
-      bgeo?.dispose()
-      scene?.environment?.dispose()
-      scene?.traverse((o) => {
-        if (!o.material) return
-        for (const v of Object.values(o.material)) if (v?.isTexture) v.dispose()
-        o.material.dispose()
-      })
+      owned.forEach((x) => x.dispose())
     }
   }, [textures, meta, depth, reduced, maxSegments])
 

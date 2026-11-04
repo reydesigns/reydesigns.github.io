@@ -1,14 +1,22 @@
 # Designer-toy restyle
 
 The two landing-page drawings (self-portrait, strawberry cat) are given a
-glossy vinyl-toy finish live in three.js. Nothing is pre-rendered and the
-original PNGs in `Assets/experiments/3d-drawing/textures/` are never modified.
+glossy vinyl-toy finish live in three.js. The original PNGs in
+`Assets/experiments/3d-drawing/textures/` are never modified.
+
+The one pre-rendered thing is each drawing's `poster.webp`, a still of the
+live drawing at rest that the landing page shows from its first paint while
+three.js loads, then crossfades into the live canvas. **After any change to
+the look, re-run `node scripts/drawing-posters.mjs`** so the still matches.
 
 | File | Role |
 |---|---|
 | `src/data/style_config.json` | Every tunable value: gloss, lights, blush, smoothing |
-| `src/lib/toyStyle.js` | Sorts each pixel of `color.png` into a region by colour and builds the gloss maps |
-| `src/components/Drawing3D.jsx` | Applies the config: lights, studio reflections, smoothing, materials |
+| `src/lib/toyPixels.js` | Sorts each pixel of `color.png` into a region by colour and builds the gloss maps |
+| `src/lib/drawing.worker.js` | Runs that, the smoothing and the mesh off the main thread |
+| `src/lib/toyStyle.js` | The glossy material the maps feed |
+| `src/components/Drawing3D.jsx` | Applies the config: lights, studio reflections, materials |
+| `scripts/drawing-posters.mjs` | Renders the `poster.webp` stills from the live drawings |
 | `scripts/model-shots.mjs` | Close-up screenshots for before/after |
 | `restyle/comparison.html` | Side-by-side gallery |
 
@@ -18,6 +26,7 @@ original PNGs in `Assets/experiments/3d-drawing/textures/` are never modified.
 npm run dev                              # keep running
 node scripts/model-shots.mjs after       # writes restyle/renders/*-after.png
 open restyle/comparison.html
+node scripts/drawing-posters.mjs         # once happy: refresh the landing stills
 ```
 
 For fresh "before" shots, set `"enabled": false` in the config, run
