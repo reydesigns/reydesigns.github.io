@@ -335,7 +335,7 @@ export function HeySoArticle({ next }) {
         Heyso...
       </h1>
 
-      <Tags tags={['UX RESEARCH', 'MOBILE', 'DESIGNATHON']} />
+      <Tags tags={['UX RESEARCH', 'MOBILE', 'DESIGNATHON', 'TOP 10 CANDIDATE']} />
 
       {/* ------------------------------ objective ------------------------- */}
       <Section id="objective">
