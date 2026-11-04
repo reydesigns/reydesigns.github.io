@@ -29,7 +29,8 @@ import cardFaq from '@assets/tmu-kpop/images/web/card-faq.webp'
    Layout and copy follow Assets/tmu-kpop/tmukpop case study.png (6912×24000,
    4× a 1728pt frame). The last section, "PROCESS" in the comp, is ROI by
    client request, and its content — the attendance chart, the conclusion and
-   the three changes — was added on top of the comp.
+   the three changes — was added on top of the comp, as was the Screening
+   section before Process (its sticky notes' copy is a placeholder).
 
    The page screens break out of the article column into a wide band, as in the
    comp: each is a mockup on the left with an OLD / SKETCH card on the right.
@@ -85,6 +86,77 @@ function Still({ src, alt, size }) {
   )
 }
 
+/* The three usability screenings of the old Weebly site, one sticky note
+   each. PLACEHOLDER COPY: written from what the case study already shows of
+   the old site (white-on-black pages, a posters-only events grid, a team page
+   of names without bios, membership rules in the FAQ, no phone layout), to be
+   replaced with the real screenings' notes. */
+const SCREENINGS = [
+  {
+    who: 'First year, on her phone',
+    pain: [
+      'How to join was buried in the FAQ, under a wall of policy text.',
+      'The pages didn’t fit her phone, so she pinched and zoomed to read.',
+    ],
+    touch: [
+      'Came in from the link in the club’s Instagram bio.',
+      'Went straight to the FAQ looking for membership fees.',
+    ],
+  },
+  {
+    who: 'Returning member, on a laptop',
+    pain: [
+      'The events page was a grid of posters with no dates or titles.',
+      'White text on black made the longer descriptions tiring to read.',
+    ],
+    touch: [
+      'Opened the Fall 2022 events to find what was on that week.',
+      'Clicked a poster expecting details; nothing happened.',
+    ],
+  },
+  {
+    who: 'Thinking of joining the exec team',
+    pain: [
+      'The Presidential Team page had names and roles, but nothing on who to ask.',
+      'Next to the club’s Instagram the site felt out of date, so she wasn’t sure it was still kept up.',
+    ],
+    touch: [
+      'Read About us, then the Presidential Team page.',
+      'Left the site to message the club on Instagram instead.',
+    ],
+  },
+]
+
+/** Three sticky notes in a row (stacked on a phone): a student's screening
+    each, its pain points and touchpoints. A note lifts and its corner peels
+    up a little under the pointer (case-study.css). */
+function ScreeningNotes() {
+  return (
+    <ul className="cs-wide tk-notes">
+      {SCREENINGS.map((s, i) => (
+        <li key={s.who} className="tk-note" style={{ '--n': i }}>
+          <div className="tk-note__paper">
+            <h3 className="tk-note__title">Student #{i + 1}</h3>
+            <p className="tk-note__who">{s.who}</p>
+            <p className="tk-note__label">Pain points</p>
+            <ul className="tk-note__list">
+              {s.pain.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+            <p className="tk-note__label">Touchpoints</p>
+            <ul className="tk-note__list">
+              {s.touch.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function TmuKpopArticle({ next }) {
   const { before, after } = ATTENDANCE_AVERAGES
   return (
@@ -123,6 +195,19 @@ export function TmuKpopArticle({ next }) {
             ['Tools', ['WIX', 'Procreate']],
           ]}
         />
+      </Section>
+
+      {/* ------------------------------ screening ------------------------- */}
+      <Section id="screening">
+        <Eyebrow>Screening</Eyebrow>
+        <P>
+          Before sketching anything, I ran three usability screenings of the old website with TMU students. Each one
+          worked through a few everyday tasks, like finding the next event, working out how to join and who runs
+          the club, and talked me through what they were doing as they went. Their pain points and touchpoints
+          became the brief, and kickstarted the process: sketching the new pages, iterating on them, and launching
+          the site.
+        </P>
+        <ScreeningNotes />
       </Section>
 
       {/* ------------------------------- process -------------------------- */}

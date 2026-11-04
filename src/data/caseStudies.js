@@ -135,6 +135,7 @@ export const HEYSO_SECTIONS = [
 /** Ordered sections for the TMU K-POP case study. */
 export const TMU_SECTIONS = [
   { id: 'objective', label: 'OBJECTIVE' },
+  { id: 'screening', label: 'SCREENING' },
   { id: 'process', label: 'PROCESS' },
   { id: 'roi', label: 'ROI' },
 ]
