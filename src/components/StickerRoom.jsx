@@ -90,7 +90,7 @@ function Sticker({ s, x, y, className = '', style, onPointerDown, onClick, onKey
  * sticks one at its spot in the room; on a placed one, Enter/Space/Delete
  * peels it back off and the arrow keys nudge it.
  *
- * The sheet hangs under the room, pinned to the wall: on wide screens an
+ * The sheet hangs above the room, pinned to the wall: on wide screens an
  * upright page, narrower than the room (funzies.css); otherwise a long strip.
  *
  * Room and sheet each have their own scale, measured from their own box: an
@@ -107,7 +107,7 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
   const sheetRef = useRef(null)
   // Wide enough for the room and its sheet to stand beside the board
   // (funzies.css, same query): the sheet's page is then the upright one
-  // under the room; otherwise the long strip.
+  // above the room; otherwise the long strip.
   const beside = useMediaQuery('(min-width: 80rem)')
   const page = beside ? { w: SIDE_W, h: SIDE_H, at: 'side' } : { w: SHEET_W, h: SHEET_H, at: 'sheet' }
   const [scale, setScale] = useState(0)
@@ -286,33 +286,7 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
 
   return (
     <>
-      <div ref={roomRef} className={`fz-room ${roomClassName}`} style={{ '--s': scale }}>
-        {scale > 0 && (
-          <div ref={spaceRef} className="fz-room__space" style={{ '--room-x': ROOM.x }}>
-            <img
-              className="fz-room__art"
-              src={ROOM.src}
-              alt="Shreya's isometric pixel-art room: a wooden cabin with a loft, a ladder and an arched window"
-              style={{ '--x': ROOM.x, '--y': ROOM.y, '--w': ROOM.w, '--h': ROOM.h }}
-              draggable="false"
-            />
-            {inRoom.map(({ s, x, y }) => (
-              <Sticker
-                key={s.id}
-                s={s}
-                x={x}
-                y={y}
-                className={`is-placed${drag?.id === s.id ? ' is-away' : ''}${justStuck === s.id ? ' is-stuck' : ''}`}
-                label={`${s.name}, in the room. Drag to move, or drag out of the room to put it back. Delete to remove, arrow keys to move.`}
-                onPointerDown={onPointerDown('room')}
-                onClick={onRoomClick(s.id)}
-                onKeyDown={onRoomKey(s.id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
+      {/* The sheet comes first, above the room it decorates. */}
       <section
         ref={sheetRef}
         className={`fz-sheet ${sheetClassName}`}
@@ -356,10 +330,37 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
           </button>
         ) : (
           <p className="fz-sheet__hint" aria-hidden="true">
-            Peel + stick ↑
+            Peel + stick ↓
           </p>
         )}
       </section>
+
+      <div ref={roomRef} className={`fz-room ${roomClassName}`} style={{ '--s': scale }}>
+        {scale > 0 && (
+          <div ref={spaceRef} className="fz-room__space" style={{ '--room-x': ROOM.x }}>
+            <img
+              className="fz-room__art"
+              src={ROOM.src}
+              alt="Shreya's isometric pixel-art room: a wooden cabin with a loft, a ladder and an arched window"
+              style={{ '--x': ROOM.x, '--y': ROOM.y, '--w': ROOM.w, '--h': ROOM.h }}
+              draggable="false"
+            />
+            {inRoom.map(({ s, x, y }) => (
+              <Sticker
+                key={s.id}
+                s={s}
+                x={x}
+                y={y}
+                className={`is-placed${drag?.id === s.id ? ' is-away' : ''}${justStuck === s.id ? ' is-stuck' : ''}`}
+                label={`${s.name}, in the room. Drag to move, or drag out of the room to put it back. Delete to remove, arrow keys to move.`}
+                onPointerDown={onPointerDown('room')}
+                onClick={onRoomClick(s.id)}
+                onKeyDown={onRoomKey(s.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {drag &&
         createPortal(

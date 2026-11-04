@@ -4,12 +4,9 @@
 
    From 80rem the page is a grid of two columns using nearly the whole width:
    on the left the intro, the "Click on me" hint and the board; down the
-   right the room, a little wider than the column (the room comes first: it
-   is the biggest thing on the right), and under it, a step lower, the sheet,
-   an upright page narrower than the room. The room is centred on the intro (Funzies measures its height into
-   --fz-intro-h) as nearly as it can be without reaching up into the top
-   bar: if centring would lift it past the page's top padding, it stops just
-   short and hangs a little lower instead.
+   right the sticker sheet, an upright page half the column wide, at the top,
+   and under it the room it decorates, a little wider than the column (its
+   drawing is the biggest thing on the right).
 --------------------------------------------------------------------------- */
 
 .fz-page {
@@ -23,11 +20,12 @@
 @media (min-width: 80rem) {
   .fz-page {
     --fz-side-w: clamp(24rem, 36vw, 40rem);
-    /* The room's square cell, 12% wider than the column: the drawing is only
-       79% of its cell's width, so it still sits inside the column, and the
+    /* The room's square cell, 20% wider than the column: the drawing is only
+       79% of its cell's width, so it still nearly fits the column, and the
        cell's empty sides reach no further than the column gap and the page
-       gutter. */
-    --fz-room: calc(var(--fz-side-w) * 1.12);
+       gutter (at 80rem, 46px of a 47px gutter: any wider and the page would
+       scroll sideways). */
+    --fz-room: calc(var(--fz-side-w) * 1.2);
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--fz-side-w);
     grid-template-rows: auto auto 1fr;
@@ -377,8 +375,8 @@
   width: calc(var(--w) * var(--u));
   height: calc(var(--h) * var(--u));
 }
-/* The column the room and its sheet stand in: under the board up to 80rem,
-   both centred; from 80rem down the page's right side. */
+/* The column the sheet and its room stand in, the sheet first: under the
+   board up to 80rem, both centred; from 80rem down the page's right side. */
 .fz-side {
   display: grid;
   justify-items: center;
@@ -387,14 +385,14 @@
 }
 /* The room's cell: a square, which StickerRoom measures for its scale. */
 .fz-area-room {
-  width: min(100%, 28rem);
+  width: min(100%, 31rem);
   aspect-ratio: 1;
 }
 /* The sheet lies across, pinned along a strip at its top, clear of the
    stickers; its width sets its scale (StickerRoom). Up to 80rem it sits
-   under the room at the room's width. */
+   over the room, a little narrower than it. */
 .fz-sheet.fz-area-stk {
-  width: min(100%, 28rem);
+  width: min(100%, 25rem);
   height: calc((var(--sheet-h) + 24) * var(--u));
 }
 .fz-sheet.fz-area-stk .fz-sheet__page {
@@ -409,26 +407,20 @@
     gap: clamp(2rem, 3.4vw, 3.75rem);
     margin-top: 0;
   }
-  /* The room, centred on the intro: pulled up by half of whatever it is
-     taller than the intro, but never by more than the page's top padding
-     (less 0.75rem), so it stays clear of the top bar. */
+  /* The room, under the sheet. */
   .fz-room.fz-area-room {
     /* Centred on the column by hand: a grid item wider than its track is
        only ever pushed out to the right. */
     justify-self: start;
     width: var(--fz-room);
     margin-left: calc((var(--fz-side-w) - var(--fz-room)) / 2);
-    margin-top: max(
-      calc((var(--fz-intro-h, 20rem) - var(--fz-room)) / 2),
-      calc(0.75rem - var(--fz-pad-top))
-    );
   }
-  /* The sheet under it, centred, on its upright page at a little over half
-     the column's width (its stickers then come out about the room's size),
-     with a little more foot so the hint clears the bottom row of stickers. */
+  /* The sheet at the top of the column, centred, on its upright page at
+     half the column's width, with a little more foot so the hint clears the
+     bottom row of stickers. */
   .fz-sheet.fz-area-stk {
     justify-self: center;
-    width: 58%;
+    width: 50%;
     height: calc((var(--sheet-h) + 36) * var(--u));
   }
 }

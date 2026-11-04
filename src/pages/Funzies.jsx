@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Layout } from '@/components/Layout'
 import { NavDock } from '@/components/NavDock'
 import { BlinkingFace } from '@/components/BlinkingFace'
@@ -17,11 +17,10 @@ import '@/styles/funzies.css'
  * messy board, three to a row (two on a phone), each fanning out its other
  * pictures on hover and opening its window on a click (FunziePopup).
  *
- * On wide screens a column down the right holds the isometric room, centred
- * on the headline and intro, and under it its sticker sheet, as large as the
- * space beside the board (StickerRoom). The intro's height is measured into
- * --fz-intro-h for the room to centre on (funzies.css). Narrower, the room
- * and sheet follow the board.
+ * On wide screens a column down the right holds the sticker sheet and,
+ * under it, the isometric room it decorates, as large as the space beside
+ * the board (StickerRoom, funzies.css). Narrower, the sheet and room follow
+ * the board.
  */
 export function Funzies() {
   useDocumentMeta({ title: 'Design', description: 'Side projects and playful experiments by Shreya Rudrapatna.' })
@@ -29,20 +28,10 @@ export function Funzies() {
   const onOpen = useCallback((item) => setOpen(item), [])
   const onClose = useCallback(() => setOpen(null), [])
 
-  const pageRef = useRef(null)
-  const introRef = useRef(null)
-  useLayoutEffect(() => {
-    const intro = introRef.current
-    const page = pageRef.current
-    const ro = new ResizeObserver(() => page.style.setProperty('--fz-intro-h', `${intro.offsetHeight}px`))
-    ro.observe(intro)
-    return () => ro.disconnect()
-  }, [])
-
   return (
     <Layout>
-      <div ref={pageRef} className="fz-page">
-        <header ref={introRef} className="fz-intro">
+      <div className="fz-page">
+        <header className="fz-intro">
           <h1 className="fz-headline font-display">
             a look at my
             <br />
@@ -73,8 +62,8 @@ export function Funzies() {
           </ul>
         </section>
 
-        {/* The isometric pixel-art room, and under it the sheet of stickers
-            to decorate it. */}
+        {/* The sheet of stickers, and under it the isometric pixel-art room
+            they decorate. */}
         <div className="fz-side">
           <StickerRoom roomClassName="fz-area-room" sheetClassName="fz-area-stk" />
         </div>
