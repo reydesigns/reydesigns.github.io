@@ -34,9 +34,8 @@ import { useScrollSequence } from '@/lib/useScrollSequence'
  * backspaces through who the solution should feel obvious to, in Pixelta:
  * the client moved the pixel face onto the changing word alone so the one
  * thing that moves is the one thing that looks different. "why" and "how"
- * are set in a calligraphic serif italic, Cormorant Garamond (.hero-serif),
- * their quotation marks left in Inter. The typed full stop stays in Inter to
- * match the one after "how".
+ * are set in Parisienne, a cursive script (.hero-script), with no quotation
+ * marks. The typed full stop stays in Inter to match the one after "how".
  *
  * The copy is all lowercase, written that way rather than transformed, so the
  * accessible name reads the same as the screen (client, round 3).
@@ -164,13 +163,13 @@ export function Landing() {
             </p>
 
             <h1
-              aria-label={`i ask the “why” before i design the “how.” that way, your solution feels obvious to every ${AUDIENCES.join(', ')}.`}
+              aria-label={`i ask the why before i design the how. that way, your solution feels obvious to every ${AUDIENCES.join(', ')}.`}
               className="text-[length:var(--text-landing-headline)] font-light leading-[0.96] tracking-[-0.01em] text-[var(--color-ink)]"
             >
               <span aria-hidden="true">
-                i ask the “<span className="hero-serif">why</span>”
+                i ask the <span className="hero-script">why</span>
                 <br />
-                before i design the “<span className="hero-serif">how</span>.”
+                before i design the <span className="hero-script">how</span>.
                 <br />
                 that way, your solution feels
                 <br />

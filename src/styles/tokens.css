@@ -265,9 +265,9 @@
   --fl-chosen: #7a1a30;
   /* The botanical name in the square's corner: a calligraphic serif italic. */
   --font-botanical: 'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif;
-  /* The same calligraphic serif italic, for "why" and "how" in the landing
-     headline (.hero-serif). */
-  --font-serif-italic: var(--font-botanical);
+  /* A cursive script for "why" and "how" in the landing headline
+     (.hero-script). */
+  --font-script: 'Parisienne', 'Snell Roundhand', cursive;
   /* The three colours for the drawing, its digits and its glow: burgundy,
      grey and brown, each taken light enough to read on the dark square.
      Burgundy is the equaliser's middle step, grey the window dot's grey,

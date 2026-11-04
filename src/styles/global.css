@@ -274,14 +274,17 @@ html.lenis body {
 /* The landing drawings flank the centred headline and may overlap its
    edges a little (client, round 6). Sizes are plain viewport fractions,
    small enough that, with the overlap, neither reaches the window's edge. */
-/* "why" and "how" in the landing headline: Cormorant Garamond italic, a
-   calligraphic serif that stays easy to read. Its lowercase runs small
+/* "why" and "how" in the landing headline: Parisienne, a cursive script,
+   slanted by its own hand (no faked italic on top). Its lowercase runs small
    beside Inter's, so it is set a size up, with the line height scaled down
    to match, so the headline's leading is unchanged. */
-.hero-serif {
-  font-family: var(--font-serif-italic);
-  font-style: italic;
-  font-weight: 500;
+.hero-script {
+  position: relative;
+  /* Lifted a little, so the long tail of "why"'s y clears the line below. */
+  top: -0.08em;
+  font-family: var(--font-script);
+  font-style: normal;
+  font-weight: 400;
   font-size: 1.22em;
   line-height: calc(0.96 / 1.22);
   letter-spacing: 0;

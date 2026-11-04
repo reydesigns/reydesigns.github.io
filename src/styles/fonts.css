@@ -57,13 +57,25 @@
   src: url('../../Assets/brand/fonts/bebas-neue/bebas-neue-latin.woff2') format('woff2');
 }
 
-/* Cormorant Garamond italic (OFL), weight 500, latin only: the botanical
-   names in Binary Bloom's square (Lycoris radiata and the rest), and "why"
-   and "how" in the landing headline (.hero-serif). */
+/* Cormorant Garamond italic (OFL), weight 500, latin only: just the botanical
+   names in Binary Bloom's square (Lycoris radiata and the rest). */
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: italic;
   font-weight: 500;
   font-display: swap;
   src: url('../../Assets/brand/fonts/cormorant-garamond/cormorant-garamond-italic-500-latin.woff2') format('woff2');
+}
+
+/* Parisienne (OFL, from @fontsource/parisienne 5.3.0), a cursive script,
+   latin only: "why" and "how" in the landing headline (.hero-script). */
+@font-face {
+  font-family: 'Parisienne';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../Assets/brand/fonts/parisienne/parisienne-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
 }
