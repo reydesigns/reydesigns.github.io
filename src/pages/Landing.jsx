@@ -30,12 +30,13 @@ import { useScrollSequence } from '@/lib/useScrollSequence'
  * the headline copy was revised by the client after the comp, and the tagline
  * moved from under the headline to above it, replacing "rey designs".
  *
- * The headline is Inter throughout except its last word, which types and
- * backspaces through who the solution should feel obvious to, in Pixelta. The
- * comp set "why", "how" and "obvious" in Pixelta as well; the client moved
- * the pixel face onto the changing word alone so the one thing that moves is
- * the one thing that looks different. The typed full stop stays in Inter
- * to match the one after "how".
+ * The headline is Inter except for three words. Its last word types and
+ * backspaces through who the solution should feel obvious to, in Pixelta:
+ * the client moved the pixel face onto the changing word alone so the one
+ * thing that moves is the one thing that looks different. "why" and "how"
+ * are set in a calligraphic serif italic, Cormorant Garamond (.hero-serif),
+ * their quotation marks left in Inter. The typed full stop stays in Inter to
+ * match the one after "how".
  *
  * The copy is all lowercase, written that way rather than transformed, so the
  * accessible name reads the same as the screen (client, round 3).
@@ -167,9 +168,9 @@ export function Landing() {
               className="text-[length:var(--text-landing-headline)] font-light leading-[0.96] tracking-[-0.01em] text-[var(--color-ink)]"
             >
               <span aria-hidden="true">
-                i ask the “why”
+                i ask the “<span className="hero-serif">why</span>”
                 <br />
-                before i design the “how.”
+                before i design the “<span className="hero-serif">how</span>.”
                 <br />
                 that way, your solution feels
                 <br />

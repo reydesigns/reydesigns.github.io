@@ -57,8 +57,9 @@
   src: url('../../Assets/brand/fonts/bebas-neue/bebas-neue-latin.woff2') format('woff2');
 }
 
-/* Cormorant Garamond italic (OFL), weight 500, latin only: just the botanical
-   names in Binary Bloom's square (Lycoris radiata and the rest). */
+/* Cormorant Garamond italic (OFL), weight 500, latin only: the botanical
+   names in Binary Bloom's square (Lycoris radiata and the rest), and "why"
+   and "how" in the landing headline (.hero-serif). */
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: italic;
