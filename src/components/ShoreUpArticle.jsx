@@ -95,7 +95,7 @@ export function ShoreUpArticle({ next }) {
         Shore-Up
       </h1>
 
-      <Tags tags={['HACKATHON', 'WEB APP', 'SUSTAINABILITY']} />
+      <Tags tags={['HACKATHON', 'WEB APP', 'SUSTAINABILITY', 'TOP 5 CANDIDATE']} />
 
       {/* ------------------------------- facts ---------------------------- */}
       <Section id="overview">
