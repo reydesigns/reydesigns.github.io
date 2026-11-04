@@ -944,14 +944,20 @@ html.lenis body {
   font-size: 0.8125rem;
   color: var(--color-ink-muted);
 }
-/* The visitors' picks: little sleeves in a row, newest first, with the
-   stack's hard shadow. It scrolls sideways once it is longer than the
-   column (a mouse wheel scrolls it too: SongRecs). */
+/* The visitors' picks: a little pile of sleeves, newest on top, fanned out
+   to the right and each a touch askew, with the record stack's hard shadow.
+   A few overlap by about a third; as more come in they close up, down to a
+   slice (--vp-slice) of each left showing, and past that the pile runs on
+   and scrolls sideways (a mouse wheel scrolls it too: SongRecs). Pointing at
+   one, or tabbing to it, lifts it to the top, squared up, and names it in the
+   line below. SongRecs sets --n (how many) and each sleeve's --i. */
 .vp-recs__strip {
+  --vp-cover: clamp(1.875rem, 3.4cqi, 3rem);
+  --vp-slice: 0.875rem;
   display: flex;
-  gap: clamp(0.375rem, 0.6cqi, 0.5rem);
   margin: 0;
-  padding: 0.25rem 0.375rem 0.375rem 0.125rem;
+  /* Room above for a sleeve to lift into, and at the ends for its tilt. */
+  padding: 0.625rem 0.5rem 0.5rem 0.25rem;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
@@ -961,18 +967,63 @@ html.lenis body {
   mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
 }
 .vp-recs__strip > li {
+  position: relative;
+  z-index: calc(var(--n) - var(--i));
   flex: none;
+}
+/* Each after the first tucks under the one before by as much as it takes to
+   fit the column: at least a third of a sleeve, at most all but a slice. */
+.vp-recs__strip > li + li {
+  margin-left: clamp(
+    calc(var(--vp-slice) - var(--vp-cover)),
+    calc((100% - var(--vp-cover)) / max(1, var(--n) - 1) - var(--vp-cover)),
+    calc(var(--vp-cover) * -0.34)
+  );
+}
+.vp-recs__strip > li:hover,
+.vp-recs__strip > li:focus-within,
+.vp-recs__strip > li[data-flash] {
+  z-index: calc(var(--n) + 1);
+}
+.vp-recs__strip > li:nth-child(5n + 1) {
+  --tilt: -4deg;
+}
+.vp-recs__strip > li:nth-child(5n + 2) {
+  --tilt: 3deg;
+}
+.vp-recs__strip > li:nth-child(5n + 3) {
+  --tilt: -1.5deg;
+}
+.vp-recs__strip > li:nth-child(5n + 4) {
+  --tilt: 4.5deg;
+}
+.vp-recs__strip > li:nth-child(5n + 5) {
+  --tilt: -3deg;
+}
+/* The empty state's dashed slots stand in a plain row. */
+.vp-recs__strip--ghosts {
+  gap: clamp(0.375rem, 0.6cqi, 0.5rem);
+}
+.vp-recs__strip--ghosts > li {
+  z-index: auto;
+}
+.vp-recs__strip--ghosts > li + li {
+  margin-left: 0;
 }
 .vp-recs__cover {
   display: block;
-  width: clamp(1.875rem, 3.4cqi, 3rem);
+  width: var(--vp-cover);
   aspect-ratio: 1;
+  rotate: var(--tilt, 0deg);
   box-shadow: 0.125rem 0.1875rem 0 color-mix(in srgb, var(--color-ink) 18%, transparent);
-  transition: transform 160ms var(--ease-brand);
+  transition:
+    translate 180ms var(--ease-brand),
+    rotate 180ms var(--ease-brand),
+    scale 180ms var(--ease-brand);
 }
 .vp-recs__ghost {
   display: block;
-  width: clamp(1.875rem, 3.4cqi, 3rem);
+  width: var(--vp-cover);
   aspect-ratio: 1;
   border: 1.5px dashed color-mix(in srgb, var(--color-ink) 22%, transparent);
 }
@@ -984,7 +1035,9 @@ html.lenis body {
 }
 .vp-recs__cover:hover,
 .vp-recs__cover:focus-visible {
-  transform: translateY(-2px);
+  translate: 0 -0.3rem;
+  rotate: 0deg;
+  scale: 1.12;
 }
 .vp-recs__cover:focus-visible {
   outline: 2px solid var(--color-ink);
@@ -999,7 +1052,8 @@ html.lenis body {
   65% {
     outline: 2px solid var(--color-maroon);
     outline-offset: 2px;
-    transform: translateY(-3px);
+    translate: 0 -0.3rem;
+    rotate: 0deg;
   }
 }
 .vp-recs__note {
@@ -1033,11 +1087,9 @@ html.lenis body {
       height: 0.75rem;
     }
     .vp-recs__strip {
-      padding-block: 0.125rem 0.25rem;
-    }
-    .vp-recs__cover,
-    .vp-recs__ghost {
-      width: 1.625rem;
+      --vp-cover: 1.625rem;
+      --vp-slice: 0.625rem;
+      padding-block: 0.5rem 0.375rem;
     }
     .vp-recs__note {
       font-size: 0.625rem;
@@ -1050,13 +1102,15 @@ html.lenis body {
   }
   .vp-recs__cover:hover,
   .vp-recs__cover:focus-visible {
-    transform: none;
+    translate: none;
+    scale: none;
   }
   @keyframes vp-recs-flash {
     0%,
     65% {
       outline: 2px solid var(--color-maroon);
       outline-offset: 2px;
+      rotate: 0deg;
     }
   }
 }
@@ -1089,9 +1143,8 @@ html.lenis body {
     width: calc(100vw - 3.5rem);
     max-height: 50dvh;
   }
-  .vp-recs__cover,
-  .vp-recs__ghost {
-    width: 2.75rem;
+  .vp-recs__strip {
+    --vp-cover: 2.75rem;
   }
   .vp-recs__note {
     font-size: 0.75rem;

@@ -5,9 +5,9 @@ import { addRec, listRecs, searchSongs, songKey } from '@/lib/songRecs'
 /* ---------------------------------------------------------------------------
    "Recommend a song", under the Vinyl Player's record stack: a search box
    that looks songs up on iTunes as you type (the source the records come
-   from), and a strip of the covers visitors have added, newest first, each a
-   link to the song on Apple Music. Pointing at a cover names it in the line
-   underneath.
+   from), and a fanned pile of the covers visitors have added, newest on top,
+   each a link to the song on Apple Music. Pointing at a cover lifts it to
+   the top of the pile and names it in the line underneath.
 
    The search box is an ARIA combobox: the arrow keys move through the
    results, Enter adds the highlighted one (or the top one), and Escape shuts
@@ -270,7 +270,7 @@ export function SongRecs() {
       {/* Before the first pick (or while the list loads), empty slots hold
           the strip's place, so the panel is the same height either way. */}
       {count === 0 && (
-        <ul className="vp-recs__strip" aria-hidden="true">
+        <ul className="vp-recs__strip vp-recs__strip--ghosts" aria-hidden="true">
           {Array.from({ length: GHOSTS }, (_, i) => (
             <li key={i}>
               <span className="vp-recs__ghost" />
@@ -279,9 +279,15 @@ export function SongRecs() {
         </ul>
       )}
       {count > 0 && (
-        <ul ref={stripRef} className="vp-recs__strip" data-more={more || undefined} aria-label="Recommended by visitors">
+        <ul
+          ref={stripRef}
+          className="vp-recs__strip"
+          data-more={more || undefined}
+          aria-label="Recommended by visitors"
+          style={{ '--n': count }}
+        >
           {recs.map((s, i) => (
-            <li key={s.trackId} data-track={s.trackId} data-flash={flash === s.trackId || undefined}>
+            <li key={s.trackId} data-track={s.trackId} data-flash={flash === s.trackId || undefined} style={{ '--i': i }}>
               <a
                 href={s.url}
                 target="_blank"
