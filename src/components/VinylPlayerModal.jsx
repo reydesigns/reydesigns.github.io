@@ -29,6 +29,8 @@ import {
 } from '@/components/VinylStack'
 import { setCursorHost } from '@/components/CustomCursor'
 import { SizeGlyph } from '@/components/CaseStudyModal'
+import { SongRecs } from '@/components/SongRecs'
+import { RECS_ON } from '@/lib/songRecs'
 import { useMediaQuery, SM, HOVER } from '@/lib/useMediaQuery'
 import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
@@ -62,6 +64,11 @@ import { useReducedMotion } from '@/lib/useReducedMotion'
                free), on the FunziePopup pattern: Lenis paused, the custom
                cursor moved inside, a short animated close, and focus handed
                back to the card.
+
+   Under the stack, the pop-up has a "Recommend a song" panel (SongRecs):
+   visitors search iTunes and add songs to a public list. It is on when
+   src/lib/songRecs.js has its Supabase project set (and always on the dev
+   server); otherwise the pop-up is laid out as it was without it.
 
    Reduced motion keeps every interaction and drops the motion: sleeves and
    records jump to where they are going, the arm moves without swinging, and
@@ -323,7 +330,25 @@ function layoutOf({ w, h, size, stack, player, bleed = 0 }) {
    plinth's); `stack` is the column the sleeves fan down. The card is the
    Works card's 16:9, `wide` the pop-up from a tablet up (16:10), `tall` a
    phone, where the column runs down the left and the player sits beside it,
-   level with its middle, with a small margin of table at either side. */
+   level with its middle, with a small margin of table at either side.
+
+   With song recommendations on (RECS_ON), the pop-up's sleeves are a size
+   smaller and the stack ends just above the "Recommend a song" panel
+   (SongRecs) at the foot of the left column. The panel's height in scene
+   units depends on the window (its text has a smallest size), so the pop-up
+   measures where it starts and ends the stack there (wideLayout, stackEnd);
+   on a phone the scene is shorter and the panel sits under it. */
+const STACK_GAP = 36 // scene units from the stack's end to the panel: the bottom sleeve's tilt and shadow, then clear table
+const STACK_END = { min: 640, max: 966, start: 744 }
+function wideLayout(stackEnd) {
+  return layoutOf({
+    w: 1600,
+    h: 1000,
+    ...(RECS_ON ? { size: 260, stack: { cx: 352, top: 30, bottom: stackEnd } } : { size: 320, stack: { cx: 352, top: 34, bottom: 966 } }),
+    player: { x: 660, y: 268, s: 0.86 },
+    bleed: 0.04,
+  })
+}
 const LAYOUTS = {
   card: layoutOf({
     w: 1600,
@@ -336,22 +361,24 @@ const LAYOUTS = {
   // The title, the hint and the player are one group, centred top to bottom
   // in the window (global.css places the text to match: .vp-head), and the
   // sleeves sit well in from the left edge, towards the player.
-  wide: layoutOf({
-    w: 1600,
-    h: 1000,
-    size: 320,
-    stack: { cx: 352, top: 34, bottom: 966 },
-    player: { x: 660, y: 268, s: 0.86 },
-    bleed: 0.04,
-  }),
-  tall: layoutOf({
-    w: 1000,
-    h: 1340,
-    size: 290,
-    stack: { cx: 196, top: 30, bottom: 1310, overlap: 0.18 },
-    player: { x: 327, y: 439, s: 0.68 },
-    bleed: 0.9,
-  }),
+  wide: wideLayout(STACK_END.start),
+  tall: RECS_ON
+    ? layoutOf({
+        w: 1000,
+        h: 1160,
+        size: 250,
+        stack: { cx: 180, top: 30, bottom: 1130, overlap: 0.18 },
+        player: { x: 327, y: 349, s: 0.68 },
+        bleed: 0.9,
+      })
+    : layoutOf({
+        w: 1000,
+        h: 1340,
+        size: 290,
+        stack: { cx: 196, top: 30, bottom: 1310, overlap: 0.18 },
+        player: { x: 327, y: 439, s: 0.68 },
+        bleed: 0.9,
+      }),
 }
 
 /* --- the deck -------------------------------------------------------------- */
@@ -1522,6 +1549,32 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
   // 'window' or 'full': the green dot maximizes the window to the screen and
   // back. Phones are always full screen and have no green dot.
   const [size, setSize] = useState('window')
+  const canvasRef = useRef(null)
+  const [stackEnd, setStackEnd] = useState(STACK_END.start)
+
+  // Where the stack ends (see wideLayout): STACK_GAP above the top of the
+  // "Recommend a song" panel, in scene units, kept up to date as the window
+  // resizes. A ratio of the two boxes, so the opening animation's scale and
+  // the maximize FLIP do not throw it. Rounded to 8 units, so a resize does
+  // not remake the deck for every pixel.
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    const panel = canvas?.querySelector('.vp-recs')
+    if (!open || phone || !canvas || !panel) return undefined
+    const measure = () => {
+      const c = canvas.getBoundingClientRect()
+      const p = panel.getBoundingClientRect()
+      if (!c.height) return
+      const end = Math.floor((((p.top - c.top) / c.height) * 1000 - STACK_GAP) / 8) * 8
+      setStackEnd(Math.max(STACK_END.min, Math.min(STACK_END.max, end)))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(canvas)
+    ro.observe(panel)
+    return () => ro.disconnect()
+  }, [open, phone])
+  const wide = useMemo(() => wideLayout(stackEnd), [stackEnd])
 
   const toggle = useCallback(() => {
     const frame = frameRef.current
@@ -1595,7 +1648,7 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
   if (!open) return null
 
   const playing = nowPlaying !== null ? vinyls[nowPlaying] : null
-  const layout = phone ? LAYOUTS.tall : LAYOUTS.wide
+  const layout = phone ? LAYOUTS.tall : RECS_ON ? wide : LAYOUTS.wide
   // One line, set in capitals by global.css, so it is kept short: the touch
   // wording has to fit beside the close button on a phone.
   const hint = hover ? 'Drag a record onto the turntable, or click one' : 'Drag or tap a record to play it'
@@ -1653,7 +1706,7 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
         </div>
         {/* The scene's 16:10 box. In a maximized window it is centred in the
             screen, at the largest size that fits under the bar. */}
-        <div className="vp-canvas">
+        <div ref={canvasRef} className="vp-canvas">
           <Equaliser on={Boolean(playing)} reduced={reduced} />
           <div className="vp-head">
             <h2 id={titleId} className="vp-title font-display">
@@ -1684,6 +1737,7 @@ export function VinylPlayerModal({ open, onClose, returnFocus }) {
               </span>
             )}
           </p>
+          {RECS_ON && <SongRecs />}
         </div>
       </div>
     </dialog>

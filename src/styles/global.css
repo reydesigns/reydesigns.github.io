@@ -805,6 +805,291 @@ html.lenis body {
     padding: 0 1rem 1.25rem;
   }
 }
+/* "Recommend a song" (SongRecs): the foot of the left column, under the
+   record stack (LAYOUTS.wide ends the stack at 728 of 1000 when this is on),
+   from the stack's left edge to just short of the player. It is anchored at
+   the bottom and grows upwards, and its search results open upwards too,
+   over the records, since there is no room below. On a phone it sits in the
+   frame's flow, under the caption. */
+.vp-recs {
+  position: absolute;
+  z-index: 2;
+  left: 12.5%;
+  width: 25%;
+  bottom: 3.2%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.375rem, 0.7cqi, 0.625rem);
+}
+.vp-recs__label {
+  margin: 0;
+  font-size: clamp(0.625rem, 0.95cqi, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+/* The box is shorter than the panel, about the width of the record stack
+   above it; its results can be wider. */
+.vp-recs__search {
+  position: relative;
+  width: 72%;
+}
+.vp-recs__icon {
+  position: absolute;
+  top: 50%;
+  left: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  transform: translateY(-50%);
+  color: rgb(0 0 0 / 0.55);
+  pointer-events: none;
+}
+/* White, with the caption pill's hard offset shadow, and nearly square
+   corners. */
+.vp-recs__input {
+  display: block;
+  width: 100%;
+  height: clamp(2rem, 3cqi, 2.5rem);
+  padding: 0 1rem 0 2.25rem;
+  border: 1.5px solid color-mix(in srgb, var(--color-ink) 16%, transparent);
+  border-radius: 3px;
+  background: var(--color-surface);
+  box-shadow: 0.1875rem 0.25rem 0 color-mix(in srgb, var(--color-ink) 14%, transparent);
+  font: inherit;
+  font-size: clamp(0.8125rem, 1.1cqi, 0.9375rem);
+  color: var(--color-ink);
+}
+.vp-recs__input::placeholder {
+  color: rgb(0 0 0 / 0.55);
+}
+.vp-recs__input:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.vp-recs__results {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.5rem);
+  width: max(100%, 18rem);
+  max-height: 21rem;
+  margin: 0;
+  padding: 0.375rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  box-shadow: var(--window-shadow);
+}
+.vp-recs__results[hidden] {
+  display: none;
+}
+.vp-recs__option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.vp-recs__option[data-active] {
+  background: var(--color-surface-sunken);
+}
+.vp-recs__option-cover {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+}
+.vp-recs__option-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.vp-recs__option-title,
+.vp-recs__option-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-recs__option-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.vp-recs__option-artist {
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+.vp-recs__tag {
+  flex: none;
+  margin-left: auto;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.vp-recs__status {
+  padding: 0.625rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-ink-muted);
+}
+/* The visitors' picks: little sleeves in a row, newest first, with the
+   stack's hard shadow. It scrolls sideways once it is longer than the
+   column (a mouse wheel scrolls it too: SongRecs). */
+.vp-recs__strip {
+  display: flex;
+  gap: clamp(0.375rem, 0.6cqi, 0.5rem);
+  margin: 0;
+  padding: 0.25rem 0.375rem 0.375rem 0.125rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  list-style: none;
+}
+.vp-recs__strip[data-more] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+}
+.vp-recs__strip > li {
+  flex: none;
+}
+.vp-recs__cover {
+  display: block;
+  width: clamp(1.875rem, 3.4cqi, 3rem);
+  aspect-ratio: 1;
+  box-shadow: 0.125rem 0.1875rem 0 color-mix(in srgb, var(--color-ink) 18%, transparent);
+  transition: transform 160ms var(--ease-brand);
+}
+.vp-recs__ghost {
+  display: block;
+  width: clamp(1.875rem, 3.4cqi, 3rem);
+  aspect-ratio: 1;
+  border: 1.5px dashed color-mix(in srgb, var(--color-ink) 22%, transparent);
+}
+.vp-recs__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vp-recs__cover:hover,
+.vp-recs__cover:focus-visible {
+  transform: translateY(-2px);
+}
+.vp-recs__cover:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+/* A song just added (or already there) lights up for a moment. */
+.vp-recs__strip > li[data-flash] .vp-recs__cover {
+  animation: vp-recs-flash 1.6s var(--ease-brand);
+}
+@keyframes vp-recs-flash {
+  0%,
+  65% {
+    outline: 2px solid var(--color-maroon);
+    outline-offset: 2px;
+    transform: translateY(-3px);
+  }
+}
+.vp-recs__note {
+  margin: 0;
+  min-height: 1.3em;
+  overflow: hidden;
+  font-size: clamp(0.6875rem, 0.95cqi, 0.8125rem);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink-muted);
+}
+/* A small diorama (see .vp-title's): everything a step smaller, and the
+   panel a little wider, so it still clears the stack. */
+@media (min-width: 40rem) {
+  @container (max-width: 60rem) {
+    .vp-recs {
+      left: 9%;
+      width: 29%;
+      bottom: 2.6%;
+      gap: 0.25rem;
+    }
+    .vp-recs__input {
+      height: 1.75rem;
+      padding-left: 2rem;
+      font-size: 0.75rem;
+    }
+    .vp-recs__icon {
+      left: 0.75rem;
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+    .vp-recs__strip {
+      padding-block: 0.125rem 0.25rem;
+    }
+    .vp-recs__cover,
+    .vp-recs__ghost {
+      width: 1.625rem;
+    }
+    .vp-recs__note {
+      font-size: 0.625rem;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vp-recs__cover {
+    transition: none;
+  }
+  .vp-recs__cover:hover,
+  .vp-recs__cover:focus-visible {
+    transform: none;
+  }
+  @keyframes vp-recs-flash {
+    0%,
+    65% {
+      outline: 2px solid var(--color-maroon);
+      outline-offset: 2px;
+    }
+  }
+}
+@media not all and (min-width: 40rem) {
+  .vp-recs {
+    position: relative;
+    z-index: 1;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    margin-bottom: auto;
+    padding: 0 1.25rem 1.25rem;
+  }
+  /* The caption gives up its share of the space under the scene. */
+  .vp-caption:has(~ .vp-recs) {
+    min-height: 3.5rem;
+    margin-bottom: 0;
+    padding-bottom: 0.5rem;
+  }
+  .vp-recs__label {
+    font-size: 0.6875rem;
+  }
+  /* 16px, or iOS zooms the page in on focus. */
+  .vp-recs__input {
+    height: 2.75rem;
+    font-size: 1rem;
+  }
+  /* The full width of the panel, not just of the shorter box. */
+  .vp-recs__results {
+    width: calc(100vw - 3.5rem);
+    max-height: 50dvh;
+  }
+  .vp-recs__cover,
+  .vp-recs__ghost {
+    width: 2.75rem;
+  }
+  .vp-recs__note {
+    font-size: 0.75rem;
+  }
+}
 @keyframes vp-pop-in {
   from {
     opacity: 0;
