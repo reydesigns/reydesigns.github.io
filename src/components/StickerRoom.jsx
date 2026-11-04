@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, SIDE_W, SIDE_H, STICKERS } from '@/data/stickers'
-import { useMediaQuery } from '@/lib/useMediaQuery'
+import { FRAME, ROOM, SHEET_W, SHEET_H, SHEET_PAD, STICKERS } from '@/data/stickers'
 
 const BY_ID = Object.fromEntries(STICKERS.map((s) => [s.id, s]))
 /** A press that moves less than this (CSS px) is a click, not a drag. */
@@ -90,13 +89,12 @@ function Sticker({ s, x, y, className = '', style, onPointerDown, onClick, onKey
  * sticks one at its spot in the room; on a placed one, Enter/Space/Delete
  * peels it back off and the arrow keys nudge it.
  *
- * The sheet hangs above the room, pinned to the wall: on wide screens an
- * upright page, narrower than the room (funzies.css); otherwise a long strip.
+ * The sheet hangs above the room, pinned to the wall: a long strip lying
+ * across, about as wide as the room (funzies.css).
  *
  * Room and sheet each have their own scale, measured from their own box: an
  * art pixel is the room cell's side / FRAME CSS px, and the sheet's width /
- * (its page's width + 2 * SHEET_PAD). On wide screens the page is the upright
- * one (SIDE_W x SIDE_H), at about the room's scale. A sticker carried off the
+ * (its page's width + 2 * SHEET_PAD). A sticker carried off the
  * sheet takes on the room's scale as it lifts, held at the same point under the pointer. Rugs stay under everything else;
  * otherwise the last sticker down is on top. Every visit starts with them all
  * on the sheet; "Put them back" returns them without a reload.
@@ -105,11 +103,10 @@ export function StickerRoom({ roomClassName = '', sheetClassName = '' }) {
   const roomRef = useRef(null)
   const spaceRef = useRef(null)
   const sheetRef = useRef(null)
-  // Wide enough for the room and its sheet to stand beside the board
-  // (funzies.css, same query): the sheet's page is then the upright one
-  // above the room; otherwise the long strip.
-  const beside = useMediaQuery('(min-width: 80rem)')
-  const page = beside ? { w: SIDE_W, h: SIDE_H, at: 'side' } : { w: SHEET_W, h: SHEET_H, at: 'sheet' }
+  // The sheet's page: the long strip, lying across above the room, on
+  // every screen. (stickers.js still has each sticker's spot on the upright
+  // page the wide screens used to have, SIDE, should it come back.)
+  const page = { w: SHEET_W, h: SHEET_H, at: 'sheet' }
   const [scale, setScale] = useState(0)
   const [sheetScale, setSheetScale] = useState(0)
   const [placed, setPlaced] = useState({})

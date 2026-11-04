@@ -4,9 +4,9 @@
 
    From 80rem the page is a grid of two columns using nearly the whole width:
    on the left the intro, the "Click on me" hint and the board; down the
-   right the sticker sheet, an upright page half the column wide, at the top,
-   and under it the room it decorates, a little wider than the column (its
-   drawing is the biggest thing on the right).
+   right the sticker sheet, a long strip lying across nearly the column's
+   width, at the top, and under it the room it decorates, a little wider than
+   the column (its drawing is the biggest thing on the right).
 --------------------------------------------------------------------------- */
 
 .fz-page {
@@ -415,13 +415,11 @@
     width: var(--fz-room);
     margin-left: calc((var(--fz-side-w) - var(--fz-room)) / 2);
   }
-  /* The sheet at the top of the column, centred, on its upright page at
-     half the column's width, with a little more foot so the hint clears the
-     bottom row of stickers. */
+  /* The sheet at the top of the column, centred, lying across at nearly
+     the column's width, about as wide as the room's drawing under it. */
   .fz-sheet.fz-area-stk {
     justify-self: center;
-    width: 50%;
-    height: calc((var(--sheet-h) + 36) * var(--u));
+    width: 92%;
   }
 }
 .fz-sheet__slot {
