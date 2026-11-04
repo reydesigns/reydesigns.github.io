@@ -1,7 +1,8 @@
 /* ---------------------------------------------------------------------------
    The footer's visitor counter: how many browsers have visited the site, this
-   one included. A browser counts once, the first time it comes (it keeps a
-   note in localStorage); every visit after that just reads the count.
+   one included. A browser counts once, the first time it comes to the live
+   site (it keeps a note in localStorage); every visit after that, and every
+   visit to the dev server, just reads the count.
 
    The count lives in Supabase (supabase/site_visits.sql, supabase.js). With
    no project set, the dev server keeps a stand-in count in localStorage, and
@@ -34,11 +35,13 @@ let pending = null
     had. Asked once per page load, however many footers mount. */
 export function visitorCount() {
   if (pending) return pending
-  const first = !read(SEEN_KEY)
+  // Only the live site counts: the dev server and the test scripts only
+  // read the number, so working on the site never adds to it.
+  const first = import.meta.env.PROD && !read(SEEN_KEY)
   pending = (async () => {
     if (!supabaseOn) {
       if (!import.meta.env.DEV) return null
-      const n = Number(read(DEV_KEY) ?? 0) + (first ? 1 : 0)
+      const n = Number(read(DEV_KEY) ?? 0) + (read(SEEN_KEY) ? 0 : 1)
       write(DEV_KEY, String(n))
       write(SEEN_KEY, '1')
       return n

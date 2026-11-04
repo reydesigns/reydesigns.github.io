@@ -12,8 +12,8 @@
    features out.
 --------------------------------------------------------------------------- */
 
-export const SUPABASE_URL = ''
-export const SUPABASE_KEY = ''
+export const SUPABASE_URL = 'https://mpvahjxjgvmvvbojjqph.supabase.co'
+export const SUPABASE_KEY = 'sb_publishable_GuVYyUZgEtPuTIXct0B4gw_lsOn3w_O'
 
 export const supabaseOn = Boolean(SUPABASE_URL && SUPABASE_KEY)
 
