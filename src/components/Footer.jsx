@@ -16,9 +16,9 @@ const FOOT_TEXT =
  * Three parts on one line: REYDESIGNS @ 2026 (with the sleeping cat) on the
  * left, MADE /W THE HELP OF ICED CAPPS centred on the screen, and on the
  * right the visitor counter, WEBSITE STALKERS: ##. The left and centre are
- * static; the counter scrambles into place (ScrambleText) the first time the
- * footer comes into view, once the count is in. Until then its text is laid
- * out invisibly, so nothing shifts when it plays. With no count to show
+ * static; the counter scrambles into place (ScrambleText) every time the
+ * footer comes into view, once the count is in. Between times its text is
+ * laid out invisibly, so nothing shifts when it plays. With no count to show
  * (visits.js), the right is simply empty. On a phone the centre line drops
  * to a second row.
  *
@@ -49,22 +49,25 @@ export function Footer({ className = '' }) {
     }
   }, [])
 
-  // "Scrolled all the way down": most of the footer is on screen.
+  // "Scrolled all the way down": most of the footer is on screen, and the
+  // counter scrambles in. Every time: once the footer has gone right off the
+  // screen again it resets, so the next visit to the bottom plays it anew
+  // (half out and back in does not, so it never stutters at the edge).
   useEffect(() => {
     const el = ref.current
-    if (!el || seen) return undefined
+    if (!el) return undefined
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setSeen(true)
-          io.disconnect()
+        for (const e of entries) {
+          if (e.intersectionRatio >= 0.9) setSeen(true)
+          else if (!e.isIntersecting) setSeen(false)
         }
       },
-      { threshold: 0.9 },
+      { threshold: [0, 0.9] },
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [seen])
+  }, [])
 
   const stalkers = count === null ? null : `WEBSITE STALKERS: ${count.toLocaleString('en-US')}`
 
