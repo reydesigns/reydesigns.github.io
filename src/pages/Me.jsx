@@ -32,29 +32,6 @@ export function Me() {
                 <K>import</K> shreya
               </Cmd>
               <Cmd>
-                shreya.<F>tell_me_about_this_portfolio</F>()
-              </Cmd>
-              <Out>
-                <Head>about this portfolio</Head>
-                <Sub>Rebuilt every piece by hand</Sub>
-                <Body>
-                  This portfolio started as a pile of sketches, screenshots and half-finished ideas. I mapped the
-                  pages in Figma first, then rebuilt every piece by hand, measuring spacing and colour off the comps so
-                  the site would feel like my own work, not a template.
-                </Body>
-              </Out>
-              <Cmd>
-                shreya.<F>list_some_facts</F>()
-              </Cmd>
-              <Out>
-                <Head>some facts</Head>
-                <ul className="term__subs">
-                  <Sub as="li">Personality type: ENTJ</Sub>
-                  <Sub as="li">3+ years of professional experience</Sub>
-                  <Sub as="li">The biggest spiderman nerd you’ll meet</Sub>
-                </ul>
-              </Out>
-              <Cmd>
                 shreya.<F>explain_how_you_design</F>()
               </Cmd>
               <Out>
@@ -64,6 +41,20 @@ export function Me() {
                   The way I design is through the art of understanding. Sure, I can solve your problems, but what makes
                   me different from other designers is that I value the process of <strong>research and data</strong>.
                 </Body>
+              </Out>
+              <Cmd>
+                shreya.<F>what_i_nerd_about</F>()
+              </Cmd>
+              <Out>
+                <Head>what i nerd about</Head>
+                {/* Each one bulleted with the nav's pixel cat head. */}
+                <ul className="term__subs term__subs--cats">
+                  <Sub as="li">The biggest spiderman nerd you’ll meet</Sub>
+                  <Sub as="li">Avid comic collector</Sub>
+                  <Sub as="li">Personality of an ENTJ</Sub>
+                  <Sub as="li">Story &amp; RPG gamer</Sub>
+                  <Sub as="li">Stock market larper</Sub>
+                </ul>
               </Out>
               <Cmd>
                 shreya.<F>work_with_me</F>(<S>'hello!'</S>)
