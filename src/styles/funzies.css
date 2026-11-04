@@ -4,9 +4,9 @@
 
    From 80rem the page is a grid of two columns using nearly the whole width:
    on the left the intro, the "Click on me" hint and the board; down the
-   right the room, as wide as the column (the room comes first: it is the
-   biggest thing on the right), and under it the sheet, shorter, at the same
-   width. The room is centred on the intro (Funzies measures its height into
+   right the room, a little wider than the column (the room comes first: it
+   is the biggest thing on the right), and under it, a step lower, the sheet,
+   an upright page narrower than the room. The room is centred on the intro (Funzies measures its height into
    --fz-intro-h) as nearly as it can be without reaching up into the top
    bar: if centring would lift it past the page's top padding, it stops just
    short and hangs a little lower instead.
@@ -23,7 +23,11 @@
 @media (min-width: 80rem) {
   .fz-page {
     --fz-side-w: clamp(24rem, 36vw, 40rem);
-    --fz-room: var(--fz-side-w);
+    /* The room's square cell, 12% wider than the column: the drawing is only
+       79% of its cell's width, so it still sits inside the column, and the
+       cell's empty sides reach no further than the column gap and the page
+       gutter. */
+    --fz-room: calc(var(--fz-side-w) * 1.12);
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--fz-side-w);
     grid-template-rows: auto auto 1fr;
@@ -399,25 +403,32 @@
 }
 @media (min-width: 80rem) {
   .fz-side {
+    /* One track, the column's own width, whatever the room's cell is. */
+    grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
-    gap: clamp(1rem, 1.6vw, 1.75rem);
+    gap: clamp(2rem, 3.4vw, 3.75rem);
     margin-top: 0;
   }
   /* The room, centred on the intro: pulled up by half of whatever it is
      taller than the intro, but never by more than the page's top padding
      (less 0.75rem), so it stays clear of the top bar. */
   .fz-room.fz-area-room {
-    justify-self: center;
+    /* Centred on the column by hand: a grid item wider than its track is
+       only ever pushed out to the right. */
+    justify-self: start;
     width: var(--fz-room);
+    margin-left: calc((var(--fz-side-w) - var(--fz-room)) / 2);
     margin-top: max(
       calc((var(--fz-intro-h, 20rem) - var(--fz-room)) / 2),
       calc(0.75rem - var(--fz-pad-top))
     );
   }
-  /* The sheet under it, the column's full width, on its squarer page, with
-     a little more foot so the hint clears the bottom row of stickers. */
+  /* The sheet under it, centred, on its upright page at a little over half
+     the column's width (its stickers then come out about the room's size),
+     with a little more foot so the hint clears the bottom row of stickers. */
   .fz-sheet.fz-area-stk {
-    width: 100%;
+    justify-self: center;
+    width: 58%;
     height: calc((var(--sheet-h) + 36) * var(--u));
   }
 }

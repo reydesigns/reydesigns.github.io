@@ -9,7 +9,7 @@
 
    Each sticker has:
      sheet   where it sits on the sheet (top-left, on a SHEET_W x SHEET_H page;
-             on wide screens it's `side`, on the squarer SIDE_W x SIDE_H page
+             on wide screens it's `side`, on the upright SIDE_W x SIDE_H page
              under the room; `tall`, an older upright TALL_W x TALL_H page,
              is unused now)
      home    where it lands in the room if it's clicked or picked by keyboard
@@ -65,32 +65,32 @@ const TALL = {
   'wall-shelf': [94, 334],
 }
 
-/** On wide screens the sheet lies under the room, the width of the room's
-    column, on a squarer SIDE_W x SIDE_H page than the long strip: big
-    stickers, but a sheet well short of the room. Each sticker at its SIDE
-    spot (top-left), packed by height on a skyline with 3 art px between
+/** On wide screens the sheet hangs under the room as an upright page,
+    narrower than the room's column and taller than it is wide (SIDE_W x
+    SIDE_H), like a real sheet of stickers. Each sticker at its SIDE spot
+    (top-left), packed largest first on a skyline with 3 art px between
     neighbours. */
-export const SIDE_W = 289
-export const SIDE_H = 134
+export const SIDE_W = 170
+export const SIDE_H = 230
 const SIDE = {
-  bookshelf: [0, 0],
-  tree: [35, 0],
-  'flower-rug': [73, 0],
-  cabinet: [156, 0],
-  'lights-1': [182, 0],
-  'lights-2': [237, 0],
-  bed: [182, 51],
-  tv: [237, 51],
-  couch: [73, 60],
-  plant: [133, 60],
-  table: [0, 86],
-  'spider-rug': [133, 102],
-  lamps: [45, 65],
-  books: [237, 99],
-  'cat-bed': [192, 102],
-  'wall-shelf': [45, 98],
-  'cat-sitting': [266, 99],
-  'cat-standing': [71, 106],
+  'flower-rug': [0, 0],
+  bookshelf: [83, 0],
+  'lights-1': [118, 0],
+  'lights-2': [118, 51],
+  bed: [0, 60],
+  couch: [55, 86],
+  tv: [115, 102],
+  tree: [0, 111],
+  'spider-rug': [38, 132],
+  table: [97, 150],
+  cabinet: [142, 150],
+  plant: [38, 167],
+  lamps: [0, 176],
+  'cat-bed': [77, 187],
+  books: [120, 203],
+  'cat-sitting': [149, 203],
+  'wall-shelf': [27, 208],
+  'cat-standing': [0, 209],
 }
 
 const sticker = (id, name, sheet, home, extra) => {
