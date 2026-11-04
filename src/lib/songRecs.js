@@ -2,27 +2,22 @@
    Song recommendations for the Vinyl Player: visitors search iTunes for a
    song and add it to a public list everyone sees, under the record stack.
 
-   The list lives in a Supabase table (supabase/song_recs.sql sets it up),
-   read and written straight through its REST API, so there is no SDK in the
-   bundle. The two values below are public by design: the key only allows
-   what the table's row-level security lets anyone do (read the list, add a
-   song), and the table's checks hold every row to a real iTunes cover and an
-   Apple Music link. Paste them in from the Supabase dashboard (Project
-   Settings > API: the project URL, and the publishable or anon key).
+   The list lives in a Supabase table (supabase/song_recs.sql sets it up; the
+   project's URL and key are in supabase.js), and the table's checks hold
+   every row to a real iTunes cover and an Apple Music link.
 
-   With no values set, the dev server keeps the list in this browser's
+   With no project set, the dev server keeps the list in this browser's
    localStorage, so the panel can still be tried on :5173, and a production
    build leaves the panel out (RECS_ON) and lays the pop-up out as before.
 --------------------------------------------------------------------------- */
 
-const SUPABASE_URL = ''
-const SUPABASE_KEY = ''
+import { rest, supabaseHeaders, supabaseOn } from '@/lib/supabase'
 
 const TABLE = 'song_recs'
 const LIST_LIMIT = 60
 const DEV_KEY = 'vp-recs-dev'
 
-const live = Boolean(SUPABASE_URL && SUPABASE_KEY)
+const live = supabaseOn
 export const RECS_ON = live || import.meta.env.DEV
 
 /* --- iTunes search ---------------------------------------------------------- */
@@ -97,14 +92,6 @@ export async function searchSongs(term, signal) {
 
 /* --- the shared list -------------------------------------------------------- */
 
-function headers(extra) {
-  // A legacy anon key is a JWT and goes in Authorization too; the newer
-  // publishable keys (sb_publishable_...) go in apikey alone.
-  const h = { apikey: SUPABASE_KEY, ...extra }
-  if (SUPABASE_KEY.startsWith('eyJ')) h.Authorization = `Bearer ${SUPABASE_KEY}`
-  return h
-}
-
 const fromRow = (r) => ({ trackId: Number(r.track_id), title: r.title, artist: r.artist, cover: r.cover_url, url: r.track_url })
 
 function devList() {
@@ -123,7 +110,7 @@ export async function listRecs() {
     order: 'created_at.desc',
     limit: String(LIST_LIMIT),
   })
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?${q}`, { headers: headers() })
+  const res = await fetch(`${rest(TABLE)}?${q}`, { headers: supabaseHeaders() })
   if (!res.ok) throw new Error(`the list answered ${res.status}`)
   return (await res.json()).map(fromRow)
 }
@@ -141,9 +128,9 @@ export async function addRec(song) {
     }
     return 'added'
   }
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+  const res = await fetch(rest(TABLE), {
     method: 'POST',
-    headers: headers({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+    headers: supabaseHeaders({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
     body: JSON.stringify({
       track_id: song.trackId,
       title: song.title,

@@ -3,7 +3,7 @@
 -- Run once in a Supabase project: Dashboard > SQL Editor > New query, paste
 -- this, Run. Then copy the project URL and the publishable (or anon) key from
 -- Project Settings > API into SUPABASE_URL and SUPABASE_KEY in
--- src/lib/songRecs.js.
+-- src/lib/supabase.js.
 --
 -- Anyone with the key can read the list and add a song, and nothing else:
 -- they cannot edit or delete rows, or set their own id or date. Every row
