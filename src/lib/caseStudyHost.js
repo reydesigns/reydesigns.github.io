@@ -11,8 +11,7 @@ import { createContext, useContext } from 'react'
  *   root      the element that scrolls, or null for the window. The section
  *             nav, the progress bar and scroll-linked motion measure against
  *             it (sectionScroll.js, useScrollMotion.js).
- *   onClose   set by the pop-up: the nav's HOME closes it instead of routing
- *             to /works.
+ *   onClose   set by the pop-up: what closes it (its red dot and backdrop).
  *   onSelect  set by the pop-up: "next case study" swaps the study in place
  *             instead of routing to its page.
  */

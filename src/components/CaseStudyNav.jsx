@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { scrollToSection, useActiveSection, useScrollProgress } from '@/lib/sectionScroll'
 import { useCaseStudyHost } from '@/lib/caseStudyHost'
@@ -12,24 +11,6 @@ import pikaGif from '@assets/brand/animation/pika-sleeping.gif'
    loop, not a draw-on. */
 const PIKA_CANVAS = [2000, 2100]
 const PIKA_BOX = [0.112, 0.301, 0.868, 0.686]
-
-/** `‹` as a shape rather than a glyph, so it keeps its weight at any size. */
-function Chevron() {
-  return (
-    <svg
-      viewBox="0 0 8 14"
-      aria-hidden="true"
-      className="h-[0.85em] w-[0.5em] shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M6.5 1 1.5 7l5 6" />
-    </svg>
-  )
-}
 
 function Pika({ width }) {
   const [cw, ch] = PIKA_CANVAS
@@ -57,37 +38,19 @@ function Pika({ width }) {
   )
 }
 
-/** Back to the works grid: a link to /works on the case study's own page, and
- *  the pop-up's close in CaseStudyModal (the grid is right behind it). */
-function HomeButton({ className = '' }) {
-  const { onClose } = useCaseStudyHost()
-  const cls = `inline-flex shrink-0 cursor-pointer items-center gap-[0.45em] rounded-[var(--radius-pill)] border-[2.5px] border-[var(--color-surface)] bg-transparent px-[0.85em] py-[0.5em] text-[length:var(--text-eyebrow)] font-bold tracking-[0.08em] text-[var(--color-surface)] no-underline transition-colors duration-200 hover:bg-[var(--color-surface)] hover:text-[var(--color-ink)] ${className}`
-  if (onClose) {
-    return (
-      <button type="button" onClick={onClose} className={cls}>
-        <Chevron />
-        HOME
-      </button>
-    )
-  }
-  return (
-    <Link to="/works" className={cls}>
-      <Chevron />
-      HOME
-    </Link>
-  )
-}
-
 /**
  * The case study's own navigation.
  *
  * Desktop: a fixed maroon panel pinned to the left edge and vertically centred,
  * rounded on its right side only — it reads as a tab growing out of the page
- * edge. It never scrolls; only the article does.
+ * edge. It never scrolls; only the article does. It holds only the sections
+ * and the sleeping cat: there is no HOME button, since the pop-up closes with
+ * its red dot or a click outside it (and the study's own page has the top
+ * bar), on every screen size.
  *
  * Under 64rem the same panel would sit on top of the article, so it becomes a
- * slim sticky strip above it instead: the HOME button plus the six sections in
- * a horizontally swipeable row, with the progress bar as a hairline underneath.
+ * slim sticky strip above it instead: the sections in a horizontally
+ * swipeable row, with the progress bar as a hairline underneath.
  * The strip sits in an opaque, page-coloured band that fades out at its foot,
  * so the article scrolls cleanly underneath it; the row keeps its active link
  * centred as the reader moves through the sections.
@@ -182,9 +145,7 @@ export function CaseStudyNav({ sections, ids }) {
         // section names, and clears the article beside it (.cs-side-nav).
         className="cs-side-nav fixed top-1/2 left-0 z-20 hidden w-[var(--cs-nav-w)] -translate-y-1/2 flex-col rounded-r-[2rem] bg-[var(--color-ink)] p-[var(--cs-nav-pad)] lg:flex"
       >
-        <HomeButton className="self-start" />
-
-        <div className="relative mt-[var(--cs-nav-gap)] pl-[var(--cs-nav-indent)]">
+        <div className="relative pl-[var(--cs-nav-indent)]">
           {/* the rail: filled down to the section being read */}
           <span
             aria-hidden="true"
@@ -230,12 +191,11 @@ export function CaseStudyNav({ sections, ids }) {
       >
         <div className="overflow-hidden rounded-[var(--radius-pill)] bg-[var(--color-ink)]">
           {/* The links carry the vertical padding (not the strip), so each one
-              is a full 44px touch target; HOME takes the shared .hit-44 to match. */}
+              is a full 44px touch target. */}
           <div
             ref={stripRef}
             className="cs-strip flex items-center gap-[1.1rem] overflow-x-auto px-[0.85rem]"
           >
-            <HomeButton className="hit-44" />
             {sections.map((s) => (
               <a
                 key={s.id}
