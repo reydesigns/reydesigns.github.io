@@ -23,20 +23,21 @@ const ITEMS = [
 ]
 
 /* The item is a fixed-size box with no background of its own — the hover and
-   active highlight is the circle behind the glyph (see Halo). Keeping the box
+   active highlight is the rounded square behind the glyph (see Halo). Keeping the box
    the same size in both orientations is what lets NavDock interpolate the
    row-to-column reflow without anything changing shape mid-flight. */
 const ITEM =
   'group/item relative flex w-[4.25rem] flex-col items-center gap-1 px-2 py-1.5 no-underline'
 
-/* The highlight. A circle, not the item's rectangle: it is centred on the glyph
-   and sized to it, so it reads as a halo around the icon. It is the first child
+/* The highlight. A square with softly rounded corners, not the item's
+   rectangle: it is centred on the glyph and sized to it, so it reads as a tile
+   behind the icon. It is the first child
    and everything after it is positioned, so painting order puts it behind the
    glyph without needing a z-index. */
 const HALO =
   // top = py-1.5 (0.375rem) + half of the h-7 glyph (0.875rem).
   'pointer-events-none absolute left-1/2 top-[1.25rem] h-9 w-9 -translate-x-1/2 ' +
-  '-translate-y-1/2 rounded-full transition-colors duration-200'
+  '-translate-y-1/2 rounded-[0.625rem] transition-colors duration-200'
 
 function Halo({ active }) {
   return (
