@@ -221,7 +221,7 @@ await part('phone', async (browser) => {
   await shot(page, 'phone')
   await page.goBack()
   await sleep(700)
-  check('phone: back gesture closes, stays put', !(await isOpen(page)) && (await page.evaluate(() => location.pathname)) === '/works')
+  check('phone: back gesture closes, stays put', !(await isOpen(page)) && (await page.evaluate(() => location.pathname)) === '/')
   await page.click('a[data-card][href$="/heyso"]')
   await waitOpen(page)
   await page.click('[data-cs-back]')
@@ -237,14 +237,14 @@ await part('reduced', async (browser) => {
   check('reduced: still opens the pop-up', await waitOpen(page))
   await page.keyboard.press('Escape')
   await sleep(300)
-  check('reduced: closes', !(await isOpen(page)) && (await page.evaluate(() => location.pathname)) === '/works')
+  check('reduced: closes', !(await isOpen(page)) && (await page.evaluate(() => location.pathname)) === '/')
 })
 
 /* ---- the study's own route ------------------------------------------------- */
 await part('direct', async (browser) => {
   const { page, errors } = await openPage(browser, '/works/heyso')
   check('/works/heyso is a full page', !!(await page.$('main h1')) && !(await isOpen(page)))
-  check('/works/heyso HOME is a link', !!(await page.$('nav[aria-label="Case study sections"] a[href$="/works"]')))
+  check('/works/heyso has no HOME button', !(await page.$('nav[aria-label="Case study sections"] a[href$="/works"], nav[aria-label="Case study sections"] button')))
   check('direct: no console errors', errors.length === 0, errors.join(' | '))
 })
 

@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { WordCycle } from '@/components/WordCycle'
 import { BottomNav } from '@/components/BottomNav'
@@ -76,6 +77,26 @@ export function Landing() {
   const glide = wide && fine && !reduced
 
   const { stage, toWorks } = useScrollSequence({ glide, worksRef })
+
+  // Arriving from "works" anywhere else (App forwards /works here with this
+  // note): the page opens on the hero and glides down to the grid, as "works"
+  // in the nav does on this page, so the hero is always there to scroll back
+  // up to. The note is dropped at once, so a refresh lands on the hero.
+  // Read once, on arrival: dropping the note re-renders this page, and must
+  // not call the glide off.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const arriving = useRef(location.state?.to === 'works')
+  const glideRef = useRef(toWorks)
+  glideRef.current = toWorks
+  useEffect(() => {
+    if (!arriving.current) return
+    arriving.current = false
+    navigate('/', { replace: true, state: null })
+    // Two frames on: App's scroll to the top for the new page has run, and
+    // SmoothScroll has started Lenis, which the glide rides.
+    requestAnimationFrame(() => requestAnimationFrame(() => glideRef.current()))
+  }, [navigate])
 
   // "works" in the nav scrolls down to the grid rather than routing to /works:
   // the grid is right here, on every width.

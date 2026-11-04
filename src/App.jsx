@@ -4,7 +4,6 @@ import { SmoothScroll } from '@/lib/SmoothScroll'
 import { loadCaseStudy } from '@/lib/caseStudyChunk'
 import { CaseStudyModal } from '@/components/CaseStudyModal'
 import { Landing } from '@/pages/Landing'
-import { Works } from '@/pages/Works'
 import { Funzies } from '@/pages/Funzies'
 import { Me } from '@/pages/Me'
 
@@ -71,7 +70,10 @@ export default function App() {
         <Suspense fallback={null}>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/works" element={<Works />} />
+            {/* The grid lives on the landing page, under the hero: "works" from
+                anywhere else (and any old link to /works) goes there and glides
+                down to it, so the hero is always above to scroll back up to. */}
+            <Route path="/works" element={<Navigate to="/" replace state={{ to: 'works' }} />} />
             <Route path="/works/:slug" element={<CaseStudy />} />
             <Route path="/design" element={<Funzies />} />
             {/* The page's old name and address. */}

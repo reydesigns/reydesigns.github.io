@@ -60,7 +60,7 @@ export function SizeGlyph({ full }) {
 }
 
 /**
- * A case study, opened in place over the works grid (on `/` or `/works`).
+ * A case study, opened in place over the works grid (on `/`).
  *
  * A native <dialog> (focus trap, Escape and focus return come free), dressed
  * like the Funzies windows: a burgundy title bar with macOS dots top-left —

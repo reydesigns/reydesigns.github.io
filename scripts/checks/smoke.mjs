@@ -263,8 +263,12 @@ const current = (page) =>
 
 /* The Vinyl Player card on /works opens its own pop-up (dialog.vp-pop). */
 async function vinyl(page, tag, how) {
-  await page.goto(`${BASE}/works`, { waitUntil: 'networkidle2' })
-  await sleep(1500)
+  // /works is the landing page now (its grid), whose 3D drawings keep the
+  // network busy for a long time under software GL: wait for the page, not
+  // for the network to go quiet.
+  await page.goto(`${BASE}/works`, { waitUntil: 'domcontentloaded', timeout: 60000 })
+  await page.waitForSelector('article[data-card] button[aria-label="Vinyl Player"]', { timeout: 30000 })
+  await sleep(2500)
   const sel = 'article[data-card] button[aria-label="Vinyl Player"]'
   const card = await page.$(sel)
   check(`${tag}: Vinyl Player card on /works`, !!card)
@@ -300,13 +304,17 @@ async function flowsDesktop() {
   console.log('\n=== flows: desktop 1440x900 ===')
   const { page, errors } = await openPage(browser, '/works', { w: 1440, h: 900 })
 
-  // nav pill round trip
-  for (const [label, to] of [['design', '/design'], ['me', '/me'], ['works', '/works']]) {
+  // nav pill round trip. "works" from another page is the landing page's
+  // grid: / (the old /works forwards there), glided down to the grid.
+  for (const [label, to] of [['design', '/design'], ['me', '/me'], ['works', '/']]) {
     await page.click(`nav[aria-label="Sections"] [data-flip-id="nav-${label}"]`)
     const ok = await waitPath(page, to)
-    await sleep(800)
+    await sleep(label === 'works' ? 2200 : 800)
     check(`pill "${label}" -> ${to}`, ok && (await current(page)) === `nav-${label}`, `at ${await path(page)}, current=${await current(page)}`)
-    check(`  ${to} starts at the top`, (await page.evaluate(() => scrollY)) === 0)
+    if (label === 'works') {
+      const at = await page.evaluate(() => ({ y: scrollY, grid: document.querySelector('[data-stage="works"]').getBoundingClientRect().top + scrollY }))
+      check('  and glides down to the grid, the hero above it', Math.abs(at.y - at.grid) < 4, `${Math.round(at.y)} vs ${Math.round(at.grid)}`)
+    } else check(`  ${to} starts at the top`, (await page.evaluate(() => scrollY)) === 0)
   }
 
   // top-bar monogram goes home
@@ -336,7 +344,7 @@ async function flowsDesktop() {
   await page.goto(`${BASE}/nope/at/all`, { waitUntil: 'networkidle2' })
   check('unknown route -> /', await waitPath(page, '/'))
   await page.goto(`${BASE}/works/not-a-study`, { waitUntil: 'networkidle2' })
-  check('unknown study -> /works', await waitPath(page, '/works'))
+  check('unknown study -> / (the grid)', await waitPath(page, '/'))
 
   // case studies on their own routes
   for (const slug of ['heyso', 'tmu-kpop', 'lipton']) {
@@ -377,8 +385,8 @@ async function flowsDesktop() {
   }
   await page.goto(`${BASE}/works/heyso`, { waitUntil: 'networkidle2' })
   await sleep(1000)
-  await page.click('nav.fixed[aria-label="Case study sections"] a[href$="/works"]')
-  check('case-study HOME -> /works', await waitPath(page, '/works'))
+  // No HOME button in the section nav (the window closes; the page has the top bar).
+  check('case-study nav has no HOME button', !(await page.$('nav[aria-label="Case study sections"] a[href$="/works"], nav[aria-label="Case study sections"] button')))
 
   await vinyl(page, 'desktop', 'click')
 

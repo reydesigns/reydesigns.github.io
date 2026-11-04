@@ -93,6 +93,12 @@ export function useScrollSequence({ glide, worksRef }) {
 
     const l = lenis()
     if (l) {
+      // Lenis caps a scroll at the page height it last measured, which can
+      // be stale by a frame or more: just after arriving from another page it
+      // still has that page's height (the glide stopped part way down), and
+      // on a fresh load it may have measured before the landing rendered (no
+      // glide at all). So it measures the page again first.
+      l.resize()
       selfScrollRef.current = true
       mark('glide')
       // `force` so it runs even if Lenis is mid-wheel; `lock` keeps that wheel
