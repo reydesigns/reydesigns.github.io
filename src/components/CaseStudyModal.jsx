@@ -208,6 +208,7 @@ export function CaseStudyModal() {
       ref={dialogRef}
       className="cs-modal"
       data-size={shown}
+      data-study={slug}
       data-closing={closing || undefined}
       data-lenis-prevent=""
       aria-labelledby="cs-modal-title"

@@ -30,6 +30,13 @@
   overflow: visible;
   color: var(--color-ink);
 }
+/* TMU K-POP's window is wider (up to 1.6 times as wide as it is tall, and
+   94vw): its page screens and sticky notes run across a band centred in the
+   window, with the same white space either side (case-study.css .tk-article),
+   and need the room. */
+.cs-modal[data-study='tmu-kpop'] {
+  --cs-window-w: min(94vw, max(64rem, calc((100dvh - 4rem) * 1.6)));
+}
 .cs-modal[data-size='window'] {
   --cs-vw: calc(var(--cs-window-w) / 92);
   --cs-wide-w: calc(77.5 * var(--cs-vw));

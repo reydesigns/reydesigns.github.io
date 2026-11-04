@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { setCursorHost } from './CustomCursor'
 import { AttendanceChart, ATTENDANCE_AVERAGES } from './AttendanceChart'
 import { AboutScrollMockup, EventsCarouselMockup } from './TmuMockups'
 import {
@@ -127,40 +129,122 @@ const SCREENINGS = [
   },
 ]
 
-/** Three sticky notes in a row (stacked on a phone): a student's screening
-    each, its pain points and touchpoints. A note lifts and its corner peels
-    up a little under the pointer (case-study.css). */
-function ScreeningNotes() {
+/** One sticky note: a student's screening, its pain points and touchpoints. */
+function Note({ s, i, zoom }) {
   return (
-    <ul className="cs-wide tk-notes">
-      {SCREENINGS.map((s, i) => (
-        <li key={s.who} className="tk-note" style={{ '--n': i }}>
-          <div className="tk-note__paper">
-            <h3 className="tk-note__title">Student #{i + 1}</h3>
-            <p className="tk-note__who">{s.who}</p>
-            <p className="tk-note__label">Pain points</p>
-            <ul className="tk-note__list">
-              {s.pain.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-            <p className="tk-note__label">Touchpoints</p>
-            <ul className="tk-note__list">
-              {s.touch.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="tk-note" data-n={i}>
+      <div className="tk-note__paper">
+        <h3 className="tk-note__title">Student #{i + 1}</h3>
+        <p className="tk-note__who">{s.who}</p>
+        <p className="tk-note__label">Pain points</p>
+        <ul className="tk-note__list">
+          {s.pain.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+        <p className="tk-note__label">Touchpoints</p>
+        <ul className="tk-note__list">
+          {s.touch.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+      </div>
+      {zoom}
+    </div>
+  )
+}
+
+/**
+ * The three sticky notes, small, in a row (two and one on a phone). Each
+ * lifts and peels a corner under the pointer, and a click (or Enter) opens it
+ * up close over a faded black backdrop, in a native <dialog> above the
+ * case-study window; a click anywhere, Escape or the close button puts it
+ * back. The custom cursor moves into the dialog while it is open, as it does
+ * for every pop-up, and focus goes back to the note it came from.
+ */
+function ScreeningNotes() {
+  const [open, setOpen] = useState(null)
+  const dialogRef = useRef(null)
+  const openers = useRef([])
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (open === null || !dialog) return undefined
+    const host = openers.current[open]?.closest('dialog') ?? null
+    if (!dialog.open) dialog.showModal()
+    setCursorHost(dialog)
+    return () => {
+      setCursorHost(host)
+      if (dialog.open) dialog.close()
+    }
+  }, [open])
+
+  const close = () => {
+    const i = open
+    setOpen(null)
+    requestAnimationFrame(() => openers.current[i]?.focus({ preventScroll: true }))
+  }
+
+  return (
+    <>
+      <ul className="cs-wide tk-notes">
+        {SCREENINGS.map((s, i) => (
+          <li key={s.who}>
+            <Note
+              s={s}
+              i={i}
+              zoom={
+                <button
+                  ref={(el) => {
+                    openers.current[i] = el
+                  }}
+                  type="button"
+                  className="tk-note__zoom"
+                  aria-label={`Read student #${i + 1}'s screening up close`}
+                  onClick={() => setOpen(i)}
+                />
+              }
+            />
+          </li>
+        ))}
+      </ul>
+      <p className="tk-notes-hint">Click a note to read it up close</p>
+
+      <dialog
+        ref={dialogRef}
+        className="tk-note-pop"
+        aria-label={open !== null ? `Student #${open + 1}` : undefined}
+        // React hands a dialog's cancel and close on to the dialogs round it
+        // (the case-study window), so they stop here: Escape closes the
+        // note, not the study under it.
+        onCancel={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          close()
+        }}
+        onClose={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          close()
+        }}
+      >
+        {open !== null && (
+          <>
+            <Note s={SCREENINGS[open]} i={open} />
+            <button type="button" className="tk-note-pop__close" onClick={close} autoFocus>
+              Close
+            </button>
+          </>
+        )}
+      </dialog>
+    </>
   )
 }
 
 export function TmuKpopArticle({ next }) {
   const { before, after } = ATTENDANCE_AVERAGES
   return (
-    <article className={ARTICLE}>
+    <article className={`${ARTICLE} tk-article`}>
       <CaseHero src={tmuVideo} aspect="2584 / 1582" label="Walkthrough of the new TMU K-POP website" />
 
       <ClientLine logo={tmuLogo}>TMU-KPOP</ClientLine>
