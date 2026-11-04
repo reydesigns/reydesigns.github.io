@@ -68,17 +68,17 @@
   --card-chip-bg: color-mix(in srgb, var(--color-surface) 82%, transparent);
   /* How strongly the film grain (.card-grain) lies over a card's picture. */
   --card-grain-alpha: 0.32;
-  /* The caption that fades up under a card on hover: bare uppercase text, no
-     backing, in burgundy held back a little so it sits below the card's own
-     name. Still 7.4:1 on --color-bg (AAA). */
-  --card-blurb-ink: color-mix(in srgb, var(--color-maroon) 72%, transparent);
+  /* The caption that fades up under a card on hover: bare sentence-case text,
+     no backing, in a neutral grey (the ground's own cool axis) so it sits well
+     below the card's burgundy name. 5.1:1 on --color-bg (AA). */
+  --card-blurb-ink: #67676c;
   /* Its size. Always one line: the eyebrow size wherever the sentence fits the
-     card (the longest blurb is 59.4em at the caption's 0.04em tracking, so 61
+     card (the longest blurb is 47.1em in sentence case, untracked, so 49
      leaves a little slack), shrinking with the card where it does not (under
      ~1400px wide in two columns), never under 9px. Below that a too-long
      sentence ends in an ellipsis. Must be used inside the card's container
      (WorkCard's wrapper): cqi is the card's width. */
-  --card-blurb-size: max(0.5625rem, min(var(--text-eyebrow), calc(100cqi / 61)));
+  --card-blurb-size: max(0.5625rem, min(var(--text-eyebrow), calc(100cqi / 49)));
   /* The room a hover-capable screen leaves between rows of cards for that
      caption: its offset under the card (0.75rem), its one line, and clear
      space before the next row. */

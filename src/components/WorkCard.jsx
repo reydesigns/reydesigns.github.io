@@ -14,8 +14,8 @@ import { useInView } from '@/lib/useInView'
      chip         bottom-left, always shown: the client's logo and the study's
                   name in burgundy on a frosted light pill, so the card can be
                   identified at a glance without a caption under it.
-     description  under the card, HIDDEN by default: a bare uppercase caption
-                  in soft burgundy, no panel behind it, that fades up into the
+     description  under the card, HIDDEN by default: a bare sentence-case
+                  caption in grey, no panel behind it, that fades up into the
                   space below the card's bottom edge (WorksGrid leaves room
                   for it between rows). A pointer that can hover reveals it on
                   hover; a keyboard reveals it on focus. Touch never sees it —
@@ -153,9 +153,9 @@ function Chip({ study }) {
  *  never in the pointer's way; aria-hidden because it repeats, in short, what
  *  the case study opens with.
  *
- *  Type: one sentence on one line, uppercase, flush with the card's left
- *  edge. Semibold rather than the eyebrow's 800 because it is a sentence, not
- *  a label, and tracked tighter (0.04em) for the same reason. Its size
+ *  Type: one sentence on one line, in sentence case as written in
+ *  caseStudies.js, flush with the card's left edge. Semibold rather than the
+ *  eyebrow's 800, and untracked, because it is a sentence, not a label. Its size
  *  (--card-blurb-size) shrinks with the card where the sentence would not
  *  otherwise fit; an ellipsis is the last resort, not the plan.
  *
@@ -168,7 +168,7 @@ function Description({ study }) {
       aria-hidden="true"
       className={
         'pointer-events-none absolute inset-x-0 top-[calc(100%+0.75rem)] block overflow-hidden text-ellipsis whitespace-nowrap ' +
-        'text-[length:var(--card-blurb-size)] font-semibold uppercase leading-[1.6] tracking-[0.04em] text-[var(--card-blurb-ink)] ' +
+        'text-[length:var(--card-blurb-size)] font-semibold leading-[1.6] text-[var(--card-blurb-ink)] ' +
         'translate-y-[0.5rem] opacity-0 transition-[opacity,translate] duration-[450ms] ease-[var(--ease-brand)] ' +
         '[@media(hover:hover)]:peer-hover:translate-y-0 [@media(hover:hover)]:peer-hover:opacity-100 [@media(hover:hover)]:peer-hover:delay-75 ' +
         'peer-focus-visible:translate-y-0 peer-focus-visible:opacity-100 motion-reduce:translate-y-0'
