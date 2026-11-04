@@ -78,13 +78,13 @@ try {
   /* ---- status line (Phase A) ------------------------------------------- */
   const { page, errors } = await openPage(browser, '/')
   const status = await page.evaluate(() => {
-    const p = [...document.querySelectorAll('p')].find((el) => el.textContent.includes('Master of Information'))
+    const p = [...document.querySelectorAll('p')].find((el) => el.textContent.includes('masters of information'))
     if (!p) return null
     const cs = getComputedStyle(p)
     return { text: p.textContent.trim(), weight: Number(cs.fontWeight), opacity: Number(cs.opacity),
              align: cs.textAlign, bg: cs.backgroundColor, dot: !!document.querySelector('.status-dot') }
   })
-  check('status text', status?.text === 'Master of Information @ UofT', status?.text)
+  check('status text', status?.text === 'masters of information @ UofT', status?.text)
   check('status bold', status?.weight >= 700, status?.weight)
   check('status muted', status?.opacity > 0 && status?.opacity < 1, status?.opacity)
   check('status centred', status?.align === 'center', status?.align)

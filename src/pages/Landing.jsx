@@ -181,7 +181,7 @@ export function Landing() {
 
           {/* Plain, bold, muted line: the copy carries the status, no pill or dot. */}
           <p className="mx-auto mt-[clamp(3rem,10vh,8rem)] text-center font-bold text-[length:var(--text-body)] text-[var(--color-ink-muted)] opacity-[var(--hero-status-opacity)]">
-            Master of Information @ UofT
+            masters of information @ UofT
           </p>
         </section>
 

@@ -38,7 +38,7 @@
   /* Secondary hero labels (eyebrow + tagline). Raised from the comps' 30% so
      they read clearly. */
   --hero-label-opacity: 0.75;
-  /* The status line under the headline ("Master of Information @ UofT"). */
+  /* The status line under the headline ("masters of information @ UofT"). */
   --hero-status-opacity: 0.55;
 
   /* --- type -------------------------------------------------------------- */
