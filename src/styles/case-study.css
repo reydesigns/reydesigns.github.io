@@ -46,15 +46,15 @@
   /* --- case-study sizing ------------------------------------------------ */
   /* The side nav panel. Its box is fixed rather than sized to its labels, so
      it is the same panel on every case study — more sections only add rows,
-     and a long label ('RESEARCH & OUTCOME') wraps instead of widening it. One
-     padding on all four sides, and one gap above and below the section list.
-     The width is the padding, the rail's indent, and 'FINAL PRODUCT' in its
-     bold active weight (~8.45em) with a little to spare, in the labels' own
-     type size, so it fits at every desktop width. */
-  --cs-nav-pad: var(--cs-5);
+     and a long label ('RESEARCH & OUTCOME', 'FINAL PRODUCT') wraps instead of
+     widening it. One padding on all four sides, and one gap above and below
+     the section list. Its width and label size (--cs-nav-w, --cs-nav-text)
+     are set on the nav itself: see .cs-side-nav. */
+  --cs-nav-pad: 1.25rem;
   --cs-nav-gap: var(--cs-6);
-  --cs-nav-indent: 0.9rem;
-  --cs-nav-w: calc(2 * var(--cs-nav-pad) + var(--cs-nav-indent) + 8.75 * var(--text-body));
+  --cs-nav-indent: 0.75rem;
+  /* Clear page between the panel's edge and the article beside it. */
+  --cs-nav-clear: 0.625rem;
   /* The article column every case study reads in. */
   --cs-col-w: 41rem;
   --cs-nav-label: clamp(0.8125rem, 0.86vw, 0.9375rem);
@@ -342,6 +342,18 @@
   /* Between the page-screen rows: each opens on its own heading, so it is
      the sub-heading gap, like every other sub-heading in the studies. */
   --tk-row-gap: var(--cs-gap-sub);
+}
+/* The side nav (CaseStudyNav) is as wide as the article's gutter beside it,
+   less --cs-nav-clear, so it never covers the study: TMU's wide band starts
+   right at the gutter. Declared on the nav, not :root, so both follow
+   whichever gutter it sits beside, the page's or the pop-up window's
+   (case-study-modal.css). The labels keep the body size unless the panel is
+   too narrow for the longest single word (OBJECTIVE, ~5.9em in the bold
+   active weight; 6em with a little spare), as in a pop-up on a wide, short
+   screen, where they come down just enough to fit. */
+.cs-side-nav {
+  --cs-nav-w: calc(var(--cs-nav-gutter) - var(--cs-nav-clear));
+  --cs-nav-text: min(var(--text-body), calc((var(--cs-nav-w) - 2 * var(--cs-nav-pad) - var(--cs-nav-indent)) / 6));
 }
 .cs-wide {
   width: 100%;

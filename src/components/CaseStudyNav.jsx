@@ -5,7 +5,8 @@ import { scrollToSection, useActiveSection, useScrollProgress } from '@/lib/sect
 import { useCaseStudyHost } from '@/lib/caseStudyHost'
 import pikaGif from '@assets/brand/animation/pika-sleeping.gif'
 
-/* The sleeping cat sits in the bottom of the panel in the comp. Its GIF canvas
+/* The sleeping cat sits in the bottom of the panel, left-aligned with the
+   section names. Its GIF canvas
    carries a lot of transparent padding, so the wrapper crops to the artwork's
    measured bounds — same trick as GifMark, without the freeze: the cat is a
    loop, not a draw-on. */
@@ -167,7 +168,7 @@ export function CaseStudyNav({ sections, ids }) {
   // phone strip scrolls sideways, so there every label stays on one line, and
   // is stretched to a 44px-tall touch target without changing the text.
   const linkClass = (id, wrap = false) =>
-    `${wrap ? 'block whitespace-normal' : 'flex min-h-11 items-center whitespace-nowrap'} text-left text-[length:var(--text-body)] leading-[1.55] tracking-[0.015em] text-[var(--color-bg)] no-underline transition-opacity duration-200 ${
+    `${wrap ? 'block whitespace-normal text-[length:var(--cs-nav-text)]' : 'flex min-h-11 items-center whitespace-nowrap text-[length:var(--text-body)]'} text-left leading-[1.55] tracking-[0.015em] text-[var(--color-bg)] no-underline transition-opacity duration-200 ${
       active === id ? 'font-extrabold opacity-100' : 'font-semibold opacity-45 hover:opacity-75'
     }`
 
@@ -178,8 +179,8 @@ export function CaseStudyNav({ sections, ids }) {
         aria-label="Case study sections"
         // One fixed width and one padding on every side, from case-study.css,
         // so the panel is identical across the case studies whatever their
-        // section names (see --cs-nav-w).
-        className="fixed top-1/2 left-0 z-20 hidden w-[var(--cs-nav-w)] -translate-y-1/2 flex-col rounded-r-[2rem] bg-[var(--color-ink)] p-[var(--cs-nav-pad)] lg:flex"
+        // section names, and clears the article beside it (.cs-side-nav).
+        className="cs-side-nav fixed top-1/2 left-0 z-20 hidden w-[var(--cs-nav-w)] -translate-y-1/2 flex-col rounded-r-[2rem] bg-[var(--color-ink)] p-[var(--cs-nav-pad)] lg:flex"
       >
         <HomeButton className="self-start" />
 
@@ -212,9 +213,9 @@ export function CaseStudyNav({ sections, ids }) {
           </ul>
         </div>
 
-        {/* The same gap below the list as above it; with even padding the
-            content box's centre is the panel's centre. */}
-        <span className="mt-[var(--cs-nav-gap)] self-center">
+        {/* The same gap below the list as above it, and lined up on the
+            section names' left edge (the list's indent). */}
+        <span className="mt-[var(--cs-nav-gap)] ml-[var(--cs-nav-indent)] self-start">
           <Pika width="4.9rem" />
         </span>
       </nav>
