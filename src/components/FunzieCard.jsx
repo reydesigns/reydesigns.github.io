@@ -1,4 +1,8 @@
+import { useEffect } from 'react'
 import { boardPicturesOf } from '@/data/funzies'
+import { useInView } from '@/lib/useInView'
+import { useReducedMotion } from '@/lib/useReducedMotion'
+import { useSaveData } from '@/lib/useSaveData'
 
 /* The board is messy on purpose: each card is tipped, nudged and pinned a
    little off centre by its own amount (deg, px, px). Fixed values rather than
@@ -13,6 +17,41 @@ const MESS = [
   { rot: -0.8, dx: 4, dy: 20, pin: 3 },
   { rot: 2.3, dx: -10, dy: 0, pin: -5 },
 ]
+
+/**
+ * The pinned print when it is a clip (print's press running): muted, looping,
+ * no controls, like a GIF. It plays only while it is on screen. Under reduced
+ * motion or data saver it stays on its poster, the clip's first frame, and
+ * isn't downloaded.
+ */
+function BoardVideo({ pic }) {
+  const reduced = useReducedMotion()
+  const saveData = useSaveData()
+  const still = reduced || saveData
+  const [ref, inView] = useInView({ threshold: 0 })
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (inView && !still) el.play().catch(() => {})
+    else el.pause()
+  }, [ref, inView, still])
+
+  return (
+    <video
+      ref={ref}
+      className="fz-card__print fz-card__photo"
+      src={pic.src}
+      poster={pic.poster}
+      muted
+      loop
+      playsInline
+      disablePictureInPicture
+      preload={still ? 'none' : 'auto'}
+      aria-hidden="true"
+    />
+  )
+}
 
 /**
  * One project on the Design board: its photo, printed with a white border
@@ -49,7 +88,11 @@ export function FunzieCard({ item, index, onOpen }) {
             draggable={false}
           />
         ))}
-        <img className="fz-card__print fz-card__photo" src={front.src} alt="" decoding="async" draggable={false} />
+        {front.type === 'video' ? (
+          <BoardVideo pic={front} />
+        ) : (
+          <img className="fz-card__print fz-card__photo" src={front.src} alt="" decoding="async" draggable={false} />
+        )}
         <span className="fz-pin" aria-hidden="true" />
       </span>
     </button>

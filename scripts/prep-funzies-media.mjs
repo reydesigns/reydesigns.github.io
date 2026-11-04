@@ -270,5 +270,60 @@ if (!only.length || only.includes('tk-banner.webp')) {
   console.log('tk-banner.webp')
 }
 
+// The print tile's moving thumbnail: the clip cropped to the card's 4:5 (the
+// centre, as object-fit: cover shows it), 640x800, silent, ~1.4 Mbps — about
+// 375 KB against the full clip's 5.7 MB. avconvert can't crop, drop the sound
+// or set a bitrate, so Chrome's MediaRecorder records it from a canvas as it
+// plays, every frame drawn as it decodes. Its poster is the first frame.
+if (!only.length || only.includes('print-thumb.mp4')) {
+  const r = await p.evaluate(async (url) => {
+    const X = 'http://www.w3.org/1999/xhtml'
+    const v = document.createElementNS(X, 'video')
+    v.muted = true
+    v.preload = 'auto'
+    v.src = url
+    await new Promise((res, rej) => {
+      v.oncanplaythrough = res
+      v.onerror = () => rej(new Error('print-video.mp4 would not load'))
+    })
+    const W = 640
+    const H = 800
+    const sw = v.videoWidth
+    const sh = Math.round((sw * H) / W)
+    const sy = (v.videoHeight - sh) / 2
+    const c = document.createElementNS(X, 'canvas')
+    c.width = W
+    c.height = H
+    const ctx = c.getContext('2d')
+    ctx.imageSmoothingQuality = 'high'
+    const draw = () => ctx.drawImage(v, 0, sy, sw, sh, 0, 0, W, H)
+    draw()
+    const poster = c.toDataURL('image/webp', 0.85)
+    const type = 'video/mp4;codecs=avc1.4D401F'
+    const rec = new MediaRecorder(c.captureStream(30), { mimeType: type, videoBitsPerSecond: 1_400_000 })
+    const chunks = []
+    rec.ondataavailable = (e) => chunks.push(e.data)
+    const onFrame = () => {
+      draw()
+      if (!v.ended) v.requestVideoFrameCallback(onFrame)
+    }
+    v.requestVideoFrameCallback(onFrame)
+    rec.start()
+    await v.play()
+    await new Promise((res) => (v.onended = res))
+    await new Promise((res) => {
+      rec.onstop = res
+      rec.stop()
+    })
+    const buf = new Uint8Array(await new Blob(chunks, { type }).arrayBuffer())
+    let bin = ''
+    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000))
+    return { poster, video: btoa(bin) }
+  }, BASE + OUT + 'print-video.mp4')
+  fs.writeFileSync(OUT + 'print-thumb.mp4', Buffer.from(r.video, 'base64'))
+  fs.writeFileSync(OUT + 'print-thumb.webp', Buffer.from(r.poster.split(',')[1], 'base64'))
+  console.log('print-thumb.mp4, print-thumb.webp')
+}
+
 await b.close()
 fs.rmSync(TMP, { recursive: true, force: true })

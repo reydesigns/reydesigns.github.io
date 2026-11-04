@@ -245,7 +245,10 @@ export const FUNZIES = [
       'modelled and produced pieces on a 3D printer, and explored other printing methods along the way, ' +
       'from packaging prototypes to a large-format event banner.',
     tile: 'photo',
-    thumb: m('print-cartridges.webp'),
+    /* The board's tile is the press running, on a loop: a small cut of
+       print-video.mp4 cropped to the card (scripts/prep-funzies-media.mjs),
+       with its first frame as the poster. */
+    thumb: m('print-thumb.mp4', { poster: m('print-thumb.webp').src }),
     media: [
       m('print-video.mp4'),
       m('print-cartridges.webp'),
@@ -311,7 +314,8 @@ export function picturesOf(item) {
 
 /** The pinned photo on the board (the project's `thumb`, else its first
     picture) and up to `under` more stills hanging behind it, which fan out
-    on hover. Videos stay out: they have no still to pin. */
+    on hover. The pinned one may be a looping video (print's); the ones
+    behind are stills only. */
 export function boardPicturesOf(item, under = 3) {
   const front = item.thumb ?? item.media[0]
   const rest = picturesOf(item).filter((m) => m.type === 'image' && m.src !== front.src && !m.icon)
