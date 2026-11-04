@@ -7,7 +7,9 @@ import tmuVideo from '@assets/tmu-kpop/video/walkthrough-1080p.mp4'
 import heysoPoster from '@assets/heyso/video/poster.webp'
 import liptonPoster from '@assets/lipton/video/poster.webp'
 import tmuPoster from '@assets/tmu-kpop/video/poster.webp'
-import shoreUpImage from '@assets/shore-up/images/app-screenshot.png'
+// Shore-Up's: recorded from the live app (the globe turning), 1280x720 WebM.
+import shoreUpVideo from '@assets/shore-up/video/globe-720p.webm'
+import shoreUpPoster from '@assets/shore-up/video/globe-poster.webp'
 import heysoLogo from '@assets/brand/icons/clients/heyso.png'
 import tmuLogo from '@assets/brand/icons/clients/tmu-kpop.png'
 import liptonLogo from '@assets/brand/icons/clients/lipton.png'
@@ -72,9 +74,11 @@ export const CASE_STUDIES = [
     logo: shoreUpLogo,
     title: 'SHORE-UP',
     metaTitle: 'Shore-Up',
-    description: 'Shore-Up, a hackathon project. The case study is coming soon.',
-    poster: shoreUpImage, // static thumbnail — no walkthrough video exists
-    status: 'coming-soon',
+    description: 'Case study: Shore-Up, a one-day hackathon web app that brings communities together to clean up local beaches.',
+    blurb: 'A one-day hackathon web app that brings communities together to clean up their local beaches.',
+    video: shoreUpVideo,
+    videoPoster: shoreUpPoster,
+    status: 'published',
   },
 ]
 
@@ -133,6 +137,15 @@ export const TMU_SECTIONS = [
   { id: 'objective', label: 'OBJECTIVE' },
   { id: 'process', label: 'PROCESS' },
   { id: 'roi', label: 'ROI' },
+]
+
+/** Ordered sections for the Shore-Up case study. The facts list above the
+ *  problem has a section of its own (`overview`) but no label, so no entry. */
+export const SHOREUP_SECTIONS = [
+  { id: 'problem', label: 'PROBLEM' },
+  { id: 'solution', label: 'SOLUTION' },
+  { id: 'research', label: 'RESEARCH' },
+  { id: 'demo', label: 'DEMO' },
 ]
 
 /** Ordered sections for the Lipton Tea case study. */

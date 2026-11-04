@@ -726,3 +726,93 @@
     width: calc(50% - var(--cs-3) / 2) !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Reference links in the body copy (Shore-Up): the word keeps its colour and
+   weight, a soft burgundy underline marks it, and it darkens on hover.
+--------------------------------------------------------------------------- */
+.cs-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-maroon) 45%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color 160ms, color 160ms;
+}
+.cs-link:hover {
+  color: var(--color-maroon);
+  text-decoration-color: var(--color-maroon);
+}
+
+/* ---------------------------------------------------------------------------
+   Shore-Up: the four UN goals, the official icon tiles in a row (two by two
+   on a phone), each with the targets the app answers to in circles of the
+   goal's own colour at its top-right, as in the team's slide. The circles
+   sit above the tile, never on it: the UN asks that its icons be shown
+   whole and unaltered.
+--------------------------------------------------------------------------- */
+.su-goals {
+  margin-inline: 0;
+}
+.su-goals__list {
+  --su-target: clamp(2.4rem, 4.2vw, 2.9rem);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 1.75rem) var(--cs-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 40rem) {
+  .su-goals__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.su-goal {
+  position: relative;
+  /* Room above the tile for its target circles. */
+  padding-top: calc(var(--su-target) + 0.35rem);
+}
+.su-goal img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.su-goal__targets {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+}
+.su-goal__target {
+  display: grid;
+  place-items: center;
+  width: var(--su-target);
+  aspect-ratio: 1;
+  border: 2px solid var(--color-bg);
+  border-radius: 50%;
+  background: var(--goal);
+  color: #fff;
+  font-size: clamp(0.8125rem, 1.2vw, 0.9375rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.su-goal__target + .su-goal__target {
+  margin-left: -0.55rem;
+}
+.su-goals__credit {
+  margin-top: var(--cs-3);
+  font-size: var(--text-eyebrow);
+  color: var(--color-ink-muted);
+}
+
+/* The demo recording: the article column's width at 16:9, with the
+   player's own controls. */
+.su-demo video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-card);
+  background: var(--color-maroon);
+}

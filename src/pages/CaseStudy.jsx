@@ -4,10 +4,12 @@ import { CaseStudyNav } from '@/components/CaseStudyNav'
 import { HeySoArticle } from '@/components/HeySoArticle'
 import { TmuKpopArticle } from '@/components/TmuKpopArticle'
 import { LiptonArticle } from '@/components/LiptonArticle'
+import { ShoreUpArticle } from '@/components/ShoreUpArticle'
 import {
   CASE_STUDIES,
   HEYSO_SECTIONS,
   LIPTON_SECTIONS,
+  SHOREUP_SECTIONS,
   TMU_SECTIONS,
   getCaseStudy,
 } from '@/data/caseStudies'
@@ -20,6 +22,7 @@ const ARTICLES = {
   heyso: { Article: HeySoArticle, sections: HEYSO_SECTIONS, ids: HEYSO_SECTIONS.map((s) => s.id) },
   'tmu-kpop': { Article: TmuKpopArticle, sections: TMU_SECTIONS, ids: TMU_SECTIONS.map((s) => s.id) },
   lipton: { Article: LiptonArticle, sections: LIPTON_SECTIONS, ids: LIPTON_SECTIONS.map((s) => s.id) },
+  'shore-up': { Article: ShoreUpArticle, sections: SHOREUP_SECTIONS, ids: SHOREUP_SECTIONS.map((s) => s.id) },
 }
 
 /** The case study that follows this one, wrapping at the end of the list.

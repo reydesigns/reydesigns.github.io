@@ -136,8 +136,8 @@ function probe() {
   const csStrip = csNavs.find((n) => !n.classList.contains('fixed'))
   const skip = document.querySelector('[data-skip-target]')
 
-  // four case studies (links; Shore-Up an <article>) and two toys, the Vinyl
-  // Player and Binary Bloom (each an <article> + button)
+  // four case studies (links) and two toys, the Vinyl Player and Binary
+  // Bloom (each an <article> + button)
   const cards = [...document.querySelectorAll('[data-card]')].filter(visible).map((c) => c.getBoundingClientRect().toJSON())
 
   return {
@@ -208,7 +208,7 @@ async function sizing() {
           if (!phone && top.linksBtnShown) problems.push('"links" button shown above phone width')
           if (phone && top.minNavItem < 44) warn.push(`nav item ${round(top.minNavItem)}px < 44`)
         }
-        if (route.startsWith('/works/') && route !== '/works/shore-up') {
+        if (route.startsWith('/works/')) {
           const lg = w >= 1024
           if (lg && (!top.csPanel || top.csStrip)) problems.push('expected side panel, not strip')
           if (!lg && (top.csPanel || !top.csStrip)) problems.push('expected strip, not side panel')

@@ -62,7 +62,7 @@ await part('cards', async (browser) => {
   check('six cards', cards.length === 6, cards.length)
   check('cards are 16:9', cards.every((c) => Math.abs(c.ratio - 16 / 9) < 0.02), cards.map((c) => c.ratio.toFixed(3)).join(' '))
   check('descriptions hidden by default', cards.filter((c) => c.tag === 'A').every((c) => c.blurb === 0))
-  check('Shore-Up is not a link', !!(await page.$('article[data-card][aria-label^="Shore-Up"]')))
+  check('Shore-Up is a case study link', !!(await page.$('a[data-card][href$="/works/shore-up"]')))
   await page.hover('a[data-card][href$="/heyso"]')
   // It fades up a beat after the card is reached (75ms delay + 450ms), but
   // just after load the fade can start late, so wait for it rather than a
@@ -72,9 +72,18 @@ await part('cards', async (browser) => {
     .then(() => true, () => false)
   check('description on hover', shown)
   await shot(page, 'cards-hover')
-  await page.click('article[data-card][aria-label^="Shore-Up"]')
-  await sleep(400)
-  check('Shore-Up opens nothing', !(await isOpen(page)))
+  await page.$eval('a[data-card][href$="/works/shore-up"]', (a) => a.scrollIntoView({ block: 'center' }))
+  await sleep(300)
+  await page.click('a[data-card][href$="/works/shore-up"]')
+  await sleep(1200)
+  const su = await page.evaluate(() => ({
+    title: document.querySelector('dialog.cs-modal article h1')?.textContent,
+    goals: document.querySelectorAll('dialog.cs-modal .su-goal').length,
+    demo: !!document.querySelector('dialog.cs-modal .su-demo video'),
+  }))
+  check('Shore-Up opens its study', (await isOpen(page)) && su.title === 'Shore-Up' && su.goals === 4 && su.demo, JSON.stringify(su))
+  await page.keyboard.press('Escape')
+  await sleep(500)
 })
 
 /* ---- desktop, from / ------------------------------------------------------ */
