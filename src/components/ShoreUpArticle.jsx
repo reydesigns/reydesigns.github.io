@@ -103,7 +103,7 @@ export function ShoreUpArticle({ next }) {
           cells={[
             ['My role', ['UX Researcher', 'UI Designer', 'Brand Designer']],
             ['Duration', ['1 Day Sprint', '6 Hours']],
-            ['Team', ['Me', 'Daniel Chahine']],
+            ['Team', ['Me', 'Daniel']],
             ['Tools', ['Figma', 'Claude Code', 'Google Slides']],
           ]}
         />
