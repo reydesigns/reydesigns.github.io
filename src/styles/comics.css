@@ -270,15 +270,16 @@ button.ch-comic:focus-visible {
 .ch-frame .ch-rack {
   --ch-u: min(40cqi / var(--ch-w), 53cqi / var(--ch-h));
 }
-/* Binary Bloom's hint: one quiet line of capitals. */
+/* The hint: one small line of capitals in a light grey, quieter than
+   Binary Bloom's (client). */
 .ch-hint {
   margin: 0;
-  font-size: clamp(0.625rem, 1.05cqi, 0.8125rem);
+  font-size: clamp(0.5625rem, 0.8cqi, 0.6875rem);
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.4;
   text-transform: uppercase;
-  color: rgb(0 0 0 / 0.55);
+  color: var(--ch-hint);
 }
 
 /* --- the stand: the comic out of the rack, in full ----------------------- */
@@ -404,34 +405,31 @@ button.ch-comic:focus-visible {
   margin-top: 0.9cqi;
 }
 
-/* --- flights: a comic on its way across the sheet ------------------------ */
+/* --- flights: a comic on its way across the window ------------------------
+   The layer is fixed over the whole screen, in the dialog but outside the
+   window, so a comic dragged past the window's edge is still drawn. */
 .ch-flyers {
-  position: absolute;
-  z-index: 30;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
+  position: fixed;
+  z-index: 1;
+  inset: 0;
   overflow: visible;
   pointer-events: none;
 }
 .ch-flyer {
   position: absolute;
   display: block;
-  /* Preflight caps an image at its container's width, and the layer has
-     none. */
+  /* Preflight caps an image at its container's width. */
   max-width: none;
   object-fit: cover;
-  border-radius: 0.3cqi;
-  box-shadow: 0 1cqi 2.2cqi -0.6cqi rgb(0 0 0 / 0.5);
-  transform-origin: 0 0;
+  border-radius: 4px;
+  box-shadow: 0 0.75rem 1.6rem -0.5rem rgb(0 0 0 / 0.5);
+  transform-origin: 50% 50%;
   will-change: transform;
   pointer-events: none;
 }
-/* In the hand: tipped about its middle, and further off the page. */
+/* In the hand: further off the page. */
 .ch-flyer--held {
-  transform-origin: 50% 50%;
-  box-shadow: 0 1.6cqi 3cqi -0.6cqi rgb(0 0 0 / 0.55);
+  box-shadow: 0 1.2rem 2.2rem -0.5rem rgb(0 0 0 / 0.55);
 }
 
 /* A portrait screen (a tablet held upright) has height to spare: the sheet
@@ -515,8 +513,5 @@ button.ch-comic:focus-visible {
   /* A finger on the rack scrolls it; a tap picks. */
   .ch-comic {
     touch-action: manipulation;
-  }
-  .ch-flyer {
-    border-radius: 3px;
   }
 }

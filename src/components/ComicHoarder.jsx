@@ -20,10 +20,11 @@ import '@/styles/comics.css'
    clipped to the wire under it. A whole run stands as one comic with a few
    more copies peeking out behind.
 
-   Clicking a comic, or dragging it off the rack and letting go, pulls it out
-   of its pocket and flies it over to the right, where it shows in full: who
+   Clicking a comic, or dragging it over to the right and letting go there,
+   pulls it out of its pocket and flies it over, where it shows in full: who
    it is, the series and issue, a "Completed" tag and the client's rating in
-   five pixel stars. The one that was there flies back to its pocket. The
+   five pixel stars. The one that was there flies back to its pocket, as does
+   one let go of anywhere but the stand (over the rack, or off the window). The
    window opens with the first comic already out. On a phone the comic on
    show sits in a strip across the top that stays put while the rack
    scrolls under it; a tap is the only way to pick one there (a drag on a
@@ -43,8 +44,10 @@ const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 // A comic's flight from the rack to the stand (and back).
 const FLY_MS = 560
 const FLY_EASE = 'cubic-bezier(0.3, 0.7, 0.2, 1)'
-// How far the pointer moves before a press on a comic becomes a drag.
+// How far the pointer moves before a press on a comic becomes a drag, and
+// how much bigger a comic in hand is, lifted off the rack.
 const DRAG_START = 6
+const HELD = 1.06
 
 /* Every comic in rack order: by character, then as listed. */
 const COMICS = STACKS.flatMap((stack) =>
@@ -210,12 +213,11 @@ function RackComic({ comic, index, out, decorative, imgRef, handlers }) {
  * The wire rack. In the window (`decorative` false) every comic is a button
  * and `shown` is the one out of its pocket; on the card it is all picture.
  */
-function Rack({ decorative = false, shown, rackRef, slotRefs, handlers }) {
+function Rack({ decorative = false, shown, slotRefs, handlers }) {
   const tiers = Array.from({ length: TIERS }, (_, t) => COMICS.slice(t * COLUMNS, t * COLUMNS + COLUMNS))
   const Sign = decorative ? 'span' : 'h2'
   return (
     <div
-      ref={rackRef}
       className="ch-rack"
       style={{
         '--ch-w': RACK_W,
@@ -269,8 +271,8 @@ function Rack({ decorative = false, shown, rackRef, slotRefs, handlers }) {
 function Stand({ comic, coverRef, standRef, hint }) {
   const issues = comic.issues ?? 1
   return (
-    <section className="ch-display" aria-labelledby="ch-display-title">
-      <div ref={standRef} className="ch-display__stage" data-hint={hint}>
+    <section ref={standRef} className="ch-display" aria-labelledby="ch-display-title">
+      <div className="ch-display__stage" data-hint={hint}>
         <img
           ref={coverRef}
           key={comic.id}
@@ -315,21 +317,20 @@ export function ComicThumb() {
 /* --- flights ------------------------------------------------------------- */
 
 /**
- * Flies a copy of a cover from one box on screen to another, in a layer over
- * the whole sheet, and resolves when it lands. It travels by transform alone:
- * placed at its destination and started from where it was.
+ * Flies a copy of a cover from one box on screen to another and resolves
+ * when it lands. The copies live in a layer fixed over the whole screen, a
+ * child of the dialog rather than of the window, so nothing clips one that
+ * strays past the window's edge, and boxes on screen are its coordinates as
+ * they are. A copy travels by transform alone, about its centre: placed at
+ * its destination and started from where it was, at the tilt it had.
  */
-function useFlights(frameRef, layerRef) {
-  const place = useCallback(
-    (el, box) => {
-      const frame = frameRef.current.getBoundingClientRect()
-      el.style.left = `${box.left - frame.left + frameRef.current.scrollLeft}px`
-      el.style.top = `${box.top - frame.top + frameRef.current.scrollTop}px`
-      el.style.width = `${box.width}px`
-      el.style.height = `${box.height}px`
-    },
-    [frameRef],
-  )
+function useFlights(layerRef) {
+  const place = useCallback((el, box) => {
+    el.style.left = `${box.left}px`
+    el.style.top = `${box.top}px`
+    el.style.width = `${box.width}px`
+    el.style.height = `${box.height}px`
+  }, [])
 
   const make = useCallback(
     (src, box) => {
@@ -346,17 +347,19 @@ function useFlights(frameRef, layerRef) {
   )
 
   const fly = useCallback(
-    (src, from, to, { el = null, back = false } = {}) => {
+    (src, from, to, { el = null, back = false, tilt = 0 } = {}) => {
       const flyer = el ?? make(src, to)
       place(flyer, to)
-      flyer.style.transform = ''
-      const dx = from.left - to.left
-      const dy = from.top - to.top
+      const dx = from.left + from.width / 2 - (to.left + to.width / 2)
+      const dy = from.top + from.height / 2 - (to.top + to.height / 2)
       const sx = from.width / to.width
       const sy = from.height / to.height
-      const start = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`
+      const start = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(${tilt}deg)`
       // Half way it rides a little high, tipped, as a comic swung across.
       const mid = `translate(${dx / 2}px, ${dy / 2 - Math.min(80, Math.abs(dx) * 0.12)}px) scale(${(sx + 1) / 2}, ${(sy + 1) / 2}) rotate(${back ? 4 : -4}deg)`
+      // Already where the flight starts, so it never shows a frame at its
+      // destination first.
+      flyer.style.transform = start
       const anim = flyer.animate(
         [{ transform: start }, { transform: mid, offset: 0.45 }, { transform: 'none' }],
         { duration: FLY_MS, easing: FLY_EASE },
@@ -380,9 +383,7 @@ const within = (box, x, y) => box && x >= box.left && x <= box.right && y >= box
 export function ComicModal({ open, onClose, returnFocus }) {
   const ref = useRef(null)
   const windowRef = useRef(null)
-  const frameRef = useRef(null)
   const layerRef = useRef(null)
-  const rackRef = useRef(null)
   const standRef = useRef(null)
   const coverRef = useRef(null)
   const slotRefs = useRef(new Map())
@@ -400,7 +401,7 @@ export function ComicModal({ open, onClose, returnFocus }) {
   const phone = !useMediaQuery(SM, true)
   const canHover = useMediaQuery(HOVER, true)
   const reduced = useReducedMotion()
-  const { fly, make } = useFlights(frameRef, layerRef)
+  const { fly, make } = useFlights(layerRef)
 
   useEffect(() => {
     const dialog = ref.current
@@ -435,7 +436,7 @@ export function ComicModal({ open, onClose, returnFocus }) {
   /** Takes a comic out of the rack onto the stand; `from` is where its
    *  flight starts (its pocket, or where a drag let go of it). */
   const pick = useCallback(
-    (id, from, flyer) => {
+    (id, from, flyer, tilt = 0) => {
       const prev = shownRef.current
       if (id === prev) {
         flyer?.remove()
@@ -451,7 +452,7 @@ export function ComicModal({ open, onClose, returnFocus }) {
       }
       const landing = coverRef.current
       const showIt = hold(landing)
-      fly(byId(id).cover, start, landing.getBoundingClientRect(), { el: flyer }).then(showIt)
+      fly(byId(id).cover, start, landing.getBoundingClientRect(), { el: flyer, tilt }).then(showIt)
       const pocket = slotRefs.current.get(prev)
       if (pocket && prevBox) {
         const backIt = hold(pocket)
@@ -490,8 +491,10 @@ export function ComicModal({ open, onClose, returnFocus }) {
         d.release = hold(slotRefs.current.get(d.id))
         setDragging('drag')
       }
-      const tilt = Math.max(-8, Math.min(8, dx / 30))
-      d.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${tilt}deg) scale(1.06)`
+      d.dx = dx
+      d.dy = dy
+      d.tilt = Math.max(-8, Math.min(8, dx / 30))
+      d.el.style.transform = `translate(${dx}px, ${dy}px) rotate(${d.tilt}deg) scale(${HELD})`
       const over = within(standRef.current?.getBoundingClientRect(), e.clientX, e.clientY)
       setDragging(over ? 'over' : 'drag')
     },
@@ -510,24 +513,34 @@ export function ComicModal({ open, onClose, returnFocus }) {
         suppressClick.current = false
       }, 0)
       setDragging(null)
-      const held = d.el.getBoundingClientRect()
+      // The comic as it is in the hand, untilted: its pocket's box moved by
+      // the drag and grown by the lift. The flight starts from there, at the
+      // same tilt, so letting go never jumps.
+      const { box, tilt } = d
+      const held = {
+        left: box.left + d.dx - (box.width * (HELD - 1)) / 2,
+        top: box.top + d.dy - (box.height * (HELD - 1)) / 2,
+        width: box.width * HELD,
+        height: box.height * HELD,
+      }
       d.el.classList.remove('ch-flyer--held')
-      const offRack = !cancelled && !within(rackRef.current?.getBoundingClientRect(), e.clientX, e.clientY)
-      if (offRack) {
-        // The pocket stays empty: the comic is out now.
+      // Let go over the stand (the right of the window; a phone's strip):
+      // it is the one on show now, and its pocket stays empty.
+      const onStand = !cancelled && within(standRef.current?.getBoundingClientRect(), e.clientX, e.clientY)
+      if (onStand) {
         d.release()
-        pick(d.id, held, reduced ? null : d.el)
+        pick(d.id, held, reduced ? null : d.el, tilt)
         if (reduced) d.el.remove()
         return
       }
-      // Let go over the rack: it goes back where it was.
+      // Anywhere else, over the rack or off the window: back where it was.
       const pocket = slotRefs.current.get(d.id)
       if (reduced || !pocket) {
         d.el.remove()
         d.release()
         return
       }
-      fly(byId(d.id).cover, held, pocket.getBoundingClientRect(), { el: d.el, back: true }).then(d.release)
+      fly(byId(d.id).cover, held, pocket.getBoundingClientRect(), { el: d.el, back: true, tilt }).then(d.release)
     },
     [fly, pick, reduced],
   )
@@ -628,15 +641,17 @@ export function ComicModal({ open, onClose, returnFocus }) {
             )}
           </div>
         </div>
-        <div ref={frameRef} className="ch-frame" data-dragging={dragging ?? undefined}>
+        <div className="ch-frame" data-dragging={dragging ?? undefined}>
           <div className="ch-shelf">
-            <Rack shown={shown} rackRef={rackRef} slotRefs={slotRefs} handlers={handlers} />
-            <p className="ch-hint">{canHover ? 'Click a comic, or drag it off the rack' : 'Tap a comic to take it out'}</p>
+            <Rack shown={shown} slotRefs={slotRefs} handlers={handlers} />
+            <p className="ch-hint">
+              {`${canHover ? 'Click' : 'Tap'} a comic${phone ? ' to take it out' : ', or drag it to the right'}`}
+            </p>
           </div>
           <Stand comic={comic} coverRef={coverRef} standRef={standRef} hint="Drop it here" />
-          <div ref={layerRef} className="ch-flyers" aria-hidden="true" />
         </div>
       </div>
+      <div ref={layerRef} className="ch-flyers" aria-hidden="true" />
     </dialog>
   )
 }

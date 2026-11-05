@@ -174,6 +174,56 @@ const browser = await launch({ gpu: true })
   const mj = await page.evaluate((s) => getComputedStyle(document.querySelector(`${s} img`)).visibility, COMIC('mary-jane-0'))
   check('let go over the rack, it goes back to its pocket', still.title === 'Nightwing (2016)' && mj === 'visible' && still.flyers === 0, JSON.stringify({ ...still, mj }))
 
+  // Out past the window's edge, the comic in hand stays in sight: nothing
+  // round it clips it. Letting go there is not a drop on the stand; it goes
+  // back. And letting go never makes it jump: the flight starts exactly
+  // where the comic in hand was.
+  {
+    const win = await (await page.$('.ch-window')).boundingBox()
+    const c = await (await page.$(COMIC('mary-jane-0'))).boundingBox()
+    const x0 = c.x + c.width / 2
+    const y0 = c.y + c.height * 0.2
+    await page.mouse.move(x0, y0)
+    await page.mouse.down()
+    const tx = win.x - 60
+    const ty = win.y + win.height - 20
+    for (let k = 1; k <= 16; k += 1) {
+      await page.mouse.move(x0 + ((tx - x0) * k) / 16, y0 + ((ty - y0) * k) / 16)
+      await sleep(16)
+    }
+    const out = await page.evaluate(() => {
+      const g = document.querySelector('.ch-flyer--held')
+      const w = document.querySelector('.ch-window').getBoundingClientRect()
+      const r = g?.getBoundingClientRect()
+      // Every box the comic sits in, up to the dialog, that would clip it.
+      const clips = []
+      for (let el = g?.parentElement; el && el.tagName !== 'DIALOG'; el = el.parentElement) {
+        if (getComputedStyle(el).overflow !== 'visible') clips.push(el.className)
+      }
+      return { past: !!r && r.left < w.left, clips, box: r && [r.left, r.top, r.width, r.height].map(Math.round) }
+    })
+    check('the comic in hand stays in sight past the window\'s edge', out.past && out.clips.length === 0, JSON.stringify(out))
+    // The comic as drawn: its centre, its width on screen and its tilt.
+    const drawn = () =>
+      page.evaluate(() => {
+        const f = document.querySelector('.ch-flyer')
+        if (!f) return null
+        const m = new DOMMatrix(getComputedStyle(f).transform)
+        const r = f.getBoundingClientRect()
+        return [r.left + r.width / 2, r.top + r.height / 2, f.offsetWidth * Math.hypot(m.a, m.b), (Math.atan2(m.b, m.a) * 180) / Math.PI]
+      })
+    const before = await drawn()
+    await page.mouse.up()
+    const after = await drawn()
+    const jump = after ? before.map((v, k) => Math.abs(v - after[k])) : null
+    check('letting go does not make it jump', !!jump && jump[0] < 4 && jump[1] < 4 && jump[2] < 4 && jump[3] < 1.5,
+      jump ? `centre ${Math.round(jump[0])},${Math.round(jump[1])}px, width ${Math.round(jump[2])}px, tilt ${jump[3].toFixed(1)}deg` : 'no flyer')
+    await sleep(900)
+    const back = await stand(page)
+    const mjShown = await page.evaluate((s) => getComputedStyle(document.querySelector(`${s} img`)).visibility, COMIC('mary-jane-0'))
+    check('let go outside the window, it goes back to its pocket', back.title === 'Nightwing (2016)' && mjShown === 'visible' && back.flyers === 0, JSON.stringify({ ...back, mjShown }))
+  }
+
   // the keyboard
   await page.focus(COMIC('miles-morales-0'))
   await page.keyboard.press('Enter')
