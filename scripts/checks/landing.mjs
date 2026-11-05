@@ -92,8 +92,11 @@ try {
   check('no dot', status?.dot === false)
 
   /* ---- desktop: two screens and the glide ------------------------------ */
+  // The hero, then the grid, which runs past a screen of its own now that it
+  // has four rows (the Comic Hoarder under the Vinyl Player): 3.02 at
+  // 1728x1117. A loader screen back in the scroll would add a whole one.
   const doc = await page.evaluate(() => document.documentElement.scrollHeight / innerHeight)
-  check('two screens', doc < 2.6, doc.toFixed(2))
+  check('hero and grid, no extra screen', doc < 3.3, doc.toFixed(2))
   check('no loader screen', !(await page.$('[data-stage="loader"]')))
 
   const worksTopRatio = await page.evaluate(worksTop)
@@ -163,12 +166,12 @@ try {
   check('phone: nav says works at the grid', await navSaysWorks(phone))
   const clear = await phone.evaluate(() => {
     const pill = document.querySelector('nav[aria-label="Sections"]').getBoundingClientRect()
-    const cards = [...document.querySelectorAll('[data-stage="works"] li')]
+    const cards = [...document.querySelectorAll('[data-stage="works"] [data-card]')]
     const last = cards.at(-1)?.getBoundingClientRect()
     const foot = document.querySelector('footer').getBoundingClientRect()
     return { pillTop: pill.top, lastBottom: last?.bottom, footBottom: foot.bottom, cards: cards.length }
   })
-  check('phone: six cards', clear.cards === 6, clear.cards)
+  check('phone: seven cards', clear.cards === 7, clear.cards)
   check('phone: last card above the pill', clear.lastBottom != null && clear.lastBottom <= clear.pillTop,
     `card bottom ${Math.round(clear.lastBottom)} pill top ${Math.round(clear.pillTop)}`)
   check('phone: footer on screen at the end', clear.footBottom <= 844 + 1, Math.round(clear.footBottom))

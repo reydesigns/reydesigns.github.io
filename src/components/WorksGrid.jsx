@@ -3,13 +3,15 @@ import { WorkCard } from './WorkCard'
 import { useOpenCaseStudy } from './CaseStudyModal'
 import { VinylPlayerModal, VinylThumb, prepareVinylAudio } from './VinylPlayerModal'
 import { FlowerModal, FlowerThumb } from './FlowerGenerator'
+import { ComicModal, ComicThumb } from './ComicHoarder'
 import { WORKS_GRID } from '@/data/caseStudies'
 import { loadCaseStudy } from '@/lib/caseStudyChunk'
 
 /* ---------------------------------------------------------------------------
    The two-column card grid on its own: no Layout, no nav, no page chrome.
    (WORKS_GRID: the four case studies in two rows, then the two toys, the
-   Vinyl Player and Binary Bloom, side by side in a third.)
+   Vinyl Player and Binary Bloom, side by side in a third, and the Comic
+   Hoarder under the Vinyl Player in a fourth.)
 
    It is rendered twice: as the second screen of the landing page (under the
    hero, on every width), and as the whole of the `/works` route. Both have to
@@ -69,6 +71,15 @@ export function WorksGrid({ className = '', ...rest }) {
   }, [])
   const closeFlowers = useCallback(() => setFlowersOpen(false), [])
 
+  // And the Comic Hoarder.
+  const [comicsOpen, setComicsOpen] = useState(false)
+  const comicsCard = useRef(null)
+  const openComics = useCallback((event) => {
+    comicsCard.current = event.currentTarget
+    setComicsOpen(true)
+  }, [])
+  const closeComics = useCallback(() => setComicsOpen(false), [])
+
   const onClick = useCallback(
     (event) => {
       // Anything other than a plain primary click belongs to the browser.
@@ -114,7 +125,13 @@ export function WorksGrid({ className = '', ...rest }) {
             {study.slug === 'vinyl-player' ? (
               <WorkCard study={study} thumbnail={<VinylThumb />} onOpen={openVinyl} />
             ) : study.slug === 'binary-bloom' ? (
-              <WorkCard study={study} thumbnail={<FlowerThumb paused={flowersOpen || vinylOpen} />} onOpen={openFlowers} />
+              <WorkCard
+                study={study}
+                thumbnail={<FlowerThumb paused={flowersOpen || vinylOpen || comicsOpen} />}
+                onOpen={openFlowers}
+              />
+            ) : study.slug === 'comic-hoarder' ? (
+              <WorkCard study={study} thumbnail={<ComicThumb />} onOpen={openComics} />
             ) : (
               <WorkCard study={study} />
             )}
@@ -123,6 +140,7 @@ export function WorksGrid({ className = '', ...rest }) {
       </ul>
       <VinylPlayerModal open={vinylOpen} onClose={closeVinyl} returnFocus={vinylCard} />
       <FlowerModal open={flowersOpen} onClose={closeFlowers} returnFocus={flowersCard} />
+      <ComicModal open={comicsOpen} onClose={closeComics} returnFocus={comicsCard} />
     </section>
   )
 }

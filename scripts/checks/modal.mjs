@@ -57,9 +57,9 @@ await part('cards', async (browser) => {
       // own contents), not inside it.
       blurb: el.nextElementSibling?.matches('[data-card-blurb]') ? Number(getComputedStyle(el.nextElementSibling).opacity) : null,
     })))
-  // Four studies and two toys, the Vinyl Player and Binary Bloom (each opens
-  // its own pop-up, not a study).
-  check('six cards', cards.length === 6, cards.length)
+  // Four studies and three toys, the Vinyl Player, Binary Bloom and the
+  // Comic Hoarder (each opens its own pop-up, not a study).
+  check('seven cards', cards.length === 7, cards.length)
   check('cards are 16:9', cards.every((c) => Math.abs(c.ratio - 16 / 9) < 0.02), cards.map((c) => c.ratio.toFixed(3)).join(' '))
   check('descriptions hidden by default', cards.filter((c) => c.tag === 'A').every((c) => c.blurb === 0))
   check('Shore-Up is a case study link', !!(await page.$('a[data-card][href$="/works/shore-up"]')))

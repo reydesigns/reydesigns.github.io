@@ -100,7 +100,8 @@ const browser = await launch({ gpu: true })
   const order = await page.evaluate(() =>
     [...document.querySelectorAll('[data-card-name]')].map((n) => n.textContent.trim()),
   )
-  check('card sits beside the Vinyl Player, under the case studies', order.at(-1) === 'Binary Bloom' && order.at(-2) === 'Vinyl Player' && order.at(-3) === 'Shore-Up', order.join(' | '))
+  const at = order.indexOf('Binary Bloom')
+  check('card sits beside the Vinyl Player, under the case studies', at > 1 && order[at - 1] === 'Vinyl Player' && order[at - 2] === 'Shore-Up', order.join(' | '))
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)

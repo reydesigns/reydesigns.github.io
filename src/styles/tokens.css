@@ -160,6 +160,14 @@
   /* The popup's header is Pixelta at 40px. */
   --fz-pop-title: 2.5rem;
 
+  /* --- Comic Hoarder (comics.css): the black wire of the newsstand rack (a
+     true near-black, not the burgundy ink), and the white of its sign and
+     the tags clipped to it (17:1 against each other). ------------------- */
+  --ch-rack: #151314;
+  --ch-sign: #ffffff;
+  /* The Works card's wall: a light lime, warmed towards yellow. */
+  --ch-card-wall: #e6ecb4;
+
   /* --- Terminal (Me page): a Python REPL made of frosted glass, a
      translucent white pane over two soft glows (terminal.css), with ink text
      and syntax colours dark enough to read on it. ------------------------- */

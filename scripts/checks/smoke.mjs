@@ -136,8 +136,8 @@ function probe() {
   const csStrip = csNavs.find((n) => !n.classList.contains('fixed'))
   const skip = document.querySelector('[data-skip-target]')
 
-  // four case studies (links) and two toys, the Vinyl Player and Binary
-  // Bloom (each an <article> + button)
+  // four case studies (links) and three toys, the Vinyl Player, Binary
+  // Bloom and the Comic Hoarder (each an <article> + button)
   const cards = [...document.querySelectorAll('[data-card]')].filter(visible).map((c) => c.getBoundingClientRect().toJSON())
 
   return {
@@ -219,8 +219,8 @@ async function sizing() {
           const c = top.cards
           const cols = new Set(c.map((r) => round(r.left))).size
           const want = w >= 1024 ? 2 : 1
-          // four studies and two toys (the Vinyl Player and Binary Bloom)
-          if (c.length !== 6) problems.push(`${c.length} cards, want 6`)
+          // four studies and three toys (the Vinyl Player, Binary Bloom, Comic Hoarder)
+          if (c.length !== 7) problems.push(`${c.length} cards, want 7`)
           if (cols !== want) problems.push(`${cols} column(s), want ${want}`)
           if (want === 2 && c.length >= 2) {
             const gap = c[1].left - c[0].right

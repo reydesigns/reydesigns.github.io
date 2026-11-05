@@ -111,10 +111,24 @@ export const BINARY_BLOOM = {
   status: 'toy',
 }
 
+/**
+ * Comic Hoarder: the third toy. Its card opens a pop-up (ComicHoarder) of
+ * the client's comics on a black 4 x 4 rack, one stack per hero or villain,
+ * each comic rated out of five (src/data/comics.js). Kept out of
+ * CASE_STUDIES for the same reasons as the Vinyl Player.
+ */
+export const COMIC_HOARDER = {
+  slug: 'comic-hoarder',
+  title: 'Comic Hoarder',
+  metaTitle: 'Comic Hoarder',
+  status: 'toy',
+}
+
 /** The Works grid's cards, in order: the four case studies first (HeySo
- *  beside TMU K-POP, then Lipton beside Shore-Up), and under them the two
- *  toys side by side, the Vinyl Player and Binary Bloom. */
-export const WORKS_GRID = [...CASE_STUDIES, VINYL_PLAYER, BINARY_BLOOM]
+ *  beside TMU K-POP, then Lipton beside Shore-Up), under them the two toys
+ *  side by side, the Vinyl Player and Binary Bloom, and under the Vinyl
+ *  Player, the Comic Hoarder (client request). */
+export const WORKS_GRID = [...CASE_STUDIES, VINYL_PLAYER, BINARY_BLOOM, COMIC_HOARDER]
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)
 

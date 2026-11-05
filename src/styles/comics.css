@@ -1,0 +1,522 @@
+/* --- Comic Hoarder (ComicHoarder.jsx) -------------------------------------
+   The pop-up borrows the Vinyl Player's dialog (.vp-pop: size, backdrop,
+   open and close) and title bar (.vp-bar, .vp-dot), as Binary Bloom does;
+   the frame inside is its own. From 40rem it is one 16:10 sheet: the wire
+   rack on the left, the comic out of it on the right. On a phone it fills
+   the screen, the comic on show is a strip across the top that stays put,
+   and the rack scrolls under it.
+
+   The rack is drawn in one unit, --ch-u, so it scales as a whole; each place
+   it appears says how big a unit is (the window: what fits its column; the
+   card: a share of its height; a phone: what fits its width). Its size and
+   geometry in units come from ComicHoarder.jsx, which sets them on the rack:
+   --ch-w and --ch-h, the columns (--ch-cols), the side rails' room
+   (--ch-side), a pocket's width, a comic's size and where the lip wire
+   crosses each tier (--ch-lip). */
+
+.ch-rack {
+  position: relative;
+  flex: none;
+  width: calc(var(--ch-w) * var(--ch-u));
+  height: calc(var(--ch-h) * var(--ch-u));
+  user-select: none;
+}
+/* The wire: one near-black, round-ended, in rack units. */
+.ch-wire {
+  fill: none;
+  stroke: var(--ch-rack);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+}
+.ch-wire--thin {
+  stroke-width: 0.3;
+}
+.ch-rack__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* The sign across the top, a white board in a black frame, as on the
+   newsstand rack, with a pixel cat at each end. */
+.ch-sign {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: calc(var(--x) * var(--ch-u));
+  right: calc(var(--x) * var(--ch-u));
+  height: calc(var(--h) * var(--ch-u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--ch-u) * 1.1);
+  border: calc(var(--ch-u) * 0.34) solid var(--ch-rack);
+  border-radius: calc(var(--ch-u) * 0.35);
+  background: var(--ch-sign);
+  box-shadow: 0 calc(var(--ch-u) * 0.3) calc(var(--ch-u) * 0.8) rgb(0 0 0 / 0.22);
+}
+.ch-sign__text {
+  margin: 0;
+  font-size: calc(var(--ch-u) * 2.75);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.ch-sign__cat {
+  flex: none;
+  width: calc(var(--ch-u) * 2.3);
+  height: calc(var(--ch-u) * 2.3);
+  background: var(--color-ink);
+  -webkit-mask: url('../../Assets/brand/icons/nav-funzies.png') center / contain no-repeat;
+  mask: url('../../Assets/brand/icons/nav-funzies.png') center / contain no-repeat;
+}
+
+/* A tier of pockets. Each one down stands in front of the one above (the
+   rack steps out towards the reader), so it covers the bottom of its
+   comics. */
+.ch-tier {
+  position: absolute;
+  z-index: calc(var(--t) + 2);
+  top: calc(var(--top) * var(--ch-u));
+  left: calc(var(--ch-side) * var(--ch-u));
+  width: calc(var(--ch-cols) * var(--ch-pocket) * var(--ch-u));
+  height: calc(var(--ch-comic-h) * var(--ch-u));
+}
+.ch-tier__wire {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: calc(var(--ch-side) * var(--ch-u) * -1);
+  width: calc(var(--ch-w) * var(--ch-u));
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* A comic in its pocket. */
+.ch-comic {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: calc((var(--c) * var(--ch-pocket) + (var(--ch-pocket) - var(--ch-comic-w)) / 2) * var(--ch-u));
+  display: block;
+  width: calc(var(--ch-comic-w) * var(--ch-u));
+  height: calc(var(--ch-comic-h) * var(--ch-u));
+  padding: 0;
+  border: 0;
+  background: none;
+  touch-action: none;
+  transition: translate 260ms var(--ease-brand);
+}
+button.ch-comic {
+  cursor: grab;
+}
+.ch-comic__cover,
+.ch-comic__copy {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--ch-u) * 0.12);
+  box-shadow: 0 0 calc(var(--ch-u) * 0.45) rgb(0 0 0 / 0.32);
+}
+.ch-comic__cover {
+  object-fit: cover;
+  pointer-events: none;
+}
+/* A run's other copies, standing behind the front one and peeking out to
+   the side (and only a little up, clear of the tag above). */
+.ch-comic__copy {
+  background-size: cover;
+  translate: calc(var(--d) * var(--ch-u) * 0.5) calc(var(--d) * var(--ch-u) * -0.2);
+  filter: brightness(calc(1 - var(--d) * 0.2));
+}
+/* Reached for: the comic comes up out of its pocket. */
+@media (hover: hover) {
+  button.ch-comic:not([aria-pressed='true']):hover {
+    translate: 0 calc(var(--ch-u) * -1.7);
+  }
+}
+button.ch-comic:focus-visible {
+  translate: 0 calc(var(--ch-u) * -1.7);
+  outline: 2px solid var(--color-maroon);
+  outline-offset: 2px;
+}
+/* Out on the stand: the pocket is empty, its outline left in dashes down to
+   the lip. */
+.ch-comic[aria-pressed='true'] {
+  cursor: default;
+}
+.ch-comic[aria-pressed='true'] > * {
+  visibility: hidden;
+}
+.ch-comic[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(var(--ch-lip) * var(--ch-u));
+  border: calc(var(--ch-u) * 0.14) dashed color-mix(in srgb, var(--ch-rack) 35%, transparent);
+  border-bottom: 0;
+  border-radius: calc(var(--ch-u) * 0.2) calc(var(--ch-u) * 0.2) 0 0;
+}
+
+/* The character's name on a white tag clipped to the lip under each comic. */
+.ch-tag {
+  position: absolute;
+  z-index: 3;
+  top: calc((var(--ch-lip) - 0.75) * var(--ch-u));
+  left: calc((var(--c) + 0.5) * var(--ch-pocket) * var(--ch-u));
+  translate: -50% 0;
+  rotate: calc(var(--tilt) * 1.5deg);
+  padding: 0.3em 0.6em 0.25em;
+  border: calc(var(--ch-u) * 0.12) solid var(--ch-rack);
+  border-radius: calc(var(--ch-u) * 0.2);
+  background: var(--ch-sign);
+  box-shadow: 0 calc(var(--ch-u) * 0.1) calc(var(--ch-u) * 0.25) rgb(0 0 0 / 0.25);
+  font-size: max(7px, calc(var(--ch-u) * 0.92));
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ch-rack);
+  pointer-events: none;
+}
+
+/* --- the card ------------------------------------------------------------
+   The rack on its own, 92% of the card tall, on a plain wall of light,
+   warm lime (client). Hovering the card lifts the comics out of their
+   pockets, one after another. */
+.ch-card {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  background: var(--ch-card-wall);
+}
+.ch-card .ch-rack {
+  --ch-u: calc(92cqh / var(--ch-h));
+}
+.ch-card .ch-comic {
+  transition-delay: calc(var(--i) * 40ms);
+}
+@media (hover: hover) {
+  [data-card]:hover .ch-card .ch-comic {
+    translate: 0 calc(var(--ch-u) * -1.7);
+  }
+}
+[data-card]:has(:focus-visible) .ch-card .ch-comic {
+  translate: 0 calc(var(--ch-u) * -1.7);
+}
+/* A card too small for its tags to be read keeps the wire bare. */
+@container (max-height: 18rem) {
+  .ch-card .ch-tag {
+    display: none;
+  }
+}
+
+/* --- the window ---------------------------------------------------------- */
+.ch-window {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--window-shadow);
+  animation: vp-pop-in 320ms var(--ease-brand) both;
+}
+.vp-pop[data-closing] .ch-window {
+  animation: vp-pop-out 180ms ease-in both;
+}
+.ch-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  grid-template-areas: 'shelf panel';
+  width: 100%;
+  aspect-ratio: 1600 / 1000;
+  overflow: hidden;
+  background: var(--color-surface);
+  container-type: inline-size;
+}
+@media (min-width: 40rem) {
+  .vp-pop[data-size='full'] .ch-window {
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .vp-pop[data-size='full'] .ch-frame {
+    width: min(100%, (100dvh - var(--vp-bar-h)) * 1.6);
+    margin: auto;
+  }
+}
+.ch-shelf {
+  grid-area: shelf;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6cqi;
+  min-width: 0;
+  min-height: 0;
+  padding: 3cqi;
+}
+/* The rack takes what its column leaves it, across or down. */
+.ch-frame .ch-rack {
+  --ch-u: min(40cqi / var(--ch-w), 53cqi / var(--ch-h));
+}
+/* Binary Bloom's hint: one quiet line of capitals. */
+.ch-hint {
+  margin: 0;
+  font-size: clamp(0.625rem, 1.05cqi, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 0.55);
+}
+
+/* --- the stand: the comic out of the rack, in full ----------------------- */
+.ch-display {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2cqi;
+  min-width: 0;
+  min-height: 0;
+  padding: 3cqi;
+  border-left: 1px solid var(--fz-divider);
+  background: var(--color-surface);
+}
+/* Where a dragged comic lands: outlined while one is held, and burgundy
+   while it is over it. */
+.ch-display__stage {
+  position: relative;
+  padding: 1.2cqi;
+  border-radius: 0.8cqi;
+  outline: 2px dashed transparent;
+  outline-offset: -2px;
+  transition:
+    outline-color 160ms,
+    background-color 160ms;
+}
+.ch-frame[data-dragging] .ch-display__stage {
+  outline-color: color-mix(in srgb, var(--color-ink) 28%, transparent);
+}
+.ch-frame[data-dragging='over'] .ch-display__stage {
+  outline-color: var(--color-maroon);
+  background: color-mix(in srgb, var(--color-maroon) 6%, transparent);
+}
+.ch-display__stage::after {
+  content: attr(data-hint);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  padding: 0.5em 0.9em 0.45em;
+  border-radius: 999px;
+  background: var(--color-maroon);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-surface);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms;
+}
+.ch-frame[data-dragging] .ch-display__stage::after {
+  opacity: 1;
+}
+.ch-display__cover {
+  display: block;
+  width: auto;
+  height: 34cqi;
+  aspect-ratio: 360 / 554;
+  border-radius: 0.3cqi;
+  box-shadow:
+    0 1.2cqi 2.4cqi -0.8cqi rgb(0 0 0 / 0.45),
+    0 0 0 1px rgb(0 0 0 / 0.06);
+}
+.ch-display__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 42cqi;
+  text-align: center;
+}
+.ch-display__who {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+.ch-display__title {
+  margin: 0.3em 0 0;
+  font-size: clamp(1rem, 1.6cqi, 1.375rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+.ch-display__issue {
+  margin: 0.3em 0 0;
+  font-size: clamp(0.75rem, 1.05cqi, 0.9375rem);
+  line-height: 1.4;
+  color: var(--color-ink-muted);
+}
+/* "Completed": a burgundy tag, above the stars. */
+.ch-display__tag {
+  margin: 1.1cqi 0 0;
+  padding: 0.45em 0.75em 0.4em;
+  border-radius: 3px;
+  background: var(--color-maroon);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--color-surface);
+}
+/* Five pixel stars, burgundy where lit. */
+.ch-stars {
+  display: block;
+  height: auto;
+}
+.ch-stars__on {
+  fill: var(--color-maroon);
+}
+.ch-stars__off {
+  fill: color-mix(in srgb, var(--color-ink) 16%, transparent);
+}
+.ch-stars--big {
+  width: clamp(7rem, 14cqi, 10.5rem);
+  margin-top: 0.9cqi;
+}
+
+/* --- flights: a comic on its way across the sheet ------------------------ */
+.ch-flyers {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.ch-flyer {
+  position: absolute;
+  display: block;
+  /* Preflight caps an image at its container's width, and the layer has
+     none. */
+  max-width: none;
+  object-fit: cover;
+  border-radius: 0.3cqi;
+  box-shadow: 0 1cqi 2.2cqi -0.6cqi rgb(0 0 0 / 0.5);
+  transform-origin: 0 0;
+  will-change: transform;
+  pointer-events: none;
+}
+/* In the hand: tipped about its middle, and further off the page. */
+.ch-flyer--held {
+  transform-origin: 50% 50%;
+  box-shadow: 0 1.6cqi 3cqi -0.6cqi rgb(0 0 0 / 0.55);
+}
+
+/* A portrait screen (a tablet held upright) has height to spare: the sheet
+   goes square, the rack takes half of it and the comic on show grows. */
+@media (min-width: 40rem) and (max-aspect-ratio: 1/1) {
+  .ch-pop {
+    width: min(75rem, 100% - 2rem, 100dvh - 2rem - var(--vp-bar-h));
+  }
+  .ch-frame {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    aspect-ratio: 1;
+  }
+  .ch-frame .ch-rack {
+    --ch-u: min(44cqi / var(--ch-w), 86cqi / var(--ch-h));
+  }
+  .ch-display__cover {
+    height: 52cqi;
+  }
+  .vp-pop[data-size='full'] .ch-frame {
+    width: min(100%, 100dvh - var(--vp-bar-h));
+  }
+}
+
+/* --- a phone: the comic on show in a strip across the top, held there
+   while the rack, the width of the screen, scrolls under it. --- */
+@media not all and (min-width: 40rem) {
+  .ch-window {
+    height: 100%;
+  }
+  .ch-frame {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .ch-display {
+    order: -1;
+    position: sticky;
+    z-index: 10;
+    top: 0;
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-left: 0;
+    border-bottom: 1px solid var(--fz-divider);
+  }
+  .ch-display__stage {
+    flex: none;
+    padding: 0;
+  }
+  .ch-display__cover {
+    height: 9rem;
+    border-radius: 3px;
+  }
+  .ch-display__info {
+    align-items: flex-start;
+    min-width: 0;
+    max-width: none;
+    text-align: left;
+  }
+  .ch-display__tag {
+    margin-top: 0.6rem;
+  }
+  .ch-stars--big {
+    width: 6.5rem;
+    margin-top: 0.5rem;
+  }
+  .ch-shelf {
+    flex: none;
+    gap: 1rem;
+    padding: 1.5rem 1.25rem 2rem;
+  }
+  .ch-frame .ch-rack {
+    --ch-u: calc((100cqi - 2.5rem) / var(--ch-w));
+  }
+  /* A finger on the rack scrolls it; a tap picks. */
+  .ch-comic {
+    touch-action: manipulation;
+  }
+  .ch-flyer {
+    border-radius: 3px;
+  }
+}
