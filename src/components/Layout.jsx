@@ -63,31 +63,31 @@ function SkipLink() {
  * so the numbers cannot be written down anywhere. They are measured, and
  * re-measured on resize.
  *
- * `stickyHeader` is set by the landing page on wide viewports, where `/` is
+ * `worksScreen` is set by the landing page on wide viewports, where `/` is
  * the hero (exactly one screen) and then the works grid (one screen at least,
- * a little more where the big cards run past it), and the bar stays on screen
- * over the grid. Three things follow from the bar floating over content:
+ * a little more where the big cards run past it). The top bar is in flow and
+ * scrolls away with the hero like on every other page: it used to stay pinned
+ * over the grid on a solid band, and the client wanted it gone while scrolling.
+ * Two things follow from the grid being one screen:
  *
- *   * it is painted on --color-bg rather than left transparent, so cards pass
- *     behind it instead of showing through it;
  *   * the works screen is inset by the bar's height at the top and the footer's
- *     at the bottom, so its cards are centred in the space those two leave
- *     rather than running underneath either. Padding inside a
- *     `min-height: 100dvh` screen does not make the screen any taller, so the
- *     works screen still starts exactly one viewport down;
+ *     at the bottom, so its cards sit centred in the viewport, clear of the
+ *     footer, exactly where they sat when the bar was pinned above them.
+ *     Padding inside a `min-height: 100dvh` screen does not make the screen
+ *     any taller, so the works screen still starts exactly one viewport down;
  *   * the footer comes out of flow and pins to the bottom of the document. On
  *     `/` that is the bottom of the works screen, which is where it belongs —
  *     and being absolute it cannot add a third screen or shift the works screen
  *     off its 1x viewport offset, which is where the glide lands.
  *
  * Below 64rem the landing page leaves it off. There the grid is one column,
- * several screens long, so nothing is centred in a viewport: the bar scrolls
- * away with the hero, the works section takes no inset, and the footer is in
- * flow after the last card, padding itself past the fixed nav pill (Footer,
- * `--dock-clear`) so the cards and its row both come to rest above the pill.
- * That is the same document every other page is: footer in flow at the end.
+ * several screens long, so nothing is centred in a viewport: the works section
+ * takes no inset, and the footer is in flow after the last card, padding
+ * itself past the fixed nav pill (Footer, `--dock-clear`) so the cards and its
+ * row both come to rest above the pill. That is the same document every other
+ * page is: footer in flow at the end.
  */
-export function Layout({ children, className = '', stickyHeader = false }) {
+export function Layout({ children, className = '', worksScreen = false }) {
   const headerRef = useRef(null)
   const footerRef = useRef(null)
 
@@ -100,10 +100,7 @@ export function Layout({ children, className = '', stickyHeader = false }) {
       <SparkleGrid />
       <CustomCursor />
       <div className="layer-content flex min-h-dvh flex-col">
-        <div
-          ref={headerRef}
-          className={stickyHeader ? 'sticky top-0 z-30 bg-[var(--color-bg)]' : undefined}
-        >
+        <div ref={headerRef}>
           <TopBar />
         </div>
         <main
@@ -111,7 +108,7 @@ export function Layout({ children, className = '', stickyHeader = false }) {
           tabIndex={-1}
           className={
             'flex flex-1 flex-col ' +
-            (stickyHeader
+            (worksScreen
               ? '[&>[data-stage=works]]:pt-[var(--topbar-h)] ' +
                 '[&>[data-stage=works]]:pb-[var(--footer-h,3rem)]'
               : '')
@@ -119,7 +116,7 @@ export function Layout({ children, className = '', stickyHeader = false }) {
         >
           {children}
         </main>
-        <div ref={footerRef} className={stickyHeader ? 'absolute inset-x-0 bottom-0 z-20' : undefined}>
+        <div ref={footerRef} className={worksScreen ? 'absolute inset-x-0 bottom-0 z-20' : undefined}>
           <Footer />
         </div>
       </div>

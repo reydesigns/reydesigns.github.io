@@ -109,12 +109,12 @@ export function Landing() {
     [toWorks],
   )
 
-  // The top bar floats over the grid only where the grid is one screen: on a
-  // phone the cards run several screens long and the bar would just eat a
-  // slice of every one, so there it scrolls away like any other page (see
-  // Layout).
+  // Where the grid is one screen (wide), Layout centres it in the viewport and
+  // pins the footer under it; on a phone the cards run several screens long
+  // and the page is laid out like any other. The top bar scrolls away with the
+  // hero on every width (see Layout).
   return (
-    <Layout stickyHeader={wide}>
+    <Layout worksScreen={wide}>
       {/* ---- screen 1: the hero ------------------------------------------ */}
       <div className="screen-first flex shrink-0 flex-col">
         <section className="relative flex flex-1 flex-col justify-center overflow-x-clip px-[var(--page-gutter)] pb-[clamp(1rem,5vh,4rem)]">
@@ -167,10 +167,10 @@ export function Landing() {
                     onTap={self.onTap}
                     className="pointer-events-auto absolute inset-[-25%]"
                   >
-                    {/* From lg the top bar is sticky and opaque, and the
-                        portrait rides high enough that a bubble above her hair
-                        would sit under it, so there it comes down to overlap
-                        the top of her hair instead. */}
+                    {/* From lg the portrait rides high enough that a bubble
+                        above her hair would run into the top bar's links, so
+                        there it comes down to overlap the top of her hair
+                        instead. */}
                     <SpeechBubble
                       open={self.open}
                       text={self.text}
