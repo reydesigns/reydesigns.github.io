@@ -4,18 +4,20 @@
  *   node scripts/checks/comics.mjs            (dev server on :5173)
  *   SHOTS=/some/dir node scripts/checks/comics.mjs   also saves screenshots
  *
- * Desktop: the card sits directly under the Vinyl Player and shows the wire
- * rack with every cover loaded. A click opens the pop-up: the rack on the
- * left under its "Comic Hoarder" sign (the window's title), one pocket per
- * comic in character order with the character on a tag under each, each
- * tier in front of the one above; on the right the first comic, out of its
+ * Desktop: the card, My Comic Collection, sits directly under the Vinyl
+ * Player and shows a clean wire rack (no sign) of its first three tiers with
+ * every cover loaded. A click opens the pop-up: the rack on the left under
+ * its "Comic Hoarder" sign (the window's title, no cats), one pocket per
+ * comic in character order with the character on a black tag under each,
+ * each tier in front of the one above, the column scrolling when the rack
+ * is taller than the window; on the right the first comic, out of its
  * pocket, in full, with a "Completed" tag above five pixel stars. Clicking
  * another flies it over (a flyer crosses the sheet) and flies the last one
  * back; dragging one onto the stand does the same, and letting go of one
  * over the rack puts it back. Enter picks too. Every comic shows. Green
  * maximizes; Escape closes and focus goes back to the card. Then a phone
  * (the comic on show is a strip that stays at the top while the rack
- * scrolls; a tap picks) and reduced motion (no flights).
+ * scrolls; a tap picks; no hint) and reduced motion (no flights).
  */
 import { launch, openPage, sleep, check, done } from '../lib/browser.mjs'
 
@@ -25,6 +27,23 @@ const shot = async (page, name) => SHOTS && page.screenshot({ path: `${SHOTS}/co
 const CARD = '[data-card]:has(.ch-card)'
 const COMIC = (id) => `.ch-frame button.ch-comic[data-comic="${id}"]`
 const isOpen = (page) => page.evaluate(() => !!document.querySelector('dialog.ch-pop')?.open)
+
+/* The rack, in order (src/data/comics.js): each character and how many comics. */
+const STACKS = [
+  ['spider-man', 'Spider-Man', 5],
+  ['black-cat', 'Black Cat', 1],
+  ['mary-jane', 'Mary Jane', 1],
+  ['miles-morales', 'Miles Morales', 1],
+  ['nightwing', 'Nightwing', 4],
+  ['batman', 'Batman', 8],
+  ['daredevil', 'Daredevil', 3],
+  ['scarlet-witch', 'Scarlet Witch', 3],
+  ['thanos', 'Thanos', 3],
+]
+const ORDER = STACKS.flatMap(([key, , n]) => Array(n).fill(key))
+const TAGS = STACKS.flatMap(([, name, n]) => Array(n).fill(name))
+const COUNT = ORDER.length
+const TIERS = Math.max(3, Math.ceil(COUNT / 3))
 
 /** The comic on the stand, and which pocket is empty. */
 const stand = (page) =>
@@ -76,7 +95,7 @@ const browser = await launch({ gpu: true })
   const place = await page.evaluate(() => {
     const name = (t) => [...document.querySelectorAll('[data-card-name]')].find((n) => n.textContent === t)?.closest('li')
     const v = name('Vinyl Player')?.getBoundingClientRect()
-    const c = name('Comic Hoarder')
+    const c = name('My Comic Collection')
     const cb = c?.getBoundingClientRect()
     return v && cb ? { dx: Math.round(cb.left - v.left), below: cb.top > v.bottom, last: !c.nextElementSibling } : null
   })
@@ -90,14 +109,14 @@ const browser = await launch({ gpu: true })
     return {
       comics: card.querySelectorAll('.ch-comic').length,
       loaded: imgs.length > 0 && imgs.every((i) => i.complete && i.naturalWidth > 0),
-      sign: card.querySelector('.ch-sign__text')?.textContent,
+      sign: !!card.querySelector('.ch-sign'),
       hidden: card.querySelector('.ch-rack')?.getAttribute('aria-hidden') === 'true',
       buttons: card.querySelectorAll('button').length,
       name: card.querySelector('button')?.getAttribute('aria-label'),
     }
   }, CARD)
-  check('card shows the rack, every cover loaded', thumb.comics === 9 && thumb.loaded && thumb.sign === 'Comic Hoarder', JSON.stringify(thumb))
-  check('the card is one button named Comic Hoarder, its rack a picture', thumb.buttons === 1 && thumb.name === 'Comic Hoarder' && thumb.hidden, JSON.stringify(thumb))
+  check('card shows a clean rack, no sign, its first nine covers loaded', thumb.comics === 9 && thumb.loaded && !thumb.sign, JSON.stringify(thumb))
+  check('the card is one button named My Comic Collection, its rack a picture', thumb.buttons === 1 && thumb.name === 'My Comic Collection' && thumb.hidden, JSON.stringify(thumb))
   if (SHOTS) await (await page.$(CARD)).screenshot({ path: `${SHOTS}/comics-card.png` })
 
   await page.click(`${CARD} button`)
@@ -107,9 +126,12 @@ const browser = await launch({ gpu: true })
     title: document.querySelector('#ch-title')?.textContent,
     inSign: !!document.querySelector('.ch-sign > #ch-title'),
     labelled: document.querySelector('dialog.ch-pop')?.getAttribute('aria-labelledby'),
+    cats: document.querySelectorAll('.ch-sign__cat').length,
+    hint: !!document.querySelector('.ch-hint'),
     dots: [...document.querySelectorAll('.ch-window > .vp-bar .vp-dot')].map((b) => b.getAttribute('aria-label')).join(' '),
   }))
   check('titled by the rack\'s sign, under the red and green dots', head.title === 'Comic Hoarder' && head.inSign && head.labelled === 'ch-title' && head.dots === 'Close Maximize', JSON.stringify(head))
+  check('the sign is just the name, no cats; no hint under the rack', head.cats === 0 && !head.hint, JSON.stringify(head))
 
   const rack = await page.evaluate(() => {
     const r = document.querySelector('.ch-frame .ch-rack')
@@ -125,15 +147,23 @@ const browser = await launch({ gpu: true })
       order: comics.map((b) => b.dataset.comic.replace(/-\d+$/, '')),
       tags: tiers.flatMap((t) => [...t.querySelectorAll('.ch-tag')].map((g) => g.textContent)),
       wire: getComputedStyle(r.querySelector('.ch-wire')).stroke,
-      inside: rb.left >= shelf.left - 1 && rb.right <= shelf.right + 1 && rb.top >= shelf.top - 1 && rb.bottom <= shelf.bottom + 1,
+      tag: (() => {
+        const g = getComputedStyle(r.querySelector('.ch-tag'))
+        return [g.backgroundColor, g.color]
+      })(),
+      across: rb.left >= shelf.left - 1 && rb.right <= shelf.right + 1,
+      scrolls: (() => {
+        const el = document.querySelector('.ch-shelf')
+        return rb.height <= shelf.height || (getComputedStyle(el).overflowY === 'auto' && el.scrollHeight > el.clientHeight)
+      })(),
       leftOfStand: rb.right <= display.left + 1,
     }
   })
-  const ORDER = ['spider-man', 'spider-man', 'spider-man', 'spider-man', 'spider-man', 'black-cat', 'mary-jane', 'miles-morales', 'nightwing']
-  check('a wire rack, three tiers, each in front of the one above', rack.tiers === 3 && rack.frontInFront && /rgb\((\d|[12]\d), (\d|[12]\d), (\d|[12]\d)\)/.test(rack.wire), JSON.stringify(rack))
+  check(`a wire rack, ${TIERS} tiers, each in front of the one above`, rack.tiers === TIERS && rack.frontInFront && /rgb\((\d|[12]\d), (\d|[12]\d), (\d|[12]\d)\)/.test(rack.wire), JSON.stringify({ ...rack, order: undefined, tags: undefined }))
   check('one pocket a comic, sorted by character', rack.order.join() === ORDER.join(), rack.order.join(' '))
-  check('a tag naming the character under every comic', rack.tags.join() === 'Spider-Man,Spider-Man,Spider-Man,Spider-Man,Spider-Man,Black Cat,Mary Jane,Miles Morales,Nightwing', rack.tags.join(' | '))
-  check('the rack fits its column, left of the stand', rack.inside && rack.leftOfStand, JSON.stringify(rack))
+  check('a tag naming the character under every comic', rack.tags.join() === TAGS.join(), rack.tags.join(' | '))
+  check('the tags are black with white lettering', /rgb\((\d|[12]\d), (\d|[12]\d), (\d|[12]\d)\)/.test(rack.tag[0]) && rack.tag[1] === 'rgb(255, 255, 255)', rack.tag.join(' / '))
+  check('the rack fits its column across, left of the stand; the column scrolls for the rest', rack.across && rack.scrolls && rack.leftOfStand, JSON.stringify({ ...rack, order: undefined, tags: undefined }))
 
   const first = await stand(page)
   check('opens with the first comic out, on the stand in full', first.title === 'The Amazing Spider-Man (2025)' && first.out.join() === 'spider-man-0' && first.cover, JSON.stringify(first))
@@ -249,7 +279,7 @@ const browser = await launch({ gpu: true })
     }
     return out
   })
-  check('every comic comes out with its cover, tag and rating', all.length === 9 && all.every((c) => c.ok), all.filter((c) => !c.ok).map((c) => c.id).join() || '9 ok')
+  check('every comic comes out with its cover, tag and rating', all.length === COUNT && all.every((c) => c.ok), all.filter((c) => !c.ok).map((c) => c.id).join() || `${all.length} ok`)
 
   await page.click('.ch-window [data-ch-toggle]')
   await sleep(500)
@@ -295,7 +325,7 @@ const browser = await launch({ gpu: true })
     }
   })
   check('phone: the comic on show across the top, the rack the width of the screen', fit.inFrame && fit.standOnTop, JSON.stringify(fit))
-  check('phone: nothing scrolls sideways; only the red dot; a tap hint', !fit.sideways && fit.dots === 1 && fit.hint === 'Tap a comic to take it out', JSON.stringify(fit))
+  check('phone: nothing scrolls sideways; only the red dot; no hint', !fit.sideways && fit.dots === 1 && fit.hint === undefined, JSON.stringify(fit))
   await page.evaluate(() => document.querySelector('.ch-frame').scrollTo(0, 400))
   await sleep(200)
   const pinned = await page.evaluate(() => {
@@ -303,6 +333,15 @@ const browser = await launch({ gpu: true })
     return Math.round(document.querySelector('.ch-display').getBoundingClientRect().top - f.top)
   })
   check('phone: the strip stays at the top while the rack scrolls', pinned === 0, `${pinned}px from the top`)
+  // Bring Mary Jane to the middle of what shows under the strip, then tap.
+  await page.evaluate((s) => {
+    const frame = document.querySelector('.ch-frame')
+    const strip = document.querySelector('.ch-display').getBoundingClientRect().height
+    const c = document.querySelector(s).getBoundingClientRect()
+    const f = frame.getBoundingClientRect()
+    frame.scrollTop += c.top - f.top - strip - (f.height - strip - c.height) / 2
+  }, COMIC('mary-jane-0'))
+  await sleep(300)
   await page.tap(COMIC('mary-jane-0'))
   await sleep(900)
   const mj = await stand(page)

@@ -119,8 +119,8 @@ export const BINARY_BLOOM = {
  */
 export const COMIC_HOARDER = {
   slug: 'comic-hoarder',
-  title: 'Comic Hoarder',
-  metaTitle: 'Comic Hoarder',
+  title: 'My Comic Collection',
+  metaTitle: 'My Comic Collection',
   status: 'toy',
 }
 

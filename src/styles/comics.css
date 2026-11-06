@@ -40,7 +40,7 @@
 }
 
 /* The sign across the top, a white board in a black frame, as on the
-   newsstand rack, with a pixel cat at each end. */
+   newsstand rack: just the name, with little white round it. */
 .ch-sign {
   position: absolute;
   z-index: 1;
@@ -51,7 +51,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: calc(var(--ch-u) * 1.1);
   border: calc(var(--ch-u) * 0.34) solid var(--ch-rack);
   border-radius: calc(var(--ch-u) * 0.35);
   background: var(--ch-sign);
@@ -66,14 +65,6 @@
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--color-ink);
-}
-.ch-sign__cat {
-  flex: none;
-  width: calc(var(--ch-u) * 2.3);
-  height: calc(var(--ch-u) * 2.3);
-  background: var(--color-ink);
-  -webkit-mask: url('../../Assets/brand/icons/nav-funzies.png') center / contain no-repeat;
-  mask: url('../../Assets/brand/icons/nav-funzies.png') center / contain no-repeat;
 }
 
 /* A tier of pockets. Each one down stands in front of the one above (the
@@ -166,7 +157,8 @@ button.ch-comic:focus-visible {
   border-radius: calc(var(--ch-u) * 0.2) calc(var(--ch-u) * 0.2) 0 0;
 }
 
-/* The character's name on a white tag clipped to the lip under each comic. */
+/* The character's name on a black tag, in white, clipped to the lip under
+   each comic. */
 .ch-tag {
   position: absolute;
   z-index: 3;
@@ -177,7 +169,7 @@ button.ch-comic:focus-visible {
   padding: 0.3em 0.6em 0.25em;
   border: calc(var(--ch-u) * 0.12) solid var(--ch-rack);
   border-radius: calc(var(--ch-u) * 0.2);
-  background: var(--ch-sign);
+  background: var(--ch-rack);
   box-shadow: 0 calc(var(--ch-u) * 0.1) calc(var(--ch-u) * 0.25) rgb(0 0 0 / 0.25);
   font-size: max(7px, calc(var(--ch-u) * 0.92));
   font-weight: 800;
@@ -185,7 +177,7 @@ button.ch-comic:focus-visible {
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
-  color: var(--ch-rack);
+  color: var(--ch-sign);
   pointer-events: none;
 }
 
@@ -255,31 +247,26 @@ button.ch-comic:focus-visible {
     margin: auto;
   }
 }
+/* The rack is as wide as its column allows, and as tall as its comics make
+   it: when that is taller than the window, the column scrolls. */
 .ch-shelf {
   grid-area: shelf;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 1.6cqi;
   min-width: 0;
   min-height: 0;
   padding: 3cqi;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
-/* The rack takes what its column leaves it, across or down. */
+.ch-shelf > .ch-rack {
+  margin-block: auto;
+}
 .ch-frame .ch-rack {
-  --ch-u: min(40cqi / var(--ch-w), 53cqi / var(--ch-h));
-}
-/* The hint: one small line of capitals in a light grey, quieter than
-   Binary Bloom's (client). */
-.ch-hint {
-  margin: 0;
-  font-size: clamp(0.5625rem, 0.8cqi, 0.6875rem);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: var(--ch-hint);
+  --ch-u: calc(40cqi / var(--ch-w));
 }
 
 /* --- the stand: the comic out of the rack, in full ----------------------- */
@@ -443,7 +430,7 @@ button.ch-comic:focus-visible {
     aspect-ratio: 1;
   }
   .ch-frame .ch-rack {
-    --ch-u: min(44cqi / var(--ch-w), 86cqi / var(--ch-h));
+    --ch-u: calc(44cqi / var(--ch-w));
   }
   .ch-display__cover {
     height: 52cqi;

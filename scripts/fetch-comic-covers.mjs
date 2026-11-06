@@ -41,6 +41,31 @@ const COVERS = {
   'miles-morales-42': `${MARVEL}7/60/6965560b9c9ed/clean.jpg`,
   // Nightwing #135, Cover A (Dexter Soy) — comicpreviews.com
   'nightwing-135': 'https://geekfetch.s3.ca-central-1.amazonaws.com/product_images/202511-0000516976.jpg',
+  // Nightwing (2016) #136–#138, Cover A (Jorge Fornés) — dc.com/comics/nightwing-2016
+  'nightwing-136': 'https://static.dc.com/2026-03/T1615301365001.jpg',
+  'nightwing-137': 'https://static.dc.com/2026-04/T1615301375001.jpg',
+  'nightwing-138': 'https://static.dc.com/2026-05/T1615301385001.jpg',
+  // Absolute Batman (2024) #1–#8, main covers (Nick Dragotta) — dc.com/comics/absolute-batman-2024
+  'absolute-batman-1': 'https://static.dc.com/2024-09/ABS_BM_Cv1_00111_DIGITAL.jpg',
+  'absolute-batman-2': 'https://static.dc.com/2024-11/ABS_BM_Cv2_00211_DIGITAL.jpg',
+  'absolute-batman-3': 'https://static.dc.com/2024-12/ABS_BM_Cv3_00311_DIGITAL.jpg',
+  'absolute-batman-4': 'https://static.dc.com/2024-12/ABS_BM_Cv4_00411_DIGITAL.jpg',
+  'absolute-batman-5': 'https://static.dc.com/2025-02/ABS_BM_Cv5_00511_DIGITAL.jpg',
+  'absolute-batman-6': 'https://static.dc.com/2025-03/ABS_BM_Cv6_00611_DIGITAL.jpg',
+  'absolute-batman-7': 'https://static.dc.com/2025-04/ABS_BM_Cv7_00711_DIGITAL.jpg',
+  'absolute-batman-8': 'https://static.dc.com/2025-05/ABS_BM_Cv8_00811_DIGITAL.jpg',
+  // Daredevil (2023) #1, #2, #25 — 105838, 105839, 120330
+  'daredevil-1': `${MARVEL}3/70/652990e6c0d14/clean.jpg`,
+  'daredevil-2': `${MARVEL}e/00/65298f5162175/clean.jpg`,
+  'daredevil-25': `${MARVEL}3/d0/68c1c61e92439/clean.jpg`,
+  // Scarlet Witch (2023) #1–#3 — 97133, 97135, 97136
+  'scarlet-witch-1': `${MARVEL}9/80/63b4782a27dcf/clean.jpg`,
+  'scarlet-witch-2': `${MARVEL}6/30/63d28f429c20a/clean.jpg`,
+  'scarlet-witch-3': `${MARVEL}2/b0/63f4e91b01041/clean.jpg`,
+  // Thanos (2016) #1 — 61697; Thanos (2023) #1 — 113207; Infinity Wars (2018) #1 — 67145
+  'thanos-2016-1': `${MARVEL}5/03/582382b737a22/clean.jpg`,
+  'thanos-2023-1': `${MARVEL}8/90/654bb0c15a46a/clean.jpg`,
+  'infinity-wars-1': `${MARVEL}6/40/5b58d18411d4d/clean.jpg`,
 }
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36'

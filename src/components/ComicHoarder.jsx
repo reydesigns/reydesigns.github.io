@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { holdScroll } from '@/lib/scrollLock'
 import { setCursorHost } from '@/components/CustomCursor'
 import { SizeGlyph } from '@/components/CaseStudyModal'
-import { useMediaQuery, HOVER, SM } from '@/lib/useMediaQuery'
+import { useMediaQuery, SM } from '@/lib/useMediaQuery'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { STACKS } from '@/data/comics'
 import '@/styles/comics.css'
@@ -12,11 +12,12 @@ import '@/styles/comics.css'
    Comic Hoarder: the Works card that opens the comic collection.
 
    The rack is a newsstand's black wire comic rack (after the client's
-   reference, Assets/comics/reference/): a sign across the top, tiers of
+   reference, Assets/comics/reference/): in the window, a sign across the
+   top (on the card the rack is bare, and only its first tiers), tiers of
    pockets stepping down, each tier's comics standing in front of the bottom
    of the ones above so only their tops show, a wire lip across every tier,
    and splayed legs. Each comic has a pocket of its own, in order of
-   character (src/data/comics.js), with the character's name on a white tag
+   character (src/data/comics.js), with the character's name on a black tag
    clipped to the wire under it. A whole run stands as one comic with a few
    more copies peeking out behind.
 
@@ -63,11 +64,18 @@ const byId = (id) => COMICS.find((c) => c.id === id)
 const COLUMNS = 3
 const MIN_TIERS = 3
 const TIERS = Math.max(MIN_TIERS, Math.ceil(COMICS.length / COLUMNS))
-const G = { pocket: 11.6, side: 1.4, comicW: 10, comicH: 15.4, step: 9.24, sign: 6.4, hang: 1.8, legs: 6.6, lip: 8 }
+// The card shows a clean rack (no sign) of just its first few tiers.
+const CARD_TIERS = 3
+const G = { pocket: 11.6, side: 1.4, comicW: 10, comicH: 15.4, step: 9.24, sign: 4.4, hang: 1.8, legs: 6.6, lip: 8 }
 const RACK_W = 2 * G.side + COLUMNS * G.pocket
-const TIERS_TOP = G.sign + G.hang
-const BASE_Y = TIERS_TOP + (TIERS - 1) * G.step + G.comicH
-const RACK_H = BASE_Y + G.legs
+
+/* Where a rack's first tier starts, its base and its full height, for a
+   number of tiers, with or without the sign across the top. */
+function rackSize(tiers, sign) {
+  const top = (sign ? G.sign : 0) + G.hang
+  const base = top + (tiers - 1) * G.step + G.comicH
+  return { sign, top, base, height: base + G.legs }
+}
 
 /* --- the stars ----------------------------------------------------------- */
 
@@ -123,18 +131,21 @@ export function Stars({ rating, className = '' }) {
 
 /* --- the rack ------------------------------------------------------------ */
 
-/** The frame behind the comics: the two side rails, the base and the legs. */
-function RackFrame() {
+/** The frame behind the comics: the two side rails (and, with no sign, a
+ *  bar across their tops), the base and the legs. */
+function RackFrame({ size }) {
   const l = G.side / 2
   const r = RACK_W - G.side / 2
-  const foot = RACK_H - 0.35
-  const base = BASE_Y + 0.4
+  const foot = size.height - 0.35
+  const base = size.base + 0.4
+  const top = size.sign ? G.sign * 0.5 : 0.25
   return (
-    <svg className="ch-rack__frame" viewBox={`0 0 ${RACK_W} ${RACK_H}`} preserveAspectRatio="none" aria-hidden="true">
+    <svg className="ch-rack__frame" viewBox={`0 0 ${RACK_W} ${size.height}`} preserveAspectRatio="none" aria-hidden="true">
       <g className="ch-wire">
-        {/* the rails, from under the sign to the base */}
-        <line x1={l} y1={G.sign * 0.5} x2={l} y2={base} />
-        <line x1={r} y1={G.sign * 0.5} x2={r} y2={base} />
+        {/* the rails, from under the sign (or the top bar) to the base */}
+        <line x1={l} y1={top} x2={l} y2={base} />
+        <line x1={r} y1={top} x2={r} y2={base} />
+        {!size.sign && <line x1={l} y1={top} x2={r} y2={top} />}
         {/* the base, and an X brace between the legs */}
         <line x1={l} y1={base} x2={r} y2={base} />
         <line x1={l + 2.4} y1={base} x2={r - 2.4} y2={foot - 1.6} className="ch-wire--thin" />
@@ -211,17 +222,19 @@ function RackComic({ comic, index, out, decorative, imgRef, handlers }) {
 
 /**
  * The wire rack. In the window (`decorative` false) every comic is a button
- * and `shown` is the one out of its pocket; on the card it is all picture.
+ * and `shown` is the one out of its pocket, under the sign that titles the
+ * window; on the card it is all picture, a clean rack of its first tiers.
  */
 function Rack({ decorative = false, shown, slotRefs, handlers }) {
-  const tiers = Array.from({ length: TIERS }, (_, t) => COMICS.slice(t * COLUMNS, t * COLUMNS + COLUMNS))
-  const Sign = decorative ? 'span' : 'h2'
+  const count = decorative ? CARD_TIERS : TIERS
+  const size = rackSize(count, !decorative)
+  const tiers = Array.from({ length: count }, (_, t) => COMICS.slice(t * COLUMNS, t * COLUMNS + COLUMNS))
   return (
     <div
       className="ch-rack"
       style={{
         '--ch-w': RACK_W,
-        '--ch-h': RACK_H,
+        '--ch-h': size.height,
         '--ch-cols': COLUMNS,
         '--ch-side': G.side,
         '--ch-pocket': G.pocket,
@@ -233,16 +246,16 @@ function Rack({ decorative = false, shown, slotRefs, handlers }) {
       aria-label={decorative ? undefined : 'The rack'}
       aria-hidden={decorative || undefined}
     >
-      <RackFrame />
-      <div className="ch-sign" style={{ '--x': G.side / 2, '--h': G.sign }}>
-        <span className="ch-sign__cat" aria-hidden="true" />
-        <Sign id={decorative ? undefined : 'ch-title'} className="ch-sign__text font-display">
-          Comic Hoarder
-        </Sign>
-        <span className="ch-sign__cat" aria-hidden="true" />
-      </div>
+      <RackFrame size={size} />
+      {size.sign && (
+        <div className="ch-sign" style={{ '--x': G.side / 2, '--h': G.sign }}>
+          <h2 id="ch-title" className="ch-sign__text font-display">
+            Comic Hoarder
+          </h2>
+        </div>
+      )}
       {tiers.map((row, t) => (
-        <div key={t} className="ch-tier" style={{ '--t': t, '--top': TIERS_TOP + t * G.step }}>
+        <div key={t} className="ch-tier" style={{ '--t': t, '--top': size.top + t * G.step }}>
           {row.map((comic, c) => (
             <RackComic
               key={comic.id}
@@ -399,7 +412,6 @@ export function ComicModal({ open, onClose, returnFocus }) {
   shownRef.current = shown
   const [dragging, setDragging] = useState(null) // null | 'drag' | 'over'
   const phone = !useMediaQuery(SM, true)
-  const canHover = useMediaQuery(HOVER, true)
   const reduced = useReducedMotion()
   const { fly, make } = useFlights(layerRef)
 
@@ -644,9 +656,6 @@ export function ComicModal({ open, onClose, returnFocus }) {
         <div className="ch-frame" data-dragging={dragging ?? undefined}>
           <div className="ch-shelf">
             <Rack shown={shown} slotRefs={slotRefs} handlers={handlers} />
-            <p className="ch-hint">
-              {`${canHover ? 'Click' : 'Tap'} a comic${phone ? ' to take it out' : ', or drag it to the right'}`}
-            </p>
           </div>
           <Stand comic={comic} coverRef={coverRef} standRef={standRef} hint="Drop it here" />
         </div>

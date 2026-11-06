@@ -162,12 +162,9 @@
 
   /* --- Comic Hoarder (comics.css): the black wire of the newsstand rack (a
      true near-black, not the burgundy ink), and the white of its sign and
-     the tags clipped to it (17:1 against each other). ------------------- */
+     the tags' lettering (17:1 against each other). ------------------- */
   --ch-rack: #151314;
   --ch-sign: #ffffff;
-  /* The rack's hint under it: a light grey (about 2.6:1 on white; a hint,
-     the client wants it quiet). */
-  --ch-hint: #a19d9e;
   /* The Works card's wall: a warm green-grey, a sage with a little yellow
      in it (client: warmer and greyer than the first lime). */
   --ch-card-wall: #d9dbc0;
