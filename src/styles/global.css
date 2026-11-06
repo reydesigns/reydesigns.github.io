@@ -1187,10 +1187,12 @@ html.lenis body {
    the screen and the title, flower and controls stack. There is no close
    button to see: Escape, or a click on the backdrop, closes it (the button
    is there for a keyboard, and shows when it has focus). */
+/* The card's thumbnail is the square's dark brown edge to edge, so the
+   square blends into it and the flower floats on one field of brown. */
 .fl-card {
   display: grid;
   place-items: center;
-  background: var(--color-surface-sunken);
+  background: var(--fl-ground);
 }
 /* The dark brown square the flower is drawn on (in the pop-up and on the
    card), so a bloom's glow shows. Its corners are the swatches' radius. */
