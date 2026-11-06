@@ -1,4 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { useScrollMotion } from '@/lib/useScrollMotion'
+import { useInView } from '@/lib/useInView'
+import { useReducedMotion } from '@/lib/useReducedMotion'
+import { useSaveData } from '@/lib/useSaveData'
 import {
   ARTICLE,
   CaseHero,
@@ -12,6 +16,8 @@ import {
   Tags,
 } from './caseStudyParts'
 import liptonVideo from '@assets/lipton/video/walkthrough-1080p.mp4'
+import walkVideo from '@assets/lipton/video/app-walkthrough.mp4'
+import walkPoster from '@assets/lipton/video/app-walkthrough-poster.webp'
 import liptonLogo from '@assets/brand/icons/clients/lipton.png'
 import f1a from '@assets/lipton/Images/web/f1-a.webp'
 import f1b from '@assets/lipton/Images/web/f1-b.webp'
@@ -22,15 +28,6 @@ import p1 from '@assets/lipton/Images/web/p-1.webp'
 import p2 from '@assets/lipton/Images/web/p-2.webp'
 import p3 from '@assets/lipton/Images/web/p-3.webp'
 import p4 from '@assets/lipton/Images/web/p-4.webp'
-import walk1 from '@assets/lipton/Images/web/walk-1.webp'
-import walk2 from '@assets/lipton/Images/web/walk-2.webp'
-import walk3 from '@assets/lipton/Images/web/walk-3.webp'
-import walk4 from '@assets/lipton/Images/web/walk-4.webp'
-import walk5 from '@assets/lipton/Images/web/walk-5.webp'
-import walk6 from '@assets/lipton/Images/web/walk-6.webp'
-import walk7 from '@assets/lipton/Images/web/walk-7.webp'
-import walk8 from '@assets/lipton/Images/web/walk-8.webp'
-import walk9 from '@assets/lipton/Images/web/walk-9.webp'
 import brandIdentity from '@assets/lipton/Images/web/brand-identity.webp'
 
 /* ---------------------------------------------------------------------------
@@ -41,6 +38,11 @@ import brandIdentity from '@assets/lipton/Images/web/brand-identity.webp'
    comp in percentages of the article column, so they keep their overlaps at
    any width; the phones themselves are cut from the comp at full resolution
    (Assets/lipton/Images/web/, made by scripts/prep-lipton-images.mjs).
+   Two departures, so the grey cards sit the same way in both features
+   (client: they looked all over the place): each card is centred on its
+   phones' height and starts just behind the last phone, and the dashboard
+   trio is set at 86% of the comp's size (centred), which leaves its card a
+   readable measure.
 
    Motion: each composition reads its progress through the viewport as `--p`
    (useScrollMotion) and every transform is derived from it in case-study.css —
@@ -48,7 +50,7 @@ import brandIdentity from '@assets/lipton/Images/web/brand-identity.webp'
    screen, the product row lands in a staggered wave. Reduced motion shows the
    final layout.
 
-   Two additions on top of the comp: the app walkthrough strip before the
+   Two additions on top of the comp: the app walkthrough video before the
    branding (client request), and the brand identity board under the empty
    "Lipton Tea branding assets" heading.
 
@@ -104,60 +106,58 @@ function Stage({ aspect, label, children, className = '' }) {
   )
 }
 
-/* The app in the order a tea drinker meets it: [image, label, natural size,
-   the left and right edge of what is drawn]. The exports carry 30–60px of
-   empty margin of their own, uneven per screen; the strip trims to the
-   drawing so the gap between screens is the gap the CSS sets. */
+/* The nine screens, in the order a tea drinker meets them; the video draws
+   them in this order (scripts/make-lipton-walkthrough.mjs). */
 const WALK = [
-  [walk1, 'Dashboard', [412, 605], [52, 323]],
-  [walk2, 'Your updates', [397, 628], [51, 342]],
-  [walk3, 'About our tea', [378, 660], [35, 330]],
-  [walk4, 'Monthly consumption', [386, 646], [33, 321]],
-  [walk5, 'Additives in your tea', [397, 628], [43, 323]],
-  [walk6, 'Shop', [403, 620], [54, 333]],
-  [walk7, 'Browse teas', [372, 671], [28, 344]],
-  [walk8, 'Your cart', [399, 625], [38, 324]],
-  [walk9, 'Subscriptions', [396, 630], [33, 318]],
+  'Dashboard',
+  'Your updates',
+  'About our tea',
+  'Monthly consumption',
+  'Additives in your tea',
+  'Shop',
+  'Browse teas',
+  'Your cart',
+  'Subscriptions',
 ]
 
 /**
- * Every screen, in order, in a strip that scrolls sideways — and only when the
- * reader scrolls it (swipe, trackpad, Shift+wheel, arrow keys). No scrollbar:
- * the half-seen screen at the faded edge is the cue that there is more. The
- * page scroll leaves it alone (client: it should not move with the page).
+ * The app walkthrough: a short looping video of every screen in order, the
+ * one on show large in the middle, the row gliding on to the next every
+ * couple of seconds (scripts/make-lipton-walkthrough.mjs). Nothing to scroll
+ * or press: it plays on its own while it is on screen and pauses when it
+ * leaves. Reduced motion, or data saver, shows its first frame with the
+ * player's controls, to play it by choice.
  */
 function Walkthrough() {
+  const videoRef = useRef(null)
+  const [boxRef, inView] = useInView({ threshold: 0.35 })
+  const reduced = useReducedMotion()
+  const saveData = useSaveData()
+  const still = reduced || saveData
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    if (!inView) el.pause()
+    else if (!still) el.play().catch(() => {})
+  }, [inView, still])
+
   return (
-    <div
-      // Focusable so arrow keys pan it; a named region so that focus means something.
-      tabIndex={0}
-      role="region"
-      aria-label={`App walkthrough, ${WALK.length} screens`}
-      // Lenis smooths the page wheel on the window; a sideways gesture over the
-      // strip must reach the strip instead. Vertical wheel still scrolls the page.
-      data-lenis-prevent-horizontal
-      className="cs-wide lp-walk"
-    >
-      <ol className="lp-walk-track m-0 list-none p-0">
-        {WALK.map(([src, label, [w, h], [l, r]]) => (
-          <li
-            key={label}
-            className="lp-walk-item"
-            // The empty margins as a share of the height, which is what the CSS sets.
-            style={{ '--lp-trim-l': (l / h).toFixed(3), '--lp-trim-r': ((w - 1 - r) / h).toFixed(3) }}
-          >
-            <img
-              src={src}
-              alt={`${label} screen`}
-              width={w}
-              height={h}
-              loading="lazy"
-              decoding="async"
-              className="lp-walk-img"
-            />
-          </li>
-        ))}
-      </ol>
+    <div ref={boxRef} className="cs-wide lp-walk">
+      <video
+        ref={videoRef}
+        src={walkVideo}
+        poster={walkPoster}
+        width={1600}
+        height={900}
+        loop
+        muted
+        playsInline
+        controls={still}
+        preload={still ? 'none' : 'metadata'}
+        aria-label={`App walkthrough video, ${WALK.length} screens in order: ${WALK.join(', ')}`}
+        className="lp-walk-video"
+      />
     </div>
   )
 }
@@ -202,7 +202,7 @@ export function LiptonArticle({ next }) {
           <Tab at={['0.27%', '0.3%']}>
             #1 Key feature
           </Tab>
-          <div className="lp-card" style={{ left: '52%', top: '19.1%', width: '48%', minHeight: '62.5%' }}>
+          <div className="lp-card" style={{ left: '52.89%' }}>
             <P>
               Considering the target consumer age ranges from 25&ndash;35 and categorizing this market
               to consume the most caffeine (avg. 3&ndash;7 cups per week) in these years (statistic).
@@ -230,10 +230,10 @@ export function LiptonArticle({ next }) {
 
         <h2 className={H2}>Dashboard your tea!</h2>
         <Stage aspect="2931 / 1608" label="Key feature 2: the tea dashboard" className="lp-f2">
-          <Tab at={['-1.94%', '1.43%']}>
+          <Tab at={['-1.94%', '8.23%']}>
             #2 Key feature
           </Tab>
-          <div className="lp-card" style={{ left: '67.9%', top: '8.96%', width: '32.1%', minHeight: '72.9%' }}>
+          <div className="lp-card" style={{ left: '56.23%' }}>
             <P>The user is able to access all tea-tools on the Lipton Tea dashboard.</P>
             <P>
               These include: Daily tea data input, cup full of information on tea, and the ability
@@ -243,21 +243,21 @@ export function LiptonArticle({ next }) {
           <Phone
             src={f2l}
             size={[624, 1518]}
-            at={['-1.94%', '1.43%', '21.26%']}
+            at={['-1.94%', '8.23%', '18.28%']}
             className="lp-f2-l"
             alt="Dashboard: Hi, Jade! with tea tools and a daily tea log."
           />
           <Phone
             src={f2r}
             size={[691, 1522]}
-            at={['45.65%', '1.49%', '23.54%']}
+            at={['38.99%', '8.28%', '20.24%']}
             className="lp-f2-r"
             alt="About our tea, with green and lemon ginger teas and recipes."
           />
           <Phone
             src={f2c}
             size={[760, 1592]}
-            at={['19.41%', '0%', '26.17%']}
+            at={['16.42%', '7%', '22.51%']}
             className="lp-f2-c"
             alt="Your updates: tea of November, and a subscription box expiring in 3 days."
           />

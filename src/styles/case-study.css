@@ -530,6 +530,13 @@
 }
 .lp-card {
   position: absolute;
+  /* Centred on the phones' height (they fill the stage's), and out to the
+     stage's right edge; LiptonArticle sets each card's left 3% inside its
+     last phone, so it starts just behind it in both features. */
+  top: 50%;
+  right: 0;
+  translate: 0 -50%;
+  min-height: 72%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -537,15 +544,13 @@
   background: var(--color-surface-sunken);
   border-radius: var(--radius-card);
   /* Percentages here are of the STAGE's width (padding always resolves
-     against the containing block), which is how the comp measures them:
-     the copy starts at 66.2% of the column in #1 and 74.3% in #2. */
-  padding: var(--cs-4) 2.5% var(--cs-4) 14.2%;
+     against the containing block): the copy starts 3.5% clear of the
+     phone (the 3% tucked behind it, then the gap) and stops 3.5% short of
+     the edge. */
+  padding: var(--cs-4) 3.5% var(--cs-4) 6.5%;
   font-size: var(--text-body);
   opacity: var(--p);
   transform: translateX(calc((1 - var(--p)) * 10%));
-}
-.lp-f2 .lp-card {
-  padding-left: 6.4%;
 }
 
 /* #1 — the pair rises and straightens, the second a beat behind. */
@@ -590,56 +595,31 @@
 .lp-p-3 { transform: translateY(calc((1 - var(--p)) * 38% + var(--q) * 3%)); }
 .lp-p-4 { transform: translateY(calc((1 - var(--p)) * 50% + var(--q) * -2%)); }
 
-/* Walkthrough strip: a native horizontal scroller that moves only when the
-   reader moves it — a swipe, a trackpad, Shift+wheel and the arrow keys (it is
-   focusable) all reach every screen; the page scroll never drives it, and a
-   vertical wheel over it still scrolls the page. It settles on whole screens;
-   the fade at each edge leaves the next screen half seen, so it reads as
-   scrollable without a scrollbar (client, round 3: hide it — it drew a grey
-   bar under the screens). Mask colours are keywords: only the alpha matters,
-   and hex lives in tokens. */
+/* Walkthrough: a looping video of the app (LiptonArticle), on a white card
+   the case-study band's width, like the brand board under it. It was a
+   sideways strip of the screens, but a mouse's wheel could not move it
+   (client: make it a video that plays through them). */
 .lp-walk {
-  --lp-walk-h: clamp(15rem, 24vw, 22rem);
-  container-type: inline-size;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
-  /* the track's 6cqw lead-in, so a snapped screen clears the edge fade */
-  scroll-padding-inline: 6%;
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
-  mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
-}
-/* The edge fade would clip an outside ring, so draw it inside. */
-.lp-walk:focus-visible {
-  outline-offset: -2px;
-}
-.lp-walk::-webkit-scrollbar {
-  display: none;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
 }
 .cs-flow > .lp-walk {
   margin-top: var(--cs-gap-figure);
 }
-.lp-walk-track {
-  display: flex;
-  gap: clamp(0.75rem, 1.4vw, 1.25rem);
-  width: max-content;
-  padding-inline: 6cqw;
-}
-.lp-walk-item {
-  scroll-snap-align: start;
-  /* pull each neighbour in over the export's own empty margin (LiptonArticle) */
-  margin-inline: calc(var(--lp-walk-h) * var(--lp-trim-l) * -1)
-    calc(var(--lp-walk-h) * var(--lp-trim-r) * -1);
-}
-.lp-walk-img {
+.lp-walk-video {
   display: block;
-  height: var(--lp-walk-h);
-  width: auto;
-  /* The exports stop mid-screen; let them fade out rather than end on a cut. */
-  -webkit-mask-image: linear-gradient(180deg, black 80%, transparent);
-  mask-image: linear-gradient(180deg, black 80%, transparent);
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+/* A phone: cropped in to the screen on show (and its caption), so it is
+   large enough to read; the neighbours peek in at the sides. */
+@media (max-width: 47.99rem) {
+  .lp-walk-video {
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
 }
 
 /* Up to small laptops: the side-by-side compositions are rebuilt as a
@@ -726,6 +706,8 @@
   .lp-card {
     order: 10;
     flex: 0 0 100%;
+    right: auto;
+    translate: none;
     width: auto !important;
     /* full width here, so a slide from the side would push the page wide */
     transform: translateY(calc((1 - var(--p)) * 12%));
