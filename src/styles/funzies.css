@@ -772,8 +772,10 @@
 }
 
 /* A thumbnail: a small square, the picture cropped to it; the picked one in
-   full colour with a burgundy ring, the others knocked back. */
-.fz-pop__thumb {
+   full colour with a burgundy ring, the others knocked back. A set's
+   carousel under the picture uses the same squares. */
+.fz-pop__thumb,
+.fz-pop__set-thumb {
   position: relative;
   display: block;
   flex: none;
@@ -796,18 +798,22 @@
     width: 100%;
   }
 }
-.fz-pop__thumb:hover {
+.fz-pop__thumb:hover,
+.fz-pop__set-thumb:hover {
   opacity: 0.85;
 }
-.fz-pop__thumb[aria-current] {
+.fz-pop__thumb[aria-current],
+.fz-pop__set-thumb[aria-current] {
   opacity: 1;
   box-shadow: 0 0 0 2px var(--color-maroon);
 }
-.fz-pop__thumb:focus-visible {
+.fz-pop__thumb:focus-visible,
+.fz-pop__set-thumb:focus-visible {
   outline-offset: 2px;
 }
 .fz-pop__thumb img,
-.fz-pop__thumb video {
+.fz-pop__thumb video,
+.fz-pop__set-thumb img {
   display: block;
   width: 100%;
   height: 100%;
@@ -841,8 +847,8 @@
   margin: 0;
   padding: var(--fz-pop-pad);
 }
-.fz-pop__stage img,
-.fz-pop__stage video {
+.fz-pop__stage > img,
+.fz-pop__stage > video {
   display: block;
   max-width: 100%;
   max-height: min(60vh, 32rem);
@@ -855,13 +861,41 @@
     height: 100%;
     box-sizing: border-box;
   }
-  .fz-pop__stage img,
-  .fz-pop__stage video {
+  .fz-pop__stage > img,
+  .fz-pop__stage > video {
     max-height: 100%;
   }
 }
-.fz-pop__stage[data-icon] img {
+.fz-pop__stage[data-icon] > img {
   max-width: min(100%, 16rem);
+}
+/* A set: the picture with a row of its thumbnails just under it, the two
+   centred together; the picture takes what height the row leaves. */
+.fz-pop__stage[data-set] {
+  --fz-set-gap: 1rem;
+  --fz-set-row: calc(3.5rem + 4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fz-set-gap);
+}
+@media (min-width: 48rem) {
+  .fz-pop__stage[data-set] > img,
+  .fz-pop__stage[data-set] > video {
+    max-height: calc(100% - var(--fz-set-row) - var(--fz-set-gap));
+  }
+}
+.fz-pop__set {
+  display: flex;
+  flex: none;
+  gap: 0.6rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 2px;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
 }
 
 /* The write-up beside it, scrolling on its own when it runs long. */
@@ -933,8 +967,8 @@
 @media (prefers-reduced-motion: reduce) {
   .fz-pop__window,
   .fz-pop::backdrop,
-  .fz-pop__stage img,
-  .fz-pop__stage video {
+  .fz-pop__stage > img,
+  .fz-pop__stage > video {
     animation: none;
   }
 }

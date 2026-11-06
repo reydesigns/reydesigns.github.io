@@ -7,8 +7,10 @@
    decode it) and the .MOV is HEVC.
 
    `thumb` is what the tile on the grid shows; `media` is the swipeable set in
-   the popup, first slide first. Every picture is shown whole on white; `tile:
-   'icon'` just gives small artwork a wider margin.
+   the popup, first slide first; a slide with `more` pictures is a set, one
+   thumbnail in the strip with a small carousel of the rest under it. Every
+   picture is shown whole on white; `tile: 'icon'` just gives small artwork a
+   wider margin.
 
    `body` is plain text: a blank line starts a new paragraph, and a paragraph
    whose lines all start with "- " becomes a bulleted list. Entries marked
@@ -75,15 +77,14 @@ export const FUNZIES = [
       'group project magazine.',
     tile: 'photo',
     thumb: m('magazine-photo.webp'),
-    /* The popup shows these two stacked down its left side in place of the
-       slides: the photo of the printed issue whole on top, the cover +
-       spread mockup under it. `media` is still what the tile previews. */
-    stack: [m('magazine-photo.webp'), m('magazine-mockup.webp')],
+    /* Two sets, one thumbnail each in the window's strip: the cover + spread
+       mockup, with the photo of the printed issue in its carousel; then the
+       spread collage, with the spread's two flat pages in its carousel. */
     media: [
-      m('magazine-photo.webp'),
-      m('magazine-collage.webp'),
-      m('magazine-spread-1.webp'),
-      m('magazine-spread-2.webp'),
+      m('magazine-mockup.webp', { more: [m('magazine-photo.webp')] }),
+      m('magazine-collage.webp', {
+        more: [m('magazine-spread-1.webp'), m('magazine-spread-2.webp')],
+      }),
     ],
   },
   {
@@ -291,9 +292,11 @@ export const funzie = (id) => FUNZIES.find((f) => f.id === id)
  * Every picture a project has, in order, for the window's thumbnail strip:
  * a foldered project's folders one after another (each folder a `group`, so
  * the strip can leave a little space between them), anything else its
- * stacked pictures then its slides, each picture once. `text` is the copy
- * shown beside a picture: its own `body` if it has one, else the project's,
- * plus its folder's line.
+ * slides. `text` is the copy shown beside a picture: its own `body` if it
+ * has one, else the project's, plus its folder's line.
+ *
+ * A slide with `more` pictures is a set: one thumbnail in the strip, and
+ * `set` (the slide, then its `more`) is the carousel under the picture.
  */
 export function picturesOf(item) {
   if (item.folders) {
@@ -306,10 +309,10 @@ export function picturesOf(item) {
       })),
     )
   }
-  const seen = new Set()
-  return [...(item.stack ?? []), ...item.media]
-    .filter((m) => !seen.has(m.src) && seen.add(m.src))
-    .map((m) => ({ ...m, group: 0, text: m.body ?? item.body }))
+  const withText = (m) => ({ ...m, group: 0, text: m.body ?? item.body })
+  return item.media.map((m) =>
+    m.more ? { ...withText(m), set: [m, ...m.more].map(withText) } : withText(m),
+  )
 }
 
 /** The pinned photo on the board (the project's `thumb`, else its first
@@ -318,6 +321,8 @@ export function picturesOf(item) {
     behind are stills only. */
 export function boardPicturesOf(item, under = 3) {
   const front = item.thumb ?? item.media[0]
-  const rest = picturesOf(item).filter((m) => m.type === 'image' && m.src !== front.src && !m.icon)
+  const rest = picturesOf(item)
+    .flatMap((m) => m.set ?? [m])
+    .filter((m) => m.type === 'image' && m.src !== front.src && !m.icon)
   return [front, ...rest.slice(0, under)]
 }

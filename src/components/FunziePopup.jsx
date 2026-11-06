@@ -22,7 +22,8 @@ const WIDE = '(min-width: 48rem)'
  *
  * Left, a narrow strip of square thumbnails, every picture the project has,
  * ruled off from the rest by a thin line (a row along the top on a phone).
- * Right, the picked picture large and whole, and beside it the write-up:
+ * Right, the picked picture large and whole (a set with a small carousel of
+ * its pictures under it), and beside it the write-up:
  * Pixelta header, tools, the picture's copy, and for the PC build its game
  * covers and floating parts. The arrow keys step through the thumbnails.
  *
@@ -39,6 +40,13 @@ export function FunziePopup({ item, onClose }) {
   const [closing, setClosing] = useState(false)
   const [size, setSize] = useState('window')
   const [index, setIndex] = useState(0)
+  // Within a set (a strip thumbnail with a carousel under its picture), which
+  // of its pictures is showing.
+  const [sub, setSub] = useState(0)
+  const pick = useCallback((i) => {
+    setIndex(i)
+    setSub(0)
+  }, [])
 
   useEffect(() => {
     const dialog = ref.current
@@ -46,6 +54,7 @@ export function FunziePopup({ item, onClose }) {
     setClosing(false)
     setSize('window')
     setIndex(0)
+    setSub(0)
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
     const release = holdScroll()
@@ -88,7 +97,9 @@ export function FunziePopup({ item, onClose }) {
   if (!item) return null
 
   const pics = picturesOf(item)
-  const cur = pics[Math.min(index, pics.length - 1)]
+  const entry = pics[Math.min(index, pics.length - 1)]
+  const set = entry.set ?? [entry]
+  const cur = set[Math.min(sub, set.length - 1)]
   const shown = wide ? size : 'full'
 
   return (
@@ -133,20 +144,29 @@ export function FunziePopup({ item, onClose }) {
         </div>
 
         <div className="fz-pop__body">
-          <Thumbs pics={pics} index={index} onPick={setIndex} title={item.title} />
+          <Thumbs pics={pics} index={index} onPick={pick} title={item.title} />
           <div className="fz-pop__main">
-            <figure className="fz-pop__stage" data-icon={cur.icon || undefined}>
+            <figure
+              className="fz-pop__stage"
+              data-icon={cur.icon || undefined}
+              data-set={set.length > 1 || undefined}
+            >
               {cur.type === 'video' ? (
                 <video key={cur.src} src={cur.src} autoPlay={!reduced} controls={reduced} muted loop playsInline />
               ) : (
                 <img
                   key={cur.src}
                   src={cur.src}
-                  alt={`${item.title}, ${index + 1} of ${pics.length}`}
+                  alt={
+                    set.length > 1
+                      ? `${item.title}, ${index + 1} of ${pics.length}, view ${sub + 1} of ${set.length}`
+                      : `${item.title}, ${index + 1} of ${pics.length}`
+                  }
                   decoding="async"
                   draggable={false}
                 />
               )}
+              {set.length > 1 && <SetThumbs set={set} sub={sub} onPick={setSub} title={item.title} />}
             </figure>
             <div className="fz-pop__text">
               <h2 className="fz-pop__title">{item.title}</h2>
@@ -224,6 +244,43 @@ function Thumbs({ pics, index, onPick, title }) {
         ))}
       </ul>
     </nav>
+  )
+}
+
+/**
+ * A set's carousel, under its picture: a small square per picture in the set
+ * (the main one first), the one showing ringed in burgundy like the strip's.
+ * The arrow keys step through it.
+ */
+function SetThumbs({ set, sub, onPick, title }) {
+  const refs = useRef([])
+  const onKeyDown = (e) => {
+    const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+    if (!d) return
+    e.preventDefault()
+    const next = Math.min(set.length - 1, Math.max(0, sub + d))
+    onPick(next)
+    refs.current[next]?.focus()
+  }
+  return (
+    <ul className="fz-pop__set" aria-label="More views" onKeyDown={onKeyDown}>
+      {set.map((p, i) => (
+        <li key={p.src}>
+          <button
+            ref={(el) => {
+              refs.current[i] = el
+            }}
+            type="button"
+            className="fz-pop__set-thumb"
+            aria-current={i === sub || undefined}
+            aria-label={`${title}, view ${i + 1} of ${set.length}`}
+            onClick={() => onPick(i)}
+          >
+            <img src={p.src} alt="" loading="lazy" decoding="async" draggable={false} />
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }
 
