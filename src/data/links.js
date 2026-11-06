@@ -1,4 +1,4 @@
-import resumePdf from '@assets/resume/resume 2026.pdf?url'
+import resumePdf from '@assets/resume/ShreyaR_Resume_2026.pdf?url'
 
 /** Contact links, shared by the top bar and the footer so they never drift. */
 export const LINKEDIN = 'https://www.linkedin.com/in/shreyarudrapatna/'
