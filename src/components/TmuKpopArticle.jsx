@@ -30,8 +30,8 @@ import cardFaq from '@assets/tmu-kpop/images/web/card-faq.webp'
 
    Layout and copy follow Assets/tmu-kpop/tmukpop case study.png (6912×24000,
    4× a 1728pt frame). The last section, "PROCESS" in the comp, is ROI by
-   client request, and its content — the attendance chart, the conclusion and
-   the three changes — was added on top of the comp, as was the Screening
+   client request, and its content — the attendance chart, why Wix and the
+   three changes — was added on top of the comp, as was the Screening
    section before Process (its sticky notes' copy is a placeholder).
 
    The page screens break out of the article column into a wide band, as in the
@@ -208,7 +208,6 @@ function ScreeningNotes() {
           </li>
         ))}
       </ul>
-      <p className="tk-notes-hint">Click a note to read it up close</p>
 
       <dialog
         ref={dialogRef}
@@ -376,20 +375,6 @@ export function TmuKpopArticle({ next }) {
           196.
         </P>
         <AttendanceChart />
-
-        <h2 className={H2}>Conclusion</h2>
-        <P>
-          Students enjoy using the new site, and the feedback we heard most was that it is simply
-          easier, especially registering for events. Everything a new member needs is now
-          one click from the home page: what the club is, what&rsquo;s coming up, who runs it, and
-          how to RSVP.
-        </P>
-        <P>
-          I started by auditing the old site page by page, then sketched each new page on paper
-          (the sketches beside each screen above) before building it in the club&rsquo;s red and
-          black. Every page was checked on desktop and on a phone before orientation, since that
-          is where most students first find us.
-        </P>
 
         <h2 className={H2}>Why Wix</h2>
         <P>

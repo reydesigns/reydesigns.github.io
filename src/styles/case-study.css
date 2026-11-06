@@ -1011,16 +1011,6 @@
   outline: 2px solid var(--color-ink);
   outline-offset: 4px;
 }
-.tk-notes-hint {
-  margin: clamp(1rem, 2vw, 1.5rem) 0 0;
-  font-size: var(--text-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
-  opacity: 0.8;
-}
 
 /* The note up close: centred over a faded black backdrop, as large as fits
    (a note is about 40em tall, so 1.9vh keeps it inside 85% of the screen's

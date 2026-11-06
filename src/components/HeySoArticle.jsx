@@ -328,7 +328,7 @@ export function HeySoArticle({ next }) {
         label="Walkthrough of the Heyso iMessage extension"
       />
 
-      <ClientLine logo={heysoLogo}>WITM: WeDesignTech Hackathon 2023</ClientLine>
+      <ClientLine logo={heysoLogo}>WITM: WeDesignTech Hackathon</ClientLine>
 
       {/* Tucked up under the event label so the two read as one unit. */}
       <h1 className="font-display m-0 mt-[var(--cs-2)] text-[length:var(--text-hero)] leading-[0.95] text-[var(--color-ink)]">
