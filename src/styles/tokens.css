@@ -165,9 +165,8 @@
      the tags' lettering (17:1 against each other). ------------------- */
   --ch-rack: #151314;
   --ch-sign: #ffffff;
-  /* The Works card's wall: a warm green-grey, a sage with a little yellow
-     in it (client: warmer and greyer than the first lime). */
-  --ch-card-wall: #d9dbc0;
+  /* The Works card's wall: a pale sage green-grey (client, #ebefe9). */
+  --ch-card-wall: #ebefe9;
 
   /* --- Terminal (Me page): a Python REPL made of frosted glass, a
      translucent white pane over two soft glows (terminal.css), with ink text
