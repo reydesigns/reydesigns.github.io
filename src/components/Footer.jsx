@@ -6,21 +6,21 @@ import pikaGif from '@assets/brand/animation/pika-sleeping.gif'
 import pikaStill from '@assets/brand/animation/pika-sleeping-still.png'
 
 /* One line of small capitals, the same on all three parts of the footer. */
-const FOOT_TEXT =
-  'text-[length:var(--text-eyebrow)] uppercase tracking-[0.06em] text-[var(--color-ink-muted)] whitespace-nowrap'
+const FOOT_TYPE = 'text-[length:var(--text-eyebrow)] uppercase tracking-[0.06em] whitespace-nowrap'
+const FOOT_TEXT = `${FOOT_TYPE} text-[var(--color-ink-muted)]`
 
 /**
  * Site footer. Rendered by Layout, so it is on every page by construction
  * rather than by remembering to add it.
  *
  * Three parts on one line: REYDESIGNS @ 2026 (with the sleeping cat) on the
- * left, MADE /W THE HELP OF ICED CAPPS centred on the screen, and on the
- * right the visit counter, WEBSITE STALKERS: ## (every visit: visits.js).
- * The left and centre are static; the counter scrambles into place
+ * left, and on the right MADE /W THE HELP OF ICED CAPPS, in a neutral grey,
+ * beside the visit counter, WEBSITE STALKERS: ## (every visit: visits.js).
+ * The left and the ICED CAPPS line are static; the counter scrambles into place
  * (ScrambleText) every time the footer comes into view, once the count is in. Between times its text is
  * laid out invisibly, so nothing shifts when it plays. With no count to show
- * (visits.js), the right is simply empty. On a phone the centre line drops
- * to a second row.
+ * (visits.js), the counter's place is simply empty. On a phone the
+ * ICED CAPPS line drops to a second row, still on the right.
  *
  * The sleeping cat is 3 frames over 1.5s with a loop count of 0, so it runs for
  * as long as the page is open on its own; reduced motion gets the first frame
@@ -76,7 +76,7 @@ export function Footer({ className = '' }) {
       ref={ref}
       className={
         'grid grid-cols-2 items-center gap-x-4 gap-y-1 px-[var(--page-gutter)] ' +
-        'sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] ' +
+        'sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-x-6 ' +
         'pb-[clamp(0.375rem,0.8vh,0.625rem)] pt-[clamp(0.1875rem,0.5vh,0.375rem)] ' +
         `max-sm:pb-[max(clamp(0.375rem,0.8vh,0.625rem),var(--dock-clear,0px))] ${className}`
       }
@@ -91,7 +91,9 @@ export function Footer({ className = '' }) {
         <span className={`truncate ${FOOT_TEXT}`}>REYDESIGNS @ 2026</span>
       </span>
 
-      <span className={`col-span-2 row-start-2 justify-self-center sm:col-span-1 sm:col-start-2 sm:row-start-1 ${FOOT_TEXT}`}>
+      <span
+        className={`col-span-2 row-start-2 justify-self-end text-[var(--card-blurb-ink)] sm:col-span-1 sm:col-start-2 sm:row-start-1 ${FOOT_TYPE}`}
+      >
         MADE /W THE HELP OF ICED CAPPS
       </span>
 
