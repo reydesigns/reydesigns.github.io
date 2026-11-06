@@ -74,6 +74,8 @@ const openComics = async (page) => {
 async function restPointer(page) {
   const d = await (await page.$('.ch-display'))?.boundingBox()
   if (d) await page.mouse.move(d.x + d.width / 2, d.y + d.height - 4)
+  // and give a lifted comic time to settle back into its pocket
+  await sleep(600)
 }
 
 /** Drags a comic by its top to (x, y) in steps, then lets go. */

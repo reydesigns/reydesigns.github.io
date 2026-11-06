@@ -248,7 +248,11 @@ button.ch-comic:focus-visible {
   }
 }
 /* The rack is as wide as its column allows, and as tall as its comics make
-   it: when that is taller than the window, the column scrolls. */
+   it: when that is taller than the window, the column scrolls up and down,
+   never sideways. The column is the rack's container, so the rack's width
+   is the column's own inner width, after any scrollbar (a mouse on macOS
+   shows one that takes room: sized to the window instead, the rack spilled
+   past it and the column scrolled sideways). */
 .ch-shelf {
   grid-area: shelf;
   display: flex;
@@ -258,15 +262,16 @@ button.ch-comic:focus-visible {
   min-width: 0;
   min-height: 0;
   padding: 3cqi;
-  overflow-y: auto;
+  overflow: hidden auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  container-type: inline-size;
 }
 .ch-shelf > .ch-rack {
   margin-block: auto;
 }
 .ch-frame .ch-rack {
-  --ch-u: calc(40cqi / var(--ch-w));
+  --ch-u: calc(100cqi / var(--ch-w));
 }
 
 /* --- the stand: the comic out of the rack, in full ----------------------- */
@@ -429,9 +434,6 @@ button.ch-comic:focus-visible {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     aspect-ratio: 1;
   }
-  .ch-frame .ch-rack {
-    --ch-u: calc(44cqi / var(--ch-w));
-  }
   .ch-display__cover {
     height: 52cqi;
   }
@@ -493,9 +495,6 @@ button.ch-comic:focus-visible {
     flex: none;
     gap: 1rem;
     padding: 1.5rem 1.25rem 2rem;
-  }
-  .ch-frame .ch-rack {
-    --ch-u: calc((100cqi - 2.5rem) / var(--ch-w));
   }
   /* A finger on the rack scrolls it; a tap picks. */
   .ch-comic {
