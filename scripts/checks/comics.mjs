@@ -30,7 +30,7 @@ const isOpen = (page) => page.evaluate(() => !!document.querySelector('dialog.ch
 
 /* The rack, in order (src/data/comics.js): each character and how many comics. */
 const STACKS = [
-  ['spider-man', 'Spider-Man', 5],
+  ['spider-man', 'Spider-Man', 6],
   ['black-cat', 'Black Cat', 1],
   ['mary-jane', 'Mary Jane', 1],
   ['miles-morales', 'Miles Morales', 1],
@@ -65,6 +65,15 @@ const openComics = async (page) => {
   await sleep(800)
   await page.click(`${CARD} button`)
   await sleep(800)
+  await restPointer(page)
+}
+
+/* The pointer, left where the card was clicked, may now be over a comic in
+   the window, which lifts it over the bottom of the one above; rest it on
+   the stand instead, so every comic sits in its pocket. */
+async function restPointer(page) {
+  const d = await (await page.$('.ch-display'))?.boundingBox()
+  if (d) await page.mouse.move(d.x + d.width / 2, d.y + d.height - 4)
 }
 
 /** Drags a comic by its top to (x, y) in steps, then lets go. */
@@ -122,6 +131,7 @@ const browser = await launch({ gpu: true })
   await page.click(`${CARD} button`)
   await sleep(800)
   check('click opens the pop-up', await isOpen(page))
+  await restPointer(page)
   const head = await page.evaluate(() => ({
     title: document.querySelector('#ch-title')?.textContent,
     inSign: !!document.querySelector('.ch-sign > #ch-title'),
@@ -166,8 +176,8 @@ const browser = await launch({ gpu: true })
   check('the rack fits its column across, left of the stand; the column scrolls for the rest', rack.across && rack.scrolls && rack.leftOfStand, JSON.stringify({ ...rack, order: undefined, tags: undefined }))
 
   const first = await stand(page)
-  check('opens with the first comic out, on the stand in full', first.title === 'The Amazing Spider-Man (2025)' && first.out.join() === 'spider-man-0' && first.cover, JSON.stringify(first))
-  check('"Completed" above the pixel stars', first.tag === 'Completed' && first.stars === 'Rated 4 out of 5 stars', JSON.stringify(first))
+  check('opens with the first comic out, Coming Home, on the stand in full', first.title === 'Amazing Spider-Man Modern Era Epic Collection: Coming Home (2025)' && first.out.join() === 'spider-man-0' && first.cover, JSON.stringify(first))
+  check('"Completed" above the pixel stars', first.tag === 'Completed' && first.stars === 'Rated 5 out of 5 stars', JSON.stringify(first))
   const order = await page.evaluate(() => {
     const tag = document.querySelector('.ch-display__tag').getBoundingClientRect()
     const stars = document.querySelector('.ch-display .ch-stars')
@@ -186,7 +196,7 @@ const browser = await launch({ gpu: true })
   check('a click flies the comic across', mid.flyers >= 1, `${mid.flyers} flyer(s) mid-flight`)
   check('and it lands on the stand; the last one goes back', cat.title === 'Black Cat (2025)' && cat.out.join() === 'black-cat-0' && cat.cover && cat.flyers === 0 && cat.stars === 'Rated 4.5 out of 5 stars', JSON.stringify(cat))
   const back = await page.evaluate((s) => getComputedStyle(document.querySelector(`${s} img`)).visibility, COMIC('spider-man-0'))
-  check('Amazing Spider-Man is back in its pocket', back === 'visible', back)
+  check('Coming Home is back in its pocket', back === 'visible', back)
 
   // a drag onto the stand
   const sb = await (await page.$('.ch-display__stage')).boundingBox()

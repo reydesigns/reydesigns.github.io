@@ -1,3 +1,4 @@
+import comingHome from '@assets/comics/covers/coming-home.webp'
 import amazingSpiderMan2025 from '@assets/comics/covers/amazing-spider-man-2025.webp'
 import ultimateSpiderMan2024 from '@assets/comics/covers/ultimate-spider-man-2024.webp'
 import longWayHome4 from '@assets/comics/covers/long-way-home-4.webp'
@@ -62,6 +63,9 @@ export const STACKS = [
     name: 'Spider-Man',
     side: 'Hero',
     comics: [
+      // First, so it is the comic out when the window opens (client: John
+      // Romita Jr.'s Spider-Man on a ledge in the rain). One book, not a run.
+      { title: 'Amazing Spider-Man Modern Era Epic Collection: Coming Home (2025)', issue: 'Collects #30–#45', cover: comingHome, rating: 5 },
       { title: 'The Amazing Spider-Man (2025)', issue: '#1–#35, #1000–#1002', run: true, issues: 38, cover: amazingSpiderMan2025, rating: 4 },
       { title: 'Ultimate Spider-Man (2024)', issue: '#1–#24', run: true, issues: 24, cover: ultimateSpiderMan2024, rating: 5 },
       { title: 'Spider-Man: Long Way Home (2026)', issue: '#4', cover: longWayHome4, rating: 4.5 },

@@ -23,6 +23,9 @@ const WIDTH = 360
 const MARVEL = 'https://cdn.marvel.com/u/prod/marvel/i/mg/'
 
 const COVERS = {
+  // Amazing Spider-Man Modern Era Epic Collection: Coming Home (2025), John
+  // Romita Jr.'s Spider-Man on a ledge in the rain — marvel.com/comics/collection/123767
+  'coming-home': `${MARVEL}4/50/67922e4c681f9/clean.jpg`,
   // The Amazing Spider-Man (2025) #1 — marvel.com/comics/issue/119343
   'amazing-spider-man-2025': `${MARVEL}6/70/67f52630b9c1d/clean.jpg`,
   // Ultimate Spider-Man (2024) #1 — 112985
