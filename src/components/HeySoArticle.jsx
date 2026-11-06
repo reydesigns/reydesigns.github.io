@@ -559,7 +559,7 @@ export function HeySoArticle({ next }) {
         <h2 className={H2}>What did I learn and what would I change?</h2>
         <NumberedList
           items={[
-            "Unfortunately, we didn't win this hackathon. Despite not winning, it doesn't mean this product is worth nothing. Here are some things I learned during this journey:",
+            'Interview people outside of our team – With only 13 hours, I interviewed my three teammates. They fit our target market, but they were also the ones building the product. Talking to even a few young professionals outside of the team would have tested our pain points without our own bias.',
             [
               'Figure out how to utilize the tagging filtration system better – The tags are a good way to filter out places and personalities in the friend group; however, I definitely think showing how it benefits the consumer would have been a better approach.',
               'Go more in-depth with competitive analysis – Due to time restrictions, we could not perform a traditional competitive analysis. I did search apps in the market and compare a few features but never visually (more detailed) mapped it out.',
