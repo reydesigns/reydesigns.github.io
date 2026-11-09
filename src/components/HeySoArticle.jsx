@@ -173,7 +173,7 @@ function Quote({ children, who }) {
 --------------------------------------------------------------------------- */
 const STATISTICS = [
   ['80-100', '...interactions are needed to become close friends'],
-  ['No Personal Time', '32-34 year olds have the lowest amount of leisure time'],
+  ['No Personal Time', '22-34 year olds have the lowest amount of leisure time'],
   ['47%', '...of Canadians lose touch with a few friends after 12 months'],
 ]
 
