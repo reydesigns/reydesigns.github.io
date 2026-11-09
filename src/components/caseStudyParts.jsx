@@ -211,7 +211,7 @@ export function Tags({ tags }) {
       {tags.map((tag) => (
         <li
           key={tag}
-          className="rounded-[var(--radius-pill)] bg-[var(--color-surface)] px-[0.95rem] py-[0.4rem] text-[length:var(--text-eyebrow)] font-medium tracking-[0.04em] text-[var(--color-ink-muted)]"
+          className="rounded-[var(--radius-pill)] bg-[var(--color-surface)] shadow-[inset_0_0_0_1px_var(--color-pill-edge)] px-[0.95rem] py-[0.4rem] text-[length:var(--text-eyebrow)] font-medium tracking-[0.04em] text-[var(--color-ink-muted)]"
         >
           {tag}
         </li>

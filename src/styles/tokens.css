@@ -35,6 +35,10 @@
   --color-surface-sunken: #ebebed; /* statistics + insights cards             */
   --color-surface-persona: #e9e9eb;/* persona card — a step below the ground   */
   --color-nav: #d9d8db;            /* bottom / side nav pill background       */
+  /* The hairline round a white pill on the page ground (the case-study tags).
+     White on --color-bg is 1.09:1, so without it the pill disappears; the
+     old warm ground set it off by hue, the neutral one cannot. */
+  --color-pill-edge: #dedee1;
   /* Secondary hero labels (eyebrow + tagline). Raised from the comps' 30% so
      they read clearly. */
   --hero-label-opacity: 0.75;
