@@ -31,9 +31,10 @@ import gifLove from '@assets/heyso/video/1.gif'
 import gifSummary from '@assets/heyso/video/3.gif'
 
 /* ---------------------------------------------------------------------------
-   Copy is transcribed from Assets/heyso/images/case-study.png, verbatim —
-   including "Qualititative", "itnerary" and "Our teams response", which are
-   the client's own spellings. Nothing here is written, only copied.
+   Copy is transcribed from Assets/heyso/images/case-study.png. It was kept
+   verbatim at first, typos included, until the client asked for the spelling
+   and grammar to be corrected (2026-11-09: "Qualitative", "Our team's
+   response" and the like). Words baked into the images are untouched.
 
    Type sizes were measured off that comp by row-profiling the ink of each
    line (cap height and leading) rather than eyeballed. The comp resolves to
@@ -167,18 +168,18 @@ function Quote({ children, who }) {
    so the figures can be set at --cs-stat, every row shares one baseline grid,
    and the rules between rows are real hairlines rather than pixels.
 
-   "80-100" and "22-31" keep plain hyphens: Pixelta has no dash glyph, and an
-   en dash would silently fall back mid-word.
+   "80-100" keeps a plain hyphen: Pixelta has no dash glyph, and an en dash
+   would silently fall back mid-word.
 --------------------------------------------------------------------------- */
 const STATISTICS = [
-  ['80-100', '...of interactions are needed to become close friends'],
-  ['No Personal Time', '22-31 year olds have the lowest amount of leisure time'],
+  ['80-100', '...interactions are needed to become close friends'],
+  ['No Personal Time', '22- to 31-year-olds have the lowest amount of leisure time'],
   ['47%', '...of Canadians lose touch with a few friends after 12 months'],
 ]
 
 const INSIGHTS = [
   ['😴', 'Working young adults are too busy or have no social battery left to plan hangouts with friends'],
-  ['🫥', 'Some have nerves while trying to start off a message or sending questions to friends'],
+  ['🫥', 'Some get nervous when trying to start a message or send questions to friends'],
   ['👥', 'The greater the group is, the harder it is to manage information overload'],
 ]
 
@@ -342,8 +343,8 @@ export function HeySoArticle({ next }) {
         <Eyebrow>Objective</Eyebrow>
         <P>
           My friends and I teamed up to compete in the annual WITM &ndash; WeDesignTech Hackathon
-          2023 competition. Over 80 teams have participated to create a product that mediates an
-          information society between its benefits and disadvantages.
+          2023 competition. Over 80 teams participated to create a product that mediates between the
+          benefits and disadvantages of an information society.
         </P>
         <P className="font-bold">
           Using technology, your challenge is to mediate between the benefits of an information
@@ -354,7 +355,7 @@ export function HeySoArticle({ next }) {
         <RoleCard
           cells={[
             ['My role', ['Product Designer', 'Researcher', 'Brand Designer']],
-            ['Duration', ['1 Day Sprint', '13 Hours']],
+            ['Duration', ['1-Day Sprint', '13 Hours']],
             ['Team', ['Me', 'Stella', 'Miguel', 'Curtis']],
             ['Tools', ['Figma', 'FigJam']],
           ]}
@@ -368,7 +369,7 @@ export function HeySoArticle({ next }) {
         <Eyebrow>Problem</Eyebrow>
         <h2 className={H2}>Struggles of scheduling plans as an adult</h2>
         <P>
-          Our teams response to this theme resulted in{' '}
+          Our team&apos;s response to this theme resulted in{' '}
           <Accent className="text-[length:calc(var(--text-body)*1.45)]">Heyso...</Accent>
         </P>
         <P>
@@ -383,7 +384,7 @@ export function HeySoArticle({ next }) {
       <Section id="research">
         <Eyebrow>Research</Eyebrow>
         <h2 className={H2}>
-          With the broad theme given, we branched through different zones within the{' '}
+          With the broad theme given, we branched out into different zones within the{' '}
           <Accent>information overload</Accent> problem space.
         </h2>
         <EmojiRows rows={ZONES} />
@@ -396,13 +397,13 @@ export function HeySoArticle({ next }) {
         />
 
         <h2 className={H2}>
-          With three problem spaces in mind, we finalized with one using a voting system based on
+          With three problem spaces in mind, we settled on one using a voting system based on
           feasibility.
         </h2>
         <P>
-          We found that the ideas that were voted the most, all add one topic in common: time/info
-          management. This alluded to three main branches tackling students, young professionals,
-          and overall overstimulation of information. We followed this by voting between the three
+          We found that the ideas that were voted for the most all had one topic in common:
+          time/info management. This pointed to three main branches tackling students, young
+          professionals, and the overall overstimulation of information. We followed this by voting between the three
           in a summarized manner.
         </P>
         <Figure
@@ -417,7 +418,7 @@ export function HeySoArticle({ next }) {
           Confirming assumptions through qualitative and quantitative research.
         </h2>
         <P>
-          There were numerous assumptions based on the topic we chose. This influenced important
+          There were numerous assumptions based on the topic we chose. These influenced important
           questions we addressed during the beginning stages of our research.
         </P>
         <NumberedList
@@ -431,7 +432,7 @@ export function HeySoArticle({ next }) {
 
         <h3 className={H3}>Quantitative research &ndash; keyword searching</h3>
         <P>
-          There were numerous assumptions based on the topic we chose. This influenced important
+          There were numerous assumptions based on the topic we chose. These influenced important
           questions we addressed during the beginning stages of our research.
         </P>
         <Figure
@@ -443,12 +444,12 @@ export function HeySoArticle({ next }) {
         />
         <Statistics />
 
-        <h3 className={H3}>Qualititative research &ndash; user interviews</h3>
+        <h3 className={H3}>Qualitative research &ndash; user interviews</h3>
         <P>I conducted user interviews with my three teammates.</P>
         <P>
-          To have a deeper empathic understanding with the user, I asked my three teammates: Stella,
-          Curtis, and Miguel three questions. These relevant users are working part-time Co-Op roles
-          and are all aged between 21-24.
+          To gain a deeper, empathic understanding of the user, I asked my three teammates, Stella,
+          Curtis, and Miguel, three questions. These relevant users work in part-time co-op roles
+          and are all between 21 and 24 years old.
         </P>
         <P>
           Analyzing key points and observations (through empathy maps) highlighted a few recurring
@@ -456,12 +457,12 @@ export function HeySoArticle({ next }) {
         </P>
         <div className="flex flex-col gap-[var(--cs-6)]">
           <Quote who="Miguel">
-            Whenever me and my friends try planning something in the group chat, it usually is never
-            ending since we have busy schedules
+            Whenever my friends and I try planning something in the group chat, it is usually
+            never-ending since we have busy schedules
           </Quote>
           <Quote who="Curtis">We can never seem to find an interesting place to hang...</Quote>
           <Quote who="Stella">
-            As an introvert, I still like to hangout with friends but I usually feel overwhelmed
+            As an introvert, I still like to hang out with friends, but I usually feel overwhelmed
             when I initiate
           </Quote>
         </div>
@@ -469,10 +470,10 @@ export function HeySoArticle({ next }) {
         <h3 className={H3}>Validating our research</h3>
         <EmojiRows rows={INSIGHTS} />
 
-        <h2 className={H2}>Who is our targeted user? &ndash; pain points &amp; goals</h2>
+        <h2 className={H2}>Who is our target user? &ndash; pain points &amp; goals</h2>
         <P>
-          The utilization of Frank was an important step forward into understanding further of who
-          our target market really is and how might this product impact their lives positively.
+          The utilization of Frank was an important step forward in further understanding who our
+          target market really is and how this product might impact their lives positively.
         </P>
         <Figure
           src={imgPersona}
@@ -487,25 +488,25 @@ export function HeySoArticle({ next }) {
       <Section id="solution">
         <Eyebrow>Solution</Eyebrow>
         <P>
-          After concluding three pain points from the research we have gathered, our team began
-          brainstorming solutions &ndash; basically our key features.
+          After identifying three pain points from the research we had gathered, our team began
+          brainstorming solutions &ndash; basically, our key features.
         </P>
         <P>
-          These ideas were then voted for three focused key features. You&apos;ll notice we chose to
-          use AI as a significant trait of the app. We believed that because of the sudden rise of
-          AI application in interfaces, we decided to utilize this opportunity of building new
-          innovative AI systems. In this particular case, AI is a valid implementation due to its
-          ability of easing common troubles consumers face while using an interface.
+          These ideas were then narrowed down by vote to three focused key features. You&apos;ll
+          notice we chose to use AI as a significant trait of the app. Because of the sudden rise of
+          AI applications in interfaces, we decided to use this opportunity to build new, innovative
+          AI systems. In this particular case, AI is a valid implementation due to its ability to
+          ease common troubles consumers face while using an interface.
         </P>
 
         <h2 className={H2}>How will Frank use our in-app feature?</h2>
         <P>Assumptions:</P>
         <ul className="m-0 flex list-none flex-col gap-[var(--cs-1)] p-0">
           <li className="text-[length:var(--text-body)] leading-[1.3] text-[var(--color-ink)]">
-            <span aria-hidden="true">💬</span> Everyone has iMessage (iOS) on their iphones
+            <span aria-hidden="true">💬</span> Everyone has iMessage (iOS) on their iPhones
           </li>
           <li className="text-[length:var(--text-body)] leading-[1.3] text-[var(--color-ink)]">
-            <span aria-hidden="true">📅</span> Everyone has an account in Heyso and their google
+            <span aria-hidden="true">📅</span> Everyone has an account in Heyso and their Google
             calendars are synced
           </li>
         </ul>
@@ -520,24 +521,24 @@ export function HeySoArticle({ next }) {
         <h3 className={H3}>Ideating + Iterating</h3>
         <P>
           We used the user flow and key features to split up the work from here. Curtis, Stella, and
-          I were responsible with curating the prototype.
+          I were responsible for curating the prototype.
         </P>
         <p className={HEAD}>
-          Specifically, I was responsible in designing the{' '}
+          Specifically, I was responsible for designing the{' '}
           <span className="quote-mark">&quot;</span>
           <Accent>iMessage Screens.</Accent>
           <span className="quote-mark">&quot;</span>
         </p>
         <P>
           During the iteration process, I would ask my teammates questions for feedback while
-          sketching to ensure we are all on the same page and understand how our extension works in
-          iMessage.
+          sketching to ensure we were all on the same page and understood how our extension would
+          work in iMessage.
         </P>
         <Figure
           src={imgWireframes}
           width={2584}
           height={722}
-          alt="Lo-fi wireframes, before and after, for place/activity selection, the invite of heyso sent, and the poll system plus finalized itnerary."
+          alt="Lo-fi wireframes, before and after, for place/activity selection, the invite of heyso sent, and the poll system plus finalized itinerary."
         />
         <Figure
           src={imgScreens}
@@ -562,9 +563,9 @@ export function HeySoArticle({ next }) {
             'Interview people outside of our team – With only 13 hours, I interviewed my three teammates. They fit our target market, but they were also the ones building the product. Talking to even a few young professionals outside of the team would have tested our pain points without our own bias.',
             [
               'Figure out how to utilize the tagging filtration system better – The tags are a good way to filter out places and personalities in the friend group; however, I definitely think showing how it benefits the consumer would have been a better approach.',
-              'Go more in-depth with competitive analysis – Due to time restrictions, we could not perform a traditional competitive analysis. I did search apps in the market and compare a few features but never visually (more detailed) mapped it out.',
+              'Go more in-depth with competitive analysis – Due to time restrictions, we could not perform a traditional competitive analysis. I did search for apps on the market and compare a few features, but I never mapped them out visually in more detail.',
             ],
-            'Research more about AI implementation and collaborate with system engineers – If I had the ability, I would definitely cross check with software engineers and cybersecurity professionals to see how safe and secure this specific AI system can be.',
+            'Research more about AI implementation and collaborate with systems engineers – If I had the ability, I would definitely cross-check with software engineers and cybersecurity professionals to see how safe and secure this specific AI system can be.',
           ]}
         />
       </Section>
