@@ -595,6 +595,13 @@
 .lp-p-3 { transform: translateY(calc((1 - var(--p)) * 38% + var(--q) * 3%)); }
 .lp-p-4 { transform: translateY(calc((1 - var(--p)) * 50% + var(--q) * -2%)); }
 
+/* HeySo's final product: the three prototype GIFs on the case-study band's
+   width, like Lipton's walkthrough below, so the phones are large enough to
+   read (in the column they were ~127px wide at 1440). Keeps a figure's gap. */
+.cs-flow > .hs-final {
+  margin-top: var(--cs-gap-figure);
+}
+
 /* Walkthrough: a looping video of the app (LiptonArticle), on a white card
    the case-study band's width, like the brand board under it. It was a
    sideways strip of the screens, but a mouse's wheel could not move it

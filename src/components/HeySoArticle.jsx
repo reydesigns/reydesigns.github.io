@@ -289,10 +289,10 @@ const FINAL_PRODUCT = [
 
 function FinalProduct() {
   return (
-    <figure className="cs-figure cs-card--surface m-0 rounded-[var(--radius-card)] px-[4%] py-[2.4%]">
+    <figure className="cs-figure cs-wide hs-final cs-card--surface m-0 rounded-[var(--radius-card)] px-[4%] py-[2.4%]">
       <ul className="m-0 grid list-none grid-cols-3 place-items-center p-0">
         {FINAL_PRODUCT.map((shot) => (
-          <li key={shot.gif} className="w-[63%]">
+          <li key={shot.gif} className="w-[80%]">
             <div
               className="relative overflow-hidden"
               style={{ aspectRatio: `${STILL_SIZE[0]} / ${STILL_SIZE[1]}` }}
