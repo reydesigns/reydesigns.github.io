@@ -102,7 +102,7 @@ export function ShoreUpArticle({ next }) {
         <RoleCard
           cells={[
             ['My role', ['UX Researcher', 'UI Designer', 'Brand Designer']],
-            ['Duration', ['1 Day Sprint', '6 Hours']],
+            ['Duration', ['1 Day', '6 Hours']],
             ['Team', ['Me', 'Daniel']],
             ['Tools', ['Figma', 'Claude Code', 'Google Slides']],
           ]}
