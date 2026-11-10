@@ -864,7 +864,7 @@
   max-height: min(60vh, 32rem);
   object-fit: contain;
   border-radius: 4px;
-  animation: fz-fade-in 220ms ease-out both;
+  /* No fade: a swipe or a thumbnail swaps the picture at once. */
 }
 @media (min-width: 48rem) {
   /* Fixed tracks too, so 100% below is the stage's height, not the
@@ -979,9 +979,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .fz-pop__window,
-  .fz-pop::backdrop,
-  .fz-pop__stage > img,
-  .fz-pop__stage > video {
+  .fz-pop::backdrop {
     animation: none;
   }
 }

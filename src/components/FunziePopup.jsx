@@ -13,18 +13,34 @@ const CLOSE_MS = 180
 const RESIZE_MS = 320
 const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const WIDE = '(min-width: 48rem)'
-// Scrolling or swiping up and down over the picture steps through the strip.
-// A trackpad flick sends a burst of wheel events: this much of it turns one
-// picture, and the burst has to go quiet for WHEEL_QUIET before the next.
-const WHEEL_STEP = 40
-const WHEEL_QUIET = 180
-// A finger has to travel this far, mostly up or down, to count as a swipe.
-const SWIPE_STEP = 40
+/* Scrolling or swiping up and down over the picture steps through the strip,
+   one picture per gesture, the moment the gesture starts.
+
+   Wheel: a mouse notch, or the first few pixels of a trackpad flick
+   (WHEEL_START), turn the picture at once. The rest of that gesture, and the
+   momentum macOS keeps sending for a second or more after the fingers lift,
+   is ignored; but a new gesture counts straight away, even mid-momentum. A
+   new gesture is any of: a pause in the events (WHEEL_GAP), a change of
+   direction, or deltas that jump well above their low of the last
+   RISE_WINDOW (momentum only ever dies away; fresh fingers push it back up).
+   A rise only counts once the last gesture has peaked (FLICK_PEAK at least)
+   and died down to half that, and RISE_AFTER its step: so a flick that
+   starts slowly and then speeds up is still one gesture.
+
+   Touch: the picture turns as soon as the finger has moved SWIPE_STEP, mostly
+   up or down, not when it lifts; one turn per touch. */
+const WHEEL_START = 4
+const WHEEL_GAP = 100
+const RISE_AFTER = 150
+const RISE_WINDOW = 120
+const FLICK_PEAK = 12
+const isRise = (abs, low) => abs > low * 2.5 + 8
+const SWIPE_STEP = 32
 
 /**
  * Calls onStep(1) for a scroll down or a swipe up over `ref`'s element, and
- * onStep(-1) for the reverse: one step per flick, however long its momentum
- * runs. A set's carousel is left alone, so it can still scroll sideways.
+ * onStep(-1) for the reverse, per the rules above. A set's carousel is left
+ * alone, so it can still scroll sideways.
  */
 function useVerticalStep(ref, onStep, key) {
   const latest = useRef(onStep)
@@ -36,23 +52,47 @@ function useVerticalStep(ref, onStep, key) {
     if (!el) return undefined
     const inSet = (e) => e.target instanceof Element && e.target.closest('.fz-pop__set')
 
+    let armed = true // the next movement starts a gesture
     let acc = 0
-    let locked = false
-    let quiet = 0
+    let lastT = -Infinity
+    let lastSign = 0
+    let stepT = -Infinity
+    let peak = 0 // the biggest delta since the last step
+    let decayed = false // ...and the deltas have since fallen to half of it
+    let recent = [] // [time, |delta|] of the last RISE_WINDOW
     const onWheel = (e) => {
       // Pinch-zoom on a trackpad arrives as ctrl+wheel; sideways is the carousel's.
       if (e.ctrlKey || inSet(e) || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
       e.preventDefault()
-      clearTimeout(quiet)
-      quiet = setTimeout(() => {
+      const now = e.timeStamp
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY
+      const abs = Math.abs(dy)
+      const sign = Math.sign(dy)
+      recent = recent.filter(([t]) => now - t <= RISE_WINDOW)
+      if (!armed) {
+        const low = recent.length ? Math.min(...recent.map(([, a]) => a)) : Infinity
+        armed =
+          now - lastT > WHEEL_GAP ||
+          (sign && lastSign && sign !== lastSign && abs >= WHEEL_START) ||
+          (decayed && now - stepT > RISE_AFTER && isRise(abs, low))
+        if (armed) acc = 0
+        peak = Math.max(peak, abs)
+        if (peak >= FLICK_PEAK && abs < peak / 2) decayed = true
+      } else if (now - lastT > WHEEL_GAP) {
         acc = 0
-        locked = false
-      }, WHEEL_QUIET)
-      if (locked) return
-      acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
-      if (Math.abs(acc) >= WHEEL_STEP) {
+      }
+      recent.push([now, abs])
+      lastT = now
+      if (sign) lastSign = sign
+      if (!armed) return
+      acc += dy
+      if (Math.abs(acc) >= WHEEL_START) {
         latest.current(Math.sign(acc))
-        locked = true
+        armed = false
+        stepT = now
+        peak = abs
+        decayed = false
+        acc = 0
       }
     }
 
@@ -60,30 +100,47 @@ function useVerticalStep(ref, onStep, key) {
     const onTouchStart = (e) => {
       start = e.touches.length === 1 && !inSet(e) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
     }
-    const onTouchEnd = (e) => {
+    const onTouchMove = (e) => {
       if (!start) return
-      const t = e.changedTouches[0]
+      const t = e.touches[0]
       const dx = t.clientX - start.x
       const dy = t.clientY - start.y
-      start = null
-      if (Math.abs(dy) >= SWIPE_STEP && Math.abs(dy) > Math.abs(dx)) latest.current(dy < 0 ? 1 : -1)
+      if (Math.abs(dy) >= SWIPE_STEP && Math.abs(dy) > Math.abs(dx)) {
+        start = null // one turn per touch
+        latest.current(dy < 0 ? 1 : -1)
+      } else if (Math.abs(dx) >= SWIPE_STEP) {
+        start = null // a sideways drag is not a swipe
+      }
     }
-    const onTouchCancel = () => {
+    const onTouchEnd = () => {
       start = null
     }
 
     el.addEventListener('wheel', onWheel, { passive: false })
     el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: true })
     el.addEventListener('touchend', onTouchEnd)
-    el.addEventListener('touchcancel', onTouchCancel)
+    el.addEventListener('touchcancel', onTouchEnd)
     return () => {
-      clearTimeout(quiet)
       el.removeEventListener('wheel', onWheel)
       el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
       el.removeEventListener('touchend', onTouchEnd)
-      el.removeEventListener('touchcancel', onTouchCancel)
+      el.removeEventListener('touchcancel', onTouchEnd)
     }
   }, [ref, key])
+}
+
+/* Pictures a step or two away are fetched and decoded ahead, so a swipe
+   shows the next one at once rather than a blank while it loads. Kept here
+   so the browser keeps them. */
+const preloaded = new Map()
+function preload(src) {
+  if (preloaded.has(src)) return
+  const img = new Image()
+  img.src = src
+  img.decode?.().catch(() => {})
+  preloaded.set(src, img)
 }
 
 /**
@@ -113,31 +170,35 @@ export function FunziePopup({ item, onClose }) {
   const wide = useMediaQuery(WIDE, true)
   const [closing, setClosing] = useState(false)
   const [size, setSize] = useState('window')
-  const [index, setIndex] = useState(0)
-  // Within a set (a strip thumbnail with a carousel under its picture), which
-  // of its pictures is showing.
-  const [sub, setSub] = useState(0)
-  const pick = useCallback((i) => {
-    setIndex(i)
-    setSub(0)
-  }, [])
+  // Which strip picture is showing, and within a set (a strip thumbnail with
+  // a carousel under its picture), which of its pictures. One state, so a
+  // step can work from the latest of both however fast steps come.
+  const [pos, setPos] = useState({ index: 0, sub: 0 })
+  const { index, sub } = pos
+  const pick = useCallback((i) => setPos({ index: i, sub: 0 }), [])
+  const pickSub = useCallback((s) => setPos((p) => ({ ...p, sub: s })), [])
   const pics = item ? picturesOf(item) : []
+  const count = pics.length
   useVerticalStep(
     stageRef,
-    (d) => {
-      const next = Math.min(pics.length - 1, Math.max(0, index + d))
-      if (next !== index) pick(next)
-    },
+    (d) =>
+      setPos((p) => {
+        const next = Math.min(count - 1, Math.max(0, p.index + d))
+        return next === p.index ? p : { index: next, sub: 0 }
+      }),
     item,
   )
+  // The pictures either side of this one, ready before a swipe asks for them.
+  useEffect(() => {
+    for (const p of pics.slice(Math.max(0, index - 2), index + 4)) if (p.type === 'image') preload(p.src)
+  }, [item, index]) // eslint-disable-line react-hooks/exhaustive-deps -- pics follows item
 
   useEffect(() => {
     const dialog = ref.current
     if (!item || !dialog) return undefined
     setClosing(false)
     setSize('window')
-    setIndex(0)
-    setSub(0)
+    setPos({ index: 0, sub: 0 })
     if (!dialog.open) dialog.showModal()
     setCursorHost(dialog)
     const release = holdScroll()
@@ -237,19 +298,20 @@ export function FunziePopup({ item, onClose }) {
               {cur.type === 'video' ? (
                 <video key={cur.src} src={cur.src} autoPlay={!reduced} controls={reduced} muted loop playsInline />
               ) : (
+                // One <img> whose src changes (no key, no async decode): the
+                // browser keeps the last picture up until the next is ready,
+                // so a step never flashes blank.
                 <img
-                  key={cur.src}
                   src={cur.src}
                   alt={
                     set.length > 1
                       ? `${item.title}, ${index + 1} of ${pics.length}, view ${sub + 1} of ${set.length}`
                       : `${item.title}, ${index + 1} of ${pics.length}`
                   }
-                  decoding="async"
                   draggable={false}
                 />
               )}
-              {set.length > 1 && <SetThumbs set={set} sub={sub} onPick={setSub} title={item.title} />}
+              {set.length > 1 && <SetThumbs set={set} sub={sub} onPick={pickSub} title={item.title} />}
             </figure>
             <div className="fz-pop__text">
               <h2 className="fz-pop__title">{item.title}</h2>
