@@ -13,6 +13,78 @@ const CLOSE_MS = 180
 const RESIZE_MS = 320
 const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const WIDE = '(min-width: 48rem)'
+// Scrolling or swiping up and down over the picture steps through the strip.
+// A trackpad flick sends a burst of wheel events: this much of it turns one
+// picture, and the burst has to go quiet for WHEEL_QUIET before the next.
+const WHEEL_STEP = 40
+const WHEEL_QUIET = 180
+// A finger has to travel this far, mostly up or down, to count as a swipe.
+const SWIPE_STEP = 40
+
+/**
+ * Calls onStep(1) for a scroll down or a swipe up over `ref`'s element, and
+ * onStep(-1) for the reverse: one step per flick, however long its momentum
+ * runs. A set's carousel is left alone, so it can still scroll sideways.
+ */
+function useVerticalStep(ref, onStep, key) {
+  const latest = useRef(onStep)
+  useEffect(() => {
+    latest.current = onStep
+  })
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    const inSet = (e) => e.target instanceof Element && e.target.closest('.fz-pop__set')
+
+    let acc = 0
+    let locked = false
+    let quiet = 0
+    const onWheel = (e) => {
+      // Pinch-zoom on a trackpad arrives as ctrl+wheel; sideways is the carousel's.
+      if (e.ctrlKey || inSet(e) || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      e.preventDefault()
+      clearTimeout(quiet)
+      quiet = setTimeout(() => {
+        acc = 0
+        locked = false
+      }, WHEEL_QUIET)
+      if (locked) return
+      acc += e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+      if (Math.abs(acc) >= WHEEL_STEP) {
+        latest.current(Math.sign(acc))
+        locked = true
+      }
+    }
+
+    let start = null
+    const onTouchStart = (e) => {
+      start = e.touches.length === 1 && !inSet(e) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+    }
+    const onTouchEnd = (e) => {
+      if (!start) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - start.x
+      const dy = t.clientY - start.y
+      start = null
+      if (Math.abs(dy) >= SWIPE_STEP && Math.abs(dy) > Math.abs(dx)) latest.current(dy < 0 ? 1 : -1)
+    }
+    const onTouchCancel = () => {
+      start = null
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchend', onTouchEnd)
+    el.addEventListener('touchcancel', onTouchCancel)
+    return () => {
+      clearTimeout(quiet)
+      el.removeEventListener('wheel', onWheel)
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchend', onTouchEnd)
+      el.removeEventListener('touchcancel', onTouchCancel)
+    }
+  }, [ref, key])
+}
 
 /**
  * The window a project on the Design board opens: a native <dialog> (focus
@@ -25,7 +97,8 @@ const WIDE = '(min-width: 48rem)'
  * Right, the picked picture large and whole (a set with a small carousel of
  * its pictures under it), and beside it the write-up:
  * Pixelta header, tools, the picture's copy, and for the PC build its game
- * covers and floating parts. The arrow keys step through the thumbnails.
+ * covers and floating parts. The arrow keys step through the thumbnails, and
+ * so does scrolling or swiping up and down over the picture.
  *
  * A modal dialog sits in the browser's top layer, above the custom cursor, so
  * while it is open the cursor is portalled into it (setCursorHost). Lenis is
@@ -35,6 +108,7 @@ const WIDE = '(min-width: 48rem)'
 export function FunziePopup({ item, onClose }) {
   const ref = useRef(null)
   const frameRef = useRef(null)
+  const stageRef = useRef(null)
   const reduced = useReducedMotion()
   const wide = useMediaQuery(WIDE, true)
   const [closing, setClosing] = useState(false)
@@ -47,6 +121,15 @@ export function FunziePopup({ item, onClose }) {
     setIndex(i)
     setSub(0)
   }, [])
+  const pics = item ? picturesOf(item) : []
+  useVerticalStep(
+    stageRef,
+    (d) => {
+      const next = Math.min(pics.length - 1, Math.max(0, index + d))
+      if (next !== index) pick(next)
+    },
+    item,
+  )
 
   useEffect(() => {
     const dialog = ref.current
@@ -96,7 +179,6 @@ export function FunziePopup({ item, onClose }) {
 
   if (!item) return null
 
-  const pics = picturesOf(item)
   const entry = pics[Math.min(index, pics.length - 1)]
   const set = entry.set ?? [entry]
   const cur = set[Math.min(sub, set.length - 1)]
@@ -147,6 +229,7 @@ export function FunziePopup({ item, onClose }) {
           <Thumbs pics={pics} index={index} onPick={pick} title={item.title} />
           <div className="fz-pop__main">
             <figure
+              ref={stageRef}
               className="fz-pop__stage"
               data-icon={cur.icon || undefined}
               data-set={set.length > 1 || undefined}
@@ -196,15 +279,18 @@ export function FunziePopup({ item, onClose }) {
  * The thumbnail strip: one square button per picture, the picked one in full
  * colour with a burgundy ring, the rest knocked back. Each folder of a
  * foldered project starts a little further down than the one before. The
- * arrow keys move the pick (and focus) along the strip.
+ * arrow keys move the pick (and focus) along the strip; however the pick
+ * moves, the strip scrolls to keep it in view.
  */
 function Thumbs({ pics, index, onPick, title }) {
   const refs = useRef([])
+  useEffect(() => {
+    refs.current[index]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [index])
   const step = (d) => {
     const next = Math.min(pics.length - 1, Math.max(0, index + d))
     onPick(next)
     refs.current[next]?.focus()
-    refs.current[next]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }
   const onKeyDown = (e) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {

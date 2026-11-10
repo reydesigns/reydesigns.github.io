@@ -433,6 +433,18 @@ async function flowsDesktop() {
       })
       check('  a thumbnail picks its picture', after.shown !== info.shown && after.current === 1, `current=${after.current}`)
     }
+    if (info.thumbs > 2) {
+      // Scrolling down over the picture steps along the strip.
+      const c = await page.$eval('dialog.fz-pop .fz-pop__stage > :is(img, video)', (e) => {
+        const r = e.getBoundingClientRect()
+        return [r.left + r.width / 2, r.top + r.height / 2]
+      })
+      await page.mouse.move(c[0], c[1])
+      await page.mouse.wheel({ deltaY: 100 })
+      await sleep(400)
+      const cur = await page.$$eval('dialog.fz-pop .fz-pop__thumb', (ts) => ts.findIndex((t) => t.hasAttribute('aria-current')))
+      check('  scrolling down over the picture picks the next', cur === 2, `current=${cur}`)
+    }
     if (i % 2) await page.keyboard.press('Escape')
     else await page.click('dialog.fz-pop button[aria-label="Close"]')
     const closed = await page
