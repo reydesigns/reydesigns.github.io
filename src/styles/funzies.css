@@ -764,9 +764,13 @@
     margin-left: 0;
     margin-top: 0.75rem;
   }
+  /* One row exactly the window's height. Left `auto`, the row grew to fit a
+     tall picture (a story, an infographic), so the picture's max-height of
+     100% capped nothing and its bottom was cut off. */
   .fz-pop__main {
     display: grid;
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
   }
 }
@@ -857,9 +861,12 @@
   animation: fz-fade-in 220ms ease-out both;
 }
 @media (min-width: 48rem) {
+  /* Fixed tracks too, so 100% below is the stage's height, not the
+     picture's own. */
   .fz-pop__stage {
     height: 100%;
     box-sizing: border-box;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   }
   .fz-pop__stage > img,
   .fz-pop__stage > video {
