@@ -184,14 +184,19 @@ export const FUNZIES = [
         name: 'icons',
         tile: 'icon',
         body: 'Instagram highlight icons for the club’s profile.',
+        // One set, like the magazine's: a single thumbnail in the strip, and
+        // all seven icons in the carousel under the picture.
         media: [
-          m('tk-icon-announce.webp'),
-          m('tk-icon-discord.webp'),
-          m('tk-icon-faq.webp'),
-          m('tk-icon-team.webp'),
-          m('tk-icon-cancelled.webp'),
-          m('tk-icon-camera.webp'),
-          m('tk-icon-website.webp'),
+          m('tk-icon-announce.webp', {
+            more: [
+              m('tk-icon-discord.webp'),
+              m('tk-icon-faq.webp'),
+              m('tk-icon-team.webp'),
+              m('tk-icon-cancelled.webp'),
+              m('tk-icon-camera.webp'),
+              m('tk-icon-website.webp'),
+            ],
+          }),
         ],
       },
     ],
@@ -295,24 +300,28 @@ export const funzie = (id) => FUNZIES.find((f) => f.id === id)
  * slides. `text` is the copy shown beside a picture: its own `body` if it
  * has one, else the project's, plus its folder's line.
  *
- * A slide with `more` pictures is a set: one thumbnail in the strip, and
- * `set` (the slide, then its `more`) is the carousel under the picture.
+ * A slide with `more` pictures is a set, in a folder or not: one thumbnail
+ * in the strip, and `set` (the slide, then its `more`) is the carousel under
+ * the picture.
  */
 export function picturesOf(item) {
+  // `details` adds the strip group, icon flag and copy to each picture.
+  const slide = (m, details) => {
+    const one = (p) => ({ ...p, ...details(p) })
+    return m.more ? { ...one(m), set: [m, ...m.more].map(one) } : one(m)
+  }
   if (item.folders) {
     return item.folders.flatMap((f, group) =>
-      f.media.map((m) => ({
-        ...m,
-        group,
-        icon: f.tile === 'icon',
-        text: m.body ?? (f.body ? `${item.body}\n\n${f.body}` : item.body),
-      })),
+      f.media.map((m) =>
+        slide(m, (p) => ({
+          group,
+          icon: f.tile === 'icon',
+          text: p.body ?? (f.body ? `${item.body}\n\n${f.body}` : item.body),
+        })),
+      ),
     )
   }
-  const withText = (m) => ({ ...m, group: 0, text: m.body ?? item.body })
-  return item.media.map((m) =>
-    m.more ? { ...withText(m), set: [m, ...m.more].map(withText) } : withText(m),
-  )
+  return item.media.map((m) => slide(m, (p) => ({ group: 0, text: p.body ?? item.body })))
 }
 
 /** The pinned photo on the board (the project's `thumb`, else its first

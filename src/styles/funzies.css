@@ -824,8 +824,10 @@
   object-fit: cover;
   pointer-events: none;
 }
-/* Small artwork (icons) is shown whole, with a margin. */
-.fz-pop__thumb[data-icon] img {
+/* Small artwork (icons) is shown whole, with a margin, in the strip and in a
+   set's carousel alike. */
+.fz-pop__thumb[data-icon] img,
+.fz-pop__set-thumb[data-icon] img {
   object-fit: contain;
   padding: 18%;
   box-sizing: border-box;

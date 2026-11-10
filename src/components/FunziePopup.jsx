@@ -261,6 +261,8 @@ function SetThumbs({ set, sub, onPick, title }) {
     const next = Math.min(set.length - 1, Math.max(0, sub + d))
     onPick(next)
     refs.current[next]?.focus()
+    // A long set (the TMU K-POP icons) can run wider than the picture.
+    refs.current[next]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }
   return (
     <ul className="fz-pop__set" aria-label="More views" onKeyDown={onKeyDown}>
@@ -272,6 +274,7 @@ function SetThumbs({ set, sub, onPick, title }) {
             }}
             type="button"
             className="fz-pop__set-thumb"
+            data-icon={p.icon || undefined}
             aria-current={i === sub || undefined}
             aria-label={`${title}, view ${i + 1} of ${set.length}`}
             onClick={() => onPick(i)}
