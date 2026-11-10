@@ -161,20 +161,6 @@ export const FUNZIES = [
         ],
       },
       {
-        name: 'icons',
-        tile: 'icon',
-        body: 'Instagram highlight icons for the club\u2019s profile.',
-        media: [
-          m('tk-icon-announce.webp'),
-          m('tk-icon-discord.webp'),
-          m('tk-icon-faq.webp'),
-          m('tk-icon-team.webp'),
-          m('tk-icon-cancelled.webp'),
-          m('tk-icon-camera.webp'),
-          m('tk-icon-website.webp'),
-        ],
-      },
-      {
         name: 'stories',
         // Inside the popup only: the tile shows the feed posts.
         preview: false,
@@ -192,6 +178,20 @@ export const FUNZIES = [
           m('tk-hallyuween.webp'),
           m('tk-mercy.webp'),
           m('tk-website-launch.webp'),
+        ],
+      },
+      {
+        name: 'icons',
+        tile: 'icon',
+        body: 'Instagram highlight icons for the club’s profile.',
+        media: [
+          m('tk-icon-announce.webp'),
+          m('tk-icon-discord.webp'),
+          m('tk-icon-faq.webp'),
+          m('tk-icon-team.webp'),
+          m('tk-icon-cancelled.webp'),
+          m('tk-icon-camera.webp'),
+          m('tk-icon-website.webp'),
         ],
       },
     ],
