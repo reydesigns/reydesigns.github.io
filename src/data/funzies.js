@@ -120,7 +120,9 @@ export const FUNZIES = [
         body:
           'Icons designed for the Science Discovery Zone website, used to inform students about the ' +
           'different streams the SDZ provides.',
-        media: [m('sdz-icon-1.webp'), m('sdz-icon-2.webp'), m('sdz-icon-3.webp'), m('sdz-icon-4.webp')],
+        // One set, like TMU K-POP's icons: a single thumbnail in the strip,
+        // all four in the carousel under the picture.
+        media: [m('sdz-icon-1.webp', { more: [m('sdz-icon-2.webp'), m('sdz-icon-3.webp'), m('sdz-icon-4.webp')] })],
       },
     ],
   },
