@@ -261,15 +261,17 @@ const waitPath = (page, p, ms = 8000) =>
 const current = (page) =>
   page.evaluate(() => document.querySelector('nav[aria-label="Sections"] [aria-current="page"]')?.dataset.flipId ?? null)
 
-/* The Vinyl Player card on /works opens its own pop-up (dialog.vp-pop). */
+/* The Vinyl Player card, in the current vibes row under the case studies,
+   opens its own pop-up (dialog.vp-pop). On a phone the cards stack and a tap
+   opens the pop-up straight away. */
 async function vinyl(page, tag, how) {
   // /works is the landing page now (its grid), whose 3D drawings keep the
   // network busy for a long time under software GL: wait for the page, not
   // for the network to go quiet.
   await page.goto(`${BASE}/works`, { waitUntil: 'domcontentloaded', timeout: 60000 })
-  await page.waitForSelector('article[data-card] button[aria-label="Vinyl Player"]', { timeout: 30000 })
+  const sel = '.epc__item[data-slug="vinyl-player"] button.epc__card'
+  await page.waitForSelector(sel, { timeout: 30000 })
   await sleep(2500)
-  const sel = 'article[data-card] button[aria-label="Vinyl Player"]'
   const card = await page.$(sel)
   check(`${tag}: Vinyl Player card on /works`, !!card)
   if (!card) return
