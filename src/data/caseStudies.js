@@ -14,6 +14,9 @@ import heysoLogo from '@assets/brand/icons/clients/heyso.png'
 import tmuLogo from '@assets/brand/icons/clients/tmu-kpop.png'
 import liptonLogo from '@assets/brand/icons/clients/lipton.png'
 import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
+import vibeBloom from '@assets/current-vibes/binary-bloom.webp'
+import vibeVinyl from '@assets/current-vibes/vinyl-player.webp'
+import vibeComics from '@assets/current-vibes/comic-collection.webp'
 
 /**
  * The Works grid and every case-study route are driven from this list.
@@ -26,7 +29,7 @@ import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
  * Assets/site-design/images/works-page.png; it heads the "next case study"
  * link and the coming-soon shell. Card order matches the comp: HeySo and TMU
  * on the top row, then Lipton and Shore-Up. The grid itself reads WORKS_GRID
- * (below), which adds the two toys as a third row under all four.
+ * (below); the toys sit in a row of their own under it (CURRENT_VIBES).
  *
  * The Works card shows only `logo` and `metaTitle` (its top-left chip) and,
  * on hover, `blurb`. The four marks only ever existed inside the comp, so they
@@ -124,11 +127,28 @@ export const COMIC_HOARDER = {
   status: 'toy',
 }
 
-/** The Works grid's cards, in order: the four case studies first (HeySo
- *  beside TMU K-POP, then Lipton beside Shore-Up), under them the two toys
- *  side by side, the Vinyl Player and Binary Bloom, and under the Vinyl
- *  Player, the Comic Hoarder (client request). */
-export const WORKS_GRID = [...CASE_STUDIES, VINYL_PLAYER, BINARY_BLOOM, COMIC_HOARDER]
+/** The Works grid's cards, in order: the four case studies, HeySo beside
+ *  TMU K-POP, then Lipton beside Shore-Up. The three toys have a row of their
+ *  own under it (CURRENT_VIBES). */
+export const WORKS_GRID = CASE_STUDIES
+
+/**
+ * "current vibes": the row of three under the case studies
+ * (ExpandingProjectCards). Each card is a square still that widens on hover
+ * to show its title and labels, and opens the toy's own pop-up.
+ *
+ * The stills are square crops of each toy's old Works card artwork (Binary
+ * Bloom in bloom, the Vinyl Player's turntable, the comic rack), 924px, in
+ * Assets/current-vibes/. Swap a file to change a picture.
+ *
+ * `labels` — DRAFT: the client to edit. Shown in capitals; written in
+ * sentence case so screen readers say them as words.
+ */
+export const CURRENT_VIBES = [
+  { ...BINARY_BLOOM, image: vibeBloom, labels: ['Interactive', 'Generative', 'Canvas'] },
+  { ...VINYL_PLAYER, image: vibeVinyl, labels: ['Interactive', 'Music', 'Song recs'] },
+  { ...COMIC_HOARDER, image: vibeComics, labels: ['Interactive', 'Collection', 'Ratings'] },
+]
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)
 

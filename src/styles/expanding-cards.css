@@ -1,0 +1,243 @@
+/* ---------------------------------------------------------------------------
+   ExpandingProjectCards ("current vibes", under the case studies).
+
+   One radius, --card-radius, for every rounded corner here: the card, the
+   picture on a phone and the label pills. In the row the card clips its own
+   corners (overflow: hidden) and the picture inside it has none, so the edge
+   where the picture meets the white panel stays square and the outer corners
+   never change size while the card widens.
+
+   Phones first: the cards stack, each a square picture with its title and
+   labels under it, always shown. From 48rem they sit in a row.
+--------------------------------------------------------------------------- */
+
+.epc {
+  --card-radius: var(--radius-card);
+  --epc-gap: 1.5rem;
+  /* An open card is this many times as wide as it is tall. */
+  --epc-grow: 1.6;
+  --epc-ease: var(--ease-brand);
+  --epc-dur: 500ms;
+  /* The pictures at rest; an open card is in full colour. */
+  --epc-mute: grayscale(0.85);
+}
+
+.epc__row {
+  display: grid;
+  gap: 2.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.epc__item {
+  min-width: 0;
+}
+
+.epc__card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--card-radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* Unlayered, so it beats global.css's 4px focus corner. */
+.epc__card:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+  border-radius: var(--card-radius);
+}
+
+.epc__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--card-radius);
+  background: var(--color-surface-sunken);
+}
+
+.epc__panel {
+  display: block;
+  padding-top: 0.875rem;
+}
+
+.epc__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.epc__title {
+  font-size: clamp(1.0625rem, 1.45vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+.epc__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* Small capitals, spaced wide, in the grey of the Works captions (5.6:1 on
+   white). A hairline round each, as on the case studies' white pills. */
+.epc__label {
+  padding: 0.5em 0.75em;
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-pill-edge);
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--card-blurb-ink);
+  white-space: nowrap;
+  /* A label longer than the panel is cut short rather than spilling out. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- the row ------------------------------------------------------------- */
+
+@media (min-width: 48rem) {
+  .epc {
+    container-type: inline-size;
+  }
+
+  /* The squares are as big as lets the row fit its column with one card
+     open, and no bigger than 30rem. The row is only as wide as its cards, so
+     it ends where the last card does (a pointer that goes past it has left),
+     and its height never changes. */
+  .epc__row {
+    --side: min(
+      30rem,
+      (100cqi - (var(--epc-n) - 1) * var(--epc-gap)) / (var(--epc-n) - 1 + var(--epc-grow))
+    );
+    display: flex;
+    gap: var(--epc-gap);
+    width: max-content;
+    height: var(--side);
+  }
+
+  .epc__item {
+    flex: none;
+    width: var(--side);
+    height: var(--side);
+    transition: width var(--epc-dur) var(--epc-ease);
+  }
+  .epc__item[data-open] {
+    width: calc(var(--side) * var(--epc-grow));
+  }
+
+  .epc__card {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    /* Keeps Safari clipping the filtered picture to the rounded corners. */
+    isolation: isolate;
+    background: var(--color-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-ink) 8%, transparent);
+    transition: box-shadow var(--epc-dur) var(--epc-ease);
+  }
+  .epc__item[data-open] .epc__card {
+    box-shadow:
+      0 1px 2px color-mix(in srgb, var(--color-ink) 8%, transparent),
+      0 22px 44px -24px color-mix(in srgb, var(--color-ink) 38%, transparent);
+  }
+
+  /* The picture stays a square pinned to the left; the card grows past it. */
+  .epc__img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--side);
+    height: var(--side);
+    border-radius: 0;
+    filter: var(--epc-mute);
+    transition: filter var(--epc-dur) var(--epc-ease);
+  }
+  .epc__item[data-open] .epc__img {
+    filter: none;
+  }
+
+  /* The white panel is laid out at its full width from the start and only
+     uncovered as the card grows, so its text never squeezes or rewraps. */
+  .epc__panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--side);
+    width: calc(var(--side) * (var(--epc-grow) - 1));
+    padding: 0;
+  }
+
+  .epc__text {
+    position: absolute;
+    inset: 0;
+    justify-content: space-between;
+    padding: clamp(0.875rem, 1.5vw, 1.5rem);
+    opacity: 0;
+    transform: translateX(10px);
+    transition:
+      opacity 160ms ease-out,
+      transform 160ms ease-out;
+  }
+  /* In a beat after the card starts to widen. */
+  .epc__item[data-open] .epc__text {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 380ms var(--epc-ease) 120ms,
+      transform 480ms var(--epc-ease) 120ms;
+  }
+  /* Leaving the row: out first, before the card shrinks. */
+  .epc__row[data-leaving] .epc__text {
+    opacity: 0;
+    transform: translateX(10px);
+    transition:
+      opacity 160ms ease-out,
+      transform 160ms ease-out;
+  }
+}
+
+/* Tablet widths: the squares are small (180-250px), so an open card widens a
+   little more, to 1.7, and the panel's type and padding tighten to fit a
+   label like COLLECTION. */
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .epc {
+    --epc-grow: 1.7;
+  }
+  .epc__text {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  .epc__title {
+    font-size: 1rem;
+  }
+  .epc__label {
+    padding: 0.45em 0.6em;
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* global.css already cuts every transition to nothing here, so a card simply
+   changes; this only drops the slide and the wait. */
+@media (prefers-reduced-motion: reduce) {
+  .epc__text,
+  .epc__item[data-open] .epc__text,
+  .epc__row[data-leaving] .epc__text {
+    transform: none;
+    transition-delay: 0s;
+  }
+}

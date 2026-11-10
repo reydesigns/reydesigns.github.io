@@ -1,12 +1,12 @@
 /**
- * Comic Hoarder: the Works card and its pop-up (ComicHoarder).
+ * Comic Hoarder: its card in "current vibes" and its pop-up (ComicHoarder).
  *
  *   node scripts/checks/comics.mjs            (dev server on :5173)
  *   SHOTS=/some/dir node scripts/checks/comics.mjs   also saves screenshots
  *
- * Desktop: the card, My Comic Collection, sits directly under the Vinyl
- * Player and shows a clean wire rack (no sign) of its first three tiers with
- * every cover loaded. A click opens the pop-up: the rack on the left under
+ * Desktop: the card, My Comic Collection, is last in the current vibes row
+ * under the case studies, one button by that name over a still of the rack.
+ * A click opens the pop-up: the rack on the left under
  * its "Comic Hoarder" sign (the window's title, no cats), one pocket per
  * comic in character order with the character on a black tag under each,
  * each tier in front of the one above, the column scrolling when the rack
@@ -24,7 +24,7 @@ import { launch, openPage, sleep, check, done } from '../lib/browser.mjs'
 const SHOTS = process.env.SHOTS
 const shot = async (page, name) => SHOTS && page.screenshot({ path: `${SHOTS}/comics-${name}.png` })
 
-const CARD = '[data-card]:has(.ch-card)'
+const CARD = '.epc__item[data-slug="comic-hoarder"]'
 const COMIC = (id) => `.ch-frame button.ch-comic[data-comic="${id}"]`
 const isOpen = (page) => page.evaluate(() => !!document.querySelector('dialog.ch-pop')?.open)
 
@@ -104,30 +104,28 @@ const browser = await launch({ gpu: true })
 {
   const { page, errors } = await openPage(browser, '/')
   const place = await page.evaluate(() => {
-    const name = (t) => [...document.querySelectorAll('[data-card-name]')].find((n) => n.textContent === t)?.closest('li')
-    const v = name('Vinyl Player')?.getBoundingClientRect()
-    const c = name('My Comic Collection')
-    const cb = c?.getBoundingClientRect()
-    return v && cb ? { dx: Math.round(cb.left - v.left), below: cb.top > v.bottom, last: !c.nextElementSibling } : null
+    const row = [...document.querySelectorAll('.epc__item')].map((li) => li.dataset.slug)
+    const last = [...document.querySelectorAll('[data-card]')].at(-1)?.getBoundingClientRect()
+    const vibes = document.querySelector('.epc')?.getBoundingClientRect()
+    return { row, below: !!last && !!vibes && vibes.top > last.bottom }
   })
-  check('card sits under the Vinyl Player, last in the grid', place && place.dx === 0 && place.below && place.last, JSON.stringify(place))
+  check('card is last in the current vibes row, under the case studies', place.row.at(-1) === 'comic-hoarder' && place.below, JSON.stringify(place))
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)
   const thumb = await page.evaluate((s) => {
     const card = document.querySelector(s)
-    const imgs = [...card.querySelectorAll('.ch-rack img')]
+    const img = card.querySelector('img')
+    const button = card.querySelector('button')
     return {
-      comics: card.querySelectorAll('.ch-comic').length,
-      loaded: imgs.length > 0 && imgs.every((i) => i.complete && i.naturalWidth > 0),
-      sign: !!card.querySelector('.ch-sign'),
-      hidden: card.querySelector('.ch-rack')?.getAttribute('aria-hidden') === 'true',
+      loaded: !!img && img.complete && img.naturalWidth > 0,
+      decorative: img?.getAttribute('alt') === '',
       buttons: card.querySelectorAll('button').length,
-      name: card.querySelector('button')?.getAttribute('aria-label'),
+      name: document.getElementById(button?.getAttribute('aria-labelledby'))?.textContent,
     }
   }, CARD)
-  check('card shows a clean rack, no sign, its first nine covers loaded', thumb.comics === 9 && thumb.loaded && !thumb.sign, JSON.stringify(thumb))
-  check('the card is one button named My Comic Collection, its rack a picture', thumb.buttons === 1 && thumb.name === 'My Comic Collection' && thumb.hidden, JSON.stringify(thumb))
+  check('card shows its still of the rack', thumb.loaded && thumb.decorative, JSON.stringify(thumb))
+  check('the card is one button named My Comic Collection', thumb.buttons === 1 && thumb.name === 'My Comic Collection', JSON.stringify(thumb))
   if (SHOTS) await (await page.$(CARD)).screenshot({ path: `${SHOTS}/comics-card.png` })
 
   await page.click(`${CARD} button`)

@@ -1,11 +1,11 @@
 /**
- * Binary Bloom: the Works card and its pop-up (FlowerGenerator).
+ * Binary Bloom: its card in "current vibes" and its pop-up (FlowerGenerator).
  *
  *   node scripts/checks/flowers.mjs            (dev server on :5173)
  *   SHOTS=/some/dir node scripts/checks/flowers.mjs   also saves screenshots
  *
- * Desktop: the card sits beside the Vinyl Player, under the case studies,
- * and draws; a click opens the pop-up, titled Binary Bloom under a title bar
+ * Desktop: the card leads the current vibes row under the case studies,
+ * shows its still and opens on hover; a click opens the pop-up, titled Binary Bloom under a title bar
  * with red and green dots, the flower on a dark square with its botanical
  * name in the top corner, and a plain list of plants (the chosen one
  * burgundy); hovering one flower blooms that flower alone, and it closes
@@ -20,7 +20,7 @@ import { launch, openPage, sleep, check, done } from '../lib/browser.mjs'
 const SHOTS = process.env.SHOTS
 const shot = async (page, name) => SHOTS && page.screenshot({ path: `${SHOTS}/flowers-${name}.png` })
 
-const CARD = '[data-card]:has(.fl-card)'
+const CARD = '.epc__item[data-slug="binary-bloom"]'
 const isOpen = (page) => page.evaluate(() => !!document.querySelector('dialog.fl-pop')?.open)
 const opened = (page) => page.evaluate(() => Number(document.querySelector('.fl-stage')?.dataset.open ?? -1))
 const flowerCount = { 'spider-lily': 5, tulip: 3, orchid: 3, 'lily-of-the-valley': 8 }
@@ -97,20 +97,21 @@ const browser = await launch({ gpu: true })
   const { page, errors } = await openPage(browser, '/works')
   await page.setViewport({ width: 1728, height: 1117, deviceScaleFactor: 2 })
   await sleep(800)
-  const order = await page.evaluate(() =>
-    [...document.querySelectorAll('[data-card-name]')].map((n) => n.textContent.trim()),
-  )
-  const at = order.indexOf('Binary Bloom')
-  check('card sits beside the Vinyl Player, under the case studies', at > 1 && order[at - 1] === 'Vinyl Player' && order[at - 2] === 'Shore-Up', order.join(' | '))
+  const place = await page.evaluate(() => {
+    const row = [...document.querySelectorAll('.epc__item')].map((li) => li.dataset.slug)
+    const last = [...document.querySelectorAll('[data-card]')].at(-1)?.getBoundingClientRect()
+    const vibes = document.querySelector('.epc')?.getBoundingClientRect()
+    return { row, below: !!last && !!vibes && vibes.top > last.bottom }
+  })
+  check('card leads the current vibes row, under the case studies', place.row[0] === 'binary-bloom' && place.below, JSON.stringify(place))
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)
-  const cardInk = await ink(page, `${CARD} canvas`)
-  check('card draws a flower', cardInk > 200, `${cardInk} drawn samples`)
+  const still = await page.$eval(`${CARD} img`, (i) => i.complete && i.naturalWidth > 0)
+  check('card shows its still', still)
   await page.hover(CARD)
-  await sleep(2200)
-  const cardHot = await ink(page, `${CARD} canvas`)
-  check('hovering the card opens its florets', cardHot > cardInk, `${cardInk} -> ${cardHot}`)
+  await sleep(800)
+  check('hovering the card opens it', await page.$eval(CARD, (li) => li.hasAttribute('data-open')))
   const card = await page.$(CARD)
   if (SHOTS) await card.screenshot({ path: `${SHOTS}/flowers-card.png` })
 

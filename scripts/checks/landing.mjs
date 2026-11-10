@@ -92,9 +92,9 @@ try {
   check('no dot', status?.dot === false)
 
   /* ---- desktop: two screens and the glide ------------------------------ */
-  // The hero, then the grid, which runs past a screen of its own now that it
-  // has four rows (the Comic Hoarder under the Vinyl Player): 3.02 at
-  // 1728x1117. A loader screen back in the scroll would add a whole one.
+  // The hero, then the grid, which runs past a screen of its own: two rows of
+  // case studies and the current vibes row under them, 2.63 at 1728x1117.
+  // A loader screen back in the scroll would add a whole one.
   const doc = await page.evaluate(() => document.documentElement.scrollHeight / innerHeight)
   check('hero and grid, no extra screen', doc < 3.3, doc.toFixed(2))
   check('no loader screen', !(await page.$('[data-stage="loader"]')))
@@ -167,11 +167,12 @@ try {
   const clear = await phone.evaluate(() => {
     const pill = document.querySelector('nav[aria-label="Sections"]').getBoundingClientRect()
     const cards = [...document.querySelectorAll('[data-stage="works"] [data-card]')]
-    const last = cards.at(-1)?.getBoundingClientRect()
+    const vibes = [...document.querySelectorAll('[data-stage="works"] .epc__card')]
+    const last = vibes.at(-1)?.getBoundingClientRect()
     const foot = document.querySelector('footer').getBoundingClientRect()
-    return { pillTop: pill.top, lastBottom: last?.bottom, footBottom: foot.bottom, cards: cards.length }
+    return { pillTop: pill.top, lastBottom: last?.bottom, footBottom: foot.bottom, cards: cards.length, vibes: vibes.length }
   })
-  check('phone: seven cards', clear.cards === 7, clear.cards)
+  check('phone: four cards, then three current vibes', clear.cards === 4 && clear.vibes === 3, `${clear.cards} + ${clear.vibes}`)
   check('phone: last card above the pill', clear.lastBottom != null && clear.lastBottom <= clear.pillTop,
     `card bottom ${Math.round(clear.lastBottom)} pill top ${Math.round(clear.pillTop)}`)
   check('phone: footer on screen at the end', clear.footBottom <= 844 + 1, Math.round(clear.footBottom))
