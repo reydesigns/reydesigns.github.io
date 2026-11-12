@@ -447,6 +447,27 @@ async function flowsDesktop() {
       const cur = await page.$$eval('dialog.fz-pop .fz-pop__thumb', (ts) => ts.findIndex((t) => t.hasAttribute('aria-current')))
       check('  scrolling down over the picture picks the next', cur === 2, `current=${cur}`)
     }
+    // Sideways over a set's picture steps through its carousel.
+    const setAt = await page.evaluate(async () => {
+      const ts = [...document.querySelectorAll('dialog.fz-pop .fz-pop__thumb')]
+      for (const [i, t] of ts.entries()) {
+        t.click()
+        await new Promise((r) => setTimeout(r, 150))
+        if (document.querySelector('dialog.fz-pop .fz-pop__set')) return i
+      }
+      return -1
+    })
+    if (setAt >= 0) {
+      const c = await page.$eval('dialog.fz-pop .fz-pop__stage > img', (e) => {
+        const r = e.getBoundingClientRect()
+        return [r.left + r.width / 2, r.top + r.height / 2]
+      })
+      await page.mouse.move(c[0], c[1])
+      await page.mouse.wheel({ deltaX: 100 })
+      await sleep(400)
+      const view = await page.$$eval('dialog.fz-pop .fz-pop__set-thumb', (ts) => ts.findIndex((t) => t.hasAttribute('aria-current')))
+      check('  scrolling sideways over a set picks its next view', view === 1, `view=${view}`)
+    }
     if (i % 2) await page.keyboard.press('Escape')
     else await page.click('dialog.fz-pop button[aria-label="Close"]')
     const closed = await page

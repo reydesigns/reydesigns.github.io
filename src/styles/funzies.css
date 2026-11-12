@@ -846,9 +846,8 @@
 }
 
 /* The picked picture, large and whole, never cropped. A swipe up or down on
-   it steps through the strip (FunziePopup), so the browser doesn't pan it;
-   pinch-zoom still works, and a set's carousel, a scroller of its own, still
-   pans sideways. */
+   it steps through the strip, and sideways through a set's carousel
+   (FunziePopup), so the browser doesn't pan it; pinch-zoom still works. */
 .fz-pop__stage {
   display: grid;
   place-items: center;
@@ -906,7 +905,9 @@
   max-width: 100%;
   margin: 0;
   padding: 2px;
+  /* Scrolled to the pick by script; a swipe on it steps, as on the picture. */
   overflow-x: auto;
+  touch-action: pinch-zoom;
   list-style: none;
   scrollbar-width: none;
 }

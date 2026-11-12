@@ -13,8 +13,9 @@ const CLOSE_MS = 180
 const RESIZE_MS = 320
 const RESIZE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const WIDE = '(min-width: 48rem)'
-/* Scrolling or swiping up and down over the picture steps through the strip,
-   one picture per gesture, the moment the gesture starts.
+/* Scrolling or swiping over the picture steps through the pictures, one per
+   gesture, the moment the gesture starts: up and down through the strip,
+   sideways through a set's carousel.
 
    Wheel: a mouse notch, or the first few pixels of a trackpad flick
    (WHEEL_START), turn the picture at once. The rest of that gesture, and the
@@ -25,10 +26,13 @@ const WIDE = '(min-width: 48rem)'
    RISE_WINDOW (momentum only ever dies away; fresh fingers push it back up).
    A rise only counts once the last gesture has peaked (FLICK_PEAK at least)
    and died down to half that, and RISE_AFTER its step: so a flick that
-   starts slowly and then speeds up is still one gesture.
+   starts slowly and then speeds up is still one gesture. A gesture keeps the
+   axis it started on, so the dying tail of an up-and-down flick, which can
+   wobble sideways, never turns the carousel; only a clear WHEEL_START of the
+   other axis switches it.
 
    Touch: the picture turns as soon as the finger has moved SWIPE_STEP, mostly
-   up or down, not when it lifts; one turn per touch. */
+   along one axis, not when it lifts; one turn per touch. */
 const WHEEL_START = 4
 const WHEEL_GAP = 100
 const RISE_AFTER = 150
@@ -37,12 +41,55 @@ const FLICK_PEAK = 12
 const isRise = (abs, low) => abs > low * 2.5 + 8
 const SWIPE_STEP = 32
 
+/** One axis's wheel gestures: feed it each delta, get back 1 or -1 when a
+    gesture starts, else 0. */
+function wheelSteps() {
+  let armed = true // the next movement starts a gesture
+  let acc = 0
+  let lastT = -Infinity
+  let lastSign = 0
+  let stepT = -Infinity
+  let peak = 0 // the biggest delta since the last step
+  let decayed = false // ...and the deltas have since fallen to half of it
+  let recent = [] // [time, |delta|] of the last RISE_WINDOW
+  return (d, now) => {
+    const abs = Math.abs(d)
+    const sign = Math.sign(d)
+    recent = recent.filter(([t]) => now - t <= RISE_WINDOW)
+    if (!armed) {
+      const low = recent.length ? Math.min(...recent.map(([, a]) => a)) : Infinity
+      armed =
+        now - lastT > WHEEL_GAP ||
+        (sign && lastSign && sign !== lastSign && abs >= WHEEL_START) ||
+        (decayed && now - stepT > RISE_AFTER && isRise(abs, low))
+      if (armed) acc = 0
+      peak = Math.max(peak, abs)
+      if (peak >= FLICK_PEAK && abs < peak / 2) decayed = true
+    } else if (now - lastT > WHEEL_GAP) {
+      acc = 0
+    }
+    recent.push([now, abs])
+    lastT = now
+    if (sign) lastSign = sign
+    if (!armed) return 0
+    acc += d
+    if (Math.abs(acc) < WHEEL_START) return 0
+    const step = Math.sign(acc)
+    armed = false
+    stepT = now
+    peak = abs
+    decayed = false
+    acc = 0
+    return step
+  }
+}
+
 /**
- * Calls onStep(1) for a scroll down or a swipe up over `ref`'s element, and
- * onStep(-1) for the reverse, per the rules above. A set's carousel is left
- * alone, so it can still scroll sideways.
+ * Over `ref`'s element, calls onStep('y', 1) for a scroll down or a swipe up
+ * and onStep('y', -1) for the reverse; onStep('x', 1) for a scroll right or a
+ * swipe left and onStep('x', -1) for the reverse; per the rules above.
  */
-function useVerticalStep(ref, onStep, key) {
+function useSwipeStep(ref, onStep, key) {
   const latest = useRef(onStep)
   useEffect(() => {
     latest.current = onStep
@@ -50,67 +97,40 @@ function useVerticalStep(ref, onStep, key) {
   useEffect(() => {
     const el = ref.current
     if (!el) return undefined
-    const inSet = (e) => e.target instanceof Element && e.target.closest('.fz-pop__set')
 
-    let armed = true // the next movement starts a gesture
-    let acc = 0
+    const steps = { x: wheelSteps(), y: wheelSteps() }
+    let axis = 'y'
     let lastT = -Infinity
-    let lastSign = 0
-    let stepT = -Infinity
-    let peak = 0 // the biggest delta since the last step
-    let decayed = false // ...and the deltas have since fallen to half of it
-    let recent = [] // [time, |delta|] of the last RISE_WINDOW
     const onWheel = (e) => {
-      // Pinch-zoom on a trackpad arrives as ctrl+wheel; sideways is the carousel's.
-      if (e.ctrlKey || inSet(e) || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return
+      // Pinch-zoom on a trackpad arrives as ctrl+wheel.
+      if (e.ctrlKey) return
+      // Sideways too: nothing in the picture scrolls that way any more, and
+      // left to the browser a sideways flick can go Back a page.
       e.preventDefault()
       const now = e.timeStamp
-      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY
-      const abs = Math.abs(dy)
-      const sign = Math.sign(dy)
-      recent = recent.filter(([t]) => now - t <= RISE_WINDOW)
-      if (!armed) {
-        const low = recent.length ? Math.min(...recent.map(([, a]) => a)) : Infinity
-        armed =
-          now - lastT > WHEEL_GAP ||
-          (sign && lastSign && sign !== lastSign && abs >= WHEEL_START) ||
-          (decayed && now - stepT > RISE_AFTER && isRise(abs, low))
-        if (armed) acc = 0
-        peak = Math.max(peak, abs)
-        if (peak >= FLICK_PEAK && abs < peak / 2) decayed = true
-      } else if (now - lastT > WHEEL_GAP) {
-        acc = 0
-      }
-      recent.push([now, abs])
+      const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1
+      const d = { x: e.deltaX * k, y: e.deltaY * k }
+      const mine = Math.abs(d.x) > Math.abs(d.y) ? 'x' : 'y'
+      if (mine !== axis && (now - lastT > WHEEL_GAP || Math.abs(d[mine]) >= WHEEL_START)) axis = mine
       lastT = now
-      if (sign) lastSign = sign
-      if (!armed) return
-      acc += dy
-      if (Math.abs(acc) >= WHEEL_START) {
-        latest.current(Math.sign(acc))
-        armed = false
-        stepT = now
-        peak = abs
-        decayed = false
-        acc = 0
-      }
+      if (mine !== axis) return // a stray of the other axis, mid-gesture
+      const step = steps[axis](d[axis], now)
+      if (step) latest.current(axis, step)
     }
 
     let start = null
     const onTouchStart = (e) => {
-      start = e.touches.length === 1 && !inSet(e) ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+      start = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
     }
     const onTouchMove = (e) => {
       if (!start) return
       const t = e.touches[0]
       const dx = t.clientX - start.x
       const dy = t.clientY - start.y
-      if (Math.abs(dy) >= SWIPE_STEP && Math.abs(dy) > Math.abs(dx)) {
-        start = null // one turn per touch
-        latest.current(dy < 0 ? 1 : -1)
-      } else if (Math.abs(dx) >= SWIPE_STEP) {
-        start = null // a sideways drag is not a swipe
-      }
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_STEP) return
+      start = null // one turn per touch
+      if (Math.abs(dy) > Math.abs(dx)) latest.current('y', dy < 0 ? 1 : -1)
+      else latest.current('x', dx < 0 ? 1 : -1)
     }
     const onTouchEnd = () => {
       start = null
@@ -155,7 +175,8 @@ function preload(src) {
  * its pictures under it), and beside it the write-up:
  * Pixelta header, tools, the picture's copy, and for the PC build its game
  * covers and floating parts. The arrow keys step through the thumbnails, and
- * so does scrolling or swiping up and down over the picture.
+ * so does scrolling or swiping up and down over the picture; sideways steps
+ * through a set's carousel.
  *
  * A modal dialog sits in the browser's top layer, above the custom cursor, so
  * while it is open the cursor is portalled into it (setCursorHost). Lenis is
@@ -179,18 +200,26 @@ export function FunziePopup({ item, onClose }) {
   const pickSub = useCallback((s) => setPos((p) => ({ ...p, sub: s })), [])
   const pics = item ? picturesOf(item) : []
   const count = pics.length
-  useVerticalStep(
+  useSwipeStep(
     stageRef,
-    (d) =>
+    (axis, d) =>
       setPos((p) => {
+        if (axis === 'x') {
+          // Sideways: through this picture's set, if it is one.
+          const n = pics[p.index]?.set?.length ?? 1
+          const s = Math.min(n - 1, Math.max(0, p.sub + d))
+          return s === p.sub ? p : { ...p, sub: s }
+        }
         const next = Math.min(count - 1, Math.max(0, p.index + d))
         return next === p.index ? p : { index: next, sub: 0 }
       }),
     item,
   )
-  // The pictures either side of this one, ready before a swipe asks for them.
+  // The pictures either side of this one, and the rest of its set, ready
+  // before a swipe asks for them.
   useEffect(() => {
-    for (const p of pics.slice(Math.max(0, index - 2), index + 4)) if (p.type === 'image') preload(p.src)
+    const near = pics.slice(Math.max(0, index - 2), index + 4)
+    for (const p of [...near, ...(pics[index]?.set ?? [])]) if (p.type === 'image') preload(p.src)
   }, [item, index]) // eslint-disable-line react-hooks/exhaustive-deps -- pics follows item
 
   useEffect(() => {
@@ -398,22 +427,35 @@ function Thumbs({ pics, index, onPick, title }) {
 /**
  * A set's carousel, under its picture: a small square per picture in the set
  * (the main one first), the one showing ringed in burgundy like the strip's.
- * The arrow keys step through it.
+ * The arrow keys step through it, and so does a sideways swipe over the
+ * picture or the carousel (FunziePopup).
  */
 function SetThumbs({ set, sub, onPick, title }) {
+  const rowRef = useRef(null)
   const refs = useRef([])
+  const first = set[0].src
+  // A long set (the TMU K-POP icons) can run wider than the picture: however
+  // the pick moves, the row scrolls (itself only, not the window) to keep it
+  // in view, ring included.
+  useEffect(() => {
+    const row = rowRef.current
+    const b = refs.current[sub]
+    if (!row || !b) return
+    const r = row.getBoundingClientRect()
+    const t = b.getBoundingClientRect()
+    if (t.left < r.left + 2) row.scrollLeft += t.left - r.left - 2
+    else if (t.right > r.right - 2) row.scrollLeft += t.right - r.right + 2
+  }, [sub, first])
   const onKeyDown = (e) => {
     const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
     if (!d) return
     e.preventDefault()
     const next = Math.min(set.length - 1, Math.max(0, sub + d))
     onPick(next)
-    refs.current[next]?.focus()
-    // A long set (the TMU K-POP icons) can run wider than the picture.
-    refs.current[next]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    refs.current[next]?.focus({ preventScroll: true })
   }
   return (
-    <ul className="fz-pop__set" aria-label="More views" onKeyDown={onKeyDown}>
+    <ul ref={rowRef} className="fz-pop__set" aria-label="More views" onKeyDown={onKeyDown}>
       {set.map((p, i) => (
         <li key={p.src}>
           <button
