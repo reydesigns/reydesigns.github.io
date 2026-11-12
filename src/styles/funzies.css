@@ -3,10 +3,10 @@
    intro, the pinboard of projects, then the room and its sticker sheet.
 
    From 80rem the page is a grid of two columns using nearly the whole width:
-   on the left the intro, the "Click on me" hint and the board; down the
-   right the sticker sheet, a long strip lying across nearly the column's
-   width, at the top, and under it the room it decorates, a little wider than
-   the column (its drawing is the biggest thing on the right).
+   on the left the intro and the board; down the right the sticker sheet, a
+   long strip lying across nearly the column's width, at the top, and under
+   it the room it decorates, a little wider than the column (its drawing is
+   the biggest thing on the right).
 --------------------------------------------------------------------------- */
 
 .fz-page {
@@ -28,10 +28,9 @@
     --fz-room: calc(var(--fz-side-w) * 1.2);
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--fz-side-w);
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       'intro side'
-      'hint  side'
       'board side';
     align-items: start;
     column-gap: clamp(2rem, 3.5vw, 4rem);
@@ -39,9 +38,6 @@
   }
   .fz-intro {
     grid-area: intro;
-  }
-  .fz-hint {
-    grid-area: hint;
   }
   .fz-board {
     grid-area: board;
@@ -143,19 +139,10 @@
 }
 
 /* --- the board ---------------------------------------------------------- */
-/* "Click on me" over the board: the case studies' eyebrow (size, weight,
-   tracking, ink at 40%), close under the intro so the first row sits high. */
-.fz-hint {
-  margin: clamp(1.5rem, 2.4vw, 2.5rem) 0 0.6rem;
-  font-size: var(--text-eyebrow);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-ink);
-  opacity: 0.4;
-}
+/* Close under the intro, so the first row sits high. */
 .fz-board {
   width: 100%;
+  margin-top: clamp(1.5rem, 2.4vw, 2.5rem);
 }
 
 /* A loose grid, three prints to a row (two on a phone), so each is large.

@@ -49,9 +49,6 @@ export function Funzies() {
           </div>
         </header>
 
-        {/* A nudge that the prints open, set like the case studies' section
-            eyebrows (OBJECTIVE, …), over the board's top-left corner. */}
-        <p className="fz-hint">Click on me</p>
         <section className="fz-board" aria-label="Projects">
           <ul className="fz-board__list">
             {FUNZIES.map((item, i) => (
