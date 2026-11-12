@@ -16,6 +16,44 @@ const LANDING = {
 /* Movement before a press on the Spider-Man magnet becomes a drag. */
 const PICKUP_PX = 4
 
+/* What the door says where the prints hung, once they have fallen: a
+   Spider-Man line, never the one it said the last time the magnet came off
+   (remembered across visits where the browser allows, else for this one). */
+const QUOTES = [
+  { line: 'With great power comes great responsibility.', by: 'Uncle Ben' },
+  { line: 'I missed the part where that’s my problem.', by: 'Peter Parker' },
+  { line: 'Pizza time!', by: 'Peter Parker' },
+  { line: 'You know, I’m something of a scientist myself.', by: 'Norman Osborn' },
+  { line: 'Face it, Tiger… you just hit the jackpot!', by: 'Mary Jane Watson' },
+  { line: 'Anyone can wear the mask.', by: 'Miles Morales' },
+  { line: 'It’s a leap of faith. That’s all it is.', by: 'Peter B. Parker' },
+  { line: 'Mr. Stark, I don’t feel so good.', by: 'Peter Parker' },
+  { line: 'My spider-sense is tingling!', by: 'Spider-Man' },
+  { line: 'Up, up and away, web!', by: 'Peter Parker' },
+  { line: 'Underoos!', by: 'Tony Stark' },
+  { line: 'Just your friendly neighborhood Spider-Man.', by: 'Spider-Man' },
+]
+const QUOTE_KEY = 'fridge-quote'
+let lastQuote = -1
+function nextQuote() {
+  try {
+    lastQuote = Number(localStorage.getItem(QUOTE_KEY) ?? lastQuote)
+  } catch {
+    // No storage (a private window, blocked site data): this visit's will do.
+  }
+  // Any but the last one (if there was a last one).
+  const skip = Number.isInteger(lastQuote) && lastQuote >= 0 && lastQuote < QUOTES.length
+  let i = Math.floor(Math.random() * (QUOTES.length - (skip ? 1 : 0)))
+  if (skip && i >= lastQuote) i += 1
+  lastQuote = i
+  try {
+    localStorage.setItem(QUOTE_KEY, String(i))
+  } catch {
+    // As above.
+  }
+  return QUOTES[i]
+}
+
 /**
  * Photos stuck to a fridge door: three prints overlapping at angles, each
  * still showing its subject, pinned up by 3D magnets. The Spider-Man head
@@ -28,15 +66,16 @@ const PICKUP_PX = 4
  * magnet's head: the magnet can be picked up and moved. Let go of
  * it anywhere off the two top prints and, with nothing holding them, they
  * fall down the page and come to rest just above the footer, and where they
- * hung the door reads "UH OH YOU DROPPED SOMETHING!". Let go of it still on
- * the prints and it springs back to its place. Under reduced motion the
- * prints are simply down there, with no fall.
+ * hung the door says a Spider-Man line, a different one each time (QUOTES).
+ * Let go of it still on the prints and it springs back to its place. Under
+ * reduced motion the prints are simply down there, with no fall.
  */
 export function FridgeDoor({ className = '' }) {
   const reduced = useReducedMotion()
   const prints = useRef({})
   const spidey = useRef(null)
   const [dropped, setDropped] = useState(false)
+  const [quote, setQuote] = useState(null)
 
   /* Where each fallen print lies: straight down from where it hung, its foot
      LAND_GAP above the footer's top, nudged apart sideways. Worked out from
@@ -83,6 +122,7 @@ export function FridgeDoor({ className = '' }) {
   }, [])
 
   const drop = useCallback(() => {
+    setQuote(nextQuote())
     setDropped(true)
     room()
     const to = landing()
@@ -189,7 +229,11 @@ export function FridgeDoor({ className = '' }) {
 
       {/* Where the two prints hung, once they have fallen. */}
       <p className="fridge__oops" aria-live="polite">
-        {dropped ? 'UH OH YOU DROPPED SOMETHING!' : ''}
+        {dropped && quote && (
+          <>
+            “{quote.line}”<span className="fridge__oops-by">— {quote.by}</span>
+          </>
+        )}
       </p>
 
       <Magnet id="strawberry" className="fridge__magnet--strawberry" />

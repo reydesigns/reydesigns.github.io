@@ -95,9 +95,20 @@
   letter-spacing: 0.04em;
   line-height: 1.15;
   text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
   color: var(--color-ink);
   transform: rotate(-3deg);
   pointer-events: none;
+}
+/* Who said it, small, under the line. */
+.fridge__oops-by {
+  display: block;
+  margin-top: 0.5em;
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
 }
 .fridge__oops:empty {
   display: none;
