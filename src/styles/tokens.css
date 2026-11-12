@@ -87,6 +87,10 @@
      caption: its offset under the card (0.75rem), its one line, and clear
      space before the next row. */
   --card-blurb-room: calc(0.75rem + 1.6 * var(--text-eyebrow) + 1.25rem);
+  /* The footer's MADE /W THE HELP OF ICED CAPPS: bold, in a lighter grey on
+     the same neutral axis (client request), so it reads as an aside. 3:1 on
+     --color-bg; the bold weight carries it at the eyebrow size. */
+  --foot-made-ink: #8e8e93;
 
   /* --- layout ------------------------------------------------------------ */
   --page-gutter: clamp(1.25rem, 3.7vw, 4rem);

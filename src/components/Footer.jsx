@@ -14,7 +14,7 @@ const FOOT_TEXT = `${FOOT_TYPE} text-[var(--color-ink-muted)]`
  * rather than by remembering to add it.
  *
  * Three parts on one line: REYDESIGNS @ 2026 (with the sleeping cat) on the
- * left, and on the right MADE /W THE HELP OF ICED CAPPS, in a neutral grey,
+ * left, and on the right MADE /W THE HELP OF ICED CAPPS, bold in a light grey,
  * beside the visit counter, WEBSITE STALKERS: ## (every visit: visits.js).
  * The left and the ICED CAPPS line are static; the counter scrambles into place
  * (ScrambleText) every time the footer comes into view, once the count is in. Between times its text is
@@ -92,7 +92,7 @@ export function Footer({ className = '' }) {
       </span>
 
       <span
-        className={`col-span-2 row-start-2 justify-self-end text-[var(--card-blurb-ink)] sm:col-span-1 sm:col-start-2 sm:row-start-1 ${FOOT_TYPE}`}
+        className={`col-span-2 row-start-2 justify-self-end font-bold text-[var(--foot-made-ink)] sm:col-span-1 sm:col-start-2 sm:row-start-1 ${FOOT_TYPE}`}
       >
         MADE /W THE HELP OF ICED CAPPS
       </span>
