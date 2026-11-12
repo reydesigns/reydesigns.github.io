@@ -137,11 +137,12 @@ export function WorksGrid({ className = '', ...rest }) {
         </ul>
 
         {/* Far enough down that a last-row card's caption (shown on hover,
-            hanging below the card) never meets the heading. */}
+            hanging below the card) never meets the heading. The heading is in
+            the pixel face (Pixelta), as the page titles are. */}
         <section aria-labelledby="current-vibes" className="mt-[max(calc(var(--card-blurb-room)+1.5rem),clamp(3.5rem,6vw,6.5rem))]">
           <h3
             id="current-vibes"
-            className="mb-[clamp(1rem,1.5vw,1.5rem)] text-[length:clamp(1.25rem,1.7vw,1.875rem)] font-medium leading-none tracking-[-0.01em] text-[var(--color-ink)]"
+            className="font-display mb-[clamp(1rem,1.5vw,1.5rem)] text-[length:clamp(1.25rem,1.7vw,1.875rem)] font-normal leading-none text-[var(--color-ink)]"
           >
             current vibes
           </h3>
