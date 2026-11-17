@@ -25,6 +25,14 @@ export const STRAWBERRY_CAT = {
   label: 'A strawberry cat drawing, extruded into 3D',
 }
 
+/**
+ * Where the landing page's strawberry cat wears its block calendar (MM YYYY,
+ * lib/catCalendar.js): the centre of the window and the size of one block, in
+ * the drawing's pixels (color.png, 806 x 896). It sits in the hood under the
+ * chin, the widest stretch of the cat's front that leaves the face clear.
+ */
+export const CAT_CALENDAR = { x: 319, y: 691, cube: 33 }
+
 export const SELF_PORTRAIT = {
   textures: { color: faceColor, back: faceBack, height: faceHeight },
   meta: { w: 795, h: 818, maxH: 102.22304978644382 },

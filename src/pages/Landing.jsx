@@ -7,7 +7,7 @@ import { NavDock } from '@/components/NavDock'
 import { WorksGrid } from '@/components/WorksGrid'
 import { Drawing3DLazy } from '@/components/Drawing3DLazy'
 import { SpeechBubble, useSpeech } from '@/components/SpeechBubble'
-import { STRAWBERRY_CAT, SELF_PORTRAIT } from '@/data/drawings'
+import { STRAWBERRY_CAT, SELF_PORTRAIT, CAT_CALENDAR } from '@/data/drawings'
 import { useMediaQuery, WIDE, SM, FINE } from '@/lib/useMediaQuery'
 import { useDocumentMeta } from '@/lib/useDocumentMeta'
 import { useReducedMotion } from '@/lib/useReducedMotion'
@@ -146,6 +146,7 @@ export function Landing() {
                 <div className="hero-drawing hero-drawing--cat pointer-events-none absolute right-[calc(100%_-_6vw)] bottom-[-95%] z-[2]">
                   <Drawing3DLazy
                     {...STRAWBERRY_CAT}
+                    calendar={CAT_CALENDAR}
                     eager
                     onHoverChange={cat.onHoverChange}
                     onTap={cat.onTap}

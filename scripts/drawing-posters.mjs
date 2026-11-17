@@ -12,8 +12,9 @@
  * hidden and the page made transparent, so the still keeps its alpha.
  *
  * Re-run it whenever the drawings' look changes (src/data/style_config.json,
- * the textures, the lights): the live canvas fades in over its still, and the
- * two must match. Needs the dev server on :5173 (or BASE_URL). Uses the GPU.
+ * the textures, the lights, the cat's calendar): the live canvas fades in over
+ * its still, and the two must match. Needs the dev server on :5173 (or
+ * BASE_URL), whose window.__catCalendar takes the calendar off. Uses the GPU.
  */
 import { writeFile } from 'node:fs/promises'
 import puppeteer from 'puppeteer-core'
@@ -42,6 +43,11 @@ await page.goto(`${BASE}/`, { waitUntil: 'networkidle2' })
 await page
   .waitForFunction(() => document.querySelectorAll('.hero-drawing [data-live="true"]').length === 2, { timeout: 20000 })
   .catch(() => new Promise((r) => setTimeout(r, 4000)))
+// The cat's block calendar is left off the still: the still is on screen for
+// a moment on every visit, in any month (and for good where WebGL never
+// starts), so it must never show a date, and six blank blocks read as teeth.
+// The calendar fades in with the live canvas.
+await page.evaluate(() => window.__catCalendar?.hide(true))
 // Two more frames, so the spring has nothing left to settle.
 await new Promise((r) => setTimeout(r, 500))
 await page.addStyleTag({

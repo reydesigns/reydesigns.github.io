@@ -4,6 +4,8 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { toyMaterial } from '@/lib/toyStyle'
 import { DEFAULT_DEPTH, DEFAULT_SEGMENTS, prepareDrawing, releaseDrawing } from '@/lib/drawingPrep'
+import { createCatCalendar, surfaceOf } from '@/lib/catCalendar'
+import { watchCalendar } from '@/lib/calendarClock'
 import style from '@/data/style_config.json'
 
 /**
@@ -23,6 +25,9 @@ import style from '@/data/style_config.json'
  *  - draggable, and springs back into its resting pose the moment it is let go
  *  - reports when the pointer is over the drawing itself (`onHoverChange`) and
  *    when it is tapped on a touch screen (`onTap`), for the speech bubbles
+ *  - with `calendar` (where it goes, in the drawing's pixels), wears a block
+ *    calendar showing the visitor's MM YYYY (lib/catCalendar.js), its digits
+ *    flipping over when the month or year turns while the page is open
  *
  * The mesh is built by displacing a plane with a 16-bit height map packed into
  * the red and green channels of height.png. That, and the gloss maps, are
@@ -70,6 +75,7 @@ export function Drawing3D({
   onHoverChange,
   onTap,
   onReady,
+  calendar = null,
 }) {
   const mountRef = useRef(null)
   const reduced = useReducedMotion()
@@ -85,6 +91,8 @@ export function Drawing3D({
     if (!mount) return undefined
 
     let renderer, scene, camera, disposed = false
+    // The block calendar, when there is one (see show()).
+    let cal = null
     const cleanupFns = []
     // Every geometry, material and texture made here, for the cleanup.
     const owned = []
@@ -221,6 +229,19 @@ export function Drawing3D({
           )
           charm.add(new THREE.Mesh(shell(mesh.front), frontMat), new THREE.Mesh(shell(mesh.back), backMat))
 
+          // The block calendar, on the same surface and in the same finish.
+          if (calendar) {
+            cal = createCatCalendar({
+              place: calendar,
+              surface: surfaceOf(mesh.front.position, meta),
+              map: { data: tex.maps.map, w: tex.w, h: tex.h },
+              reduced,
+              maxAniso,
+            })
+            owned.push(cal)
+            charm.add(cal.group)
+          }
+
           // Compiling the glossy material's shaders took ~200 ms of frozen
           // page when it happened inside the first render. compileAsync hands
           // it to the GPU process (KHR_parallel_shader_compile) and resolves
@@ -355,6 +376,21 @@ export function Drawing3D({
        */
       const show = (charm) => {
         scene.add(charm)
+        // The calendar shows today's month at once, then flips when it turns.
+        if (cal) {
+          const c = cal
+          const stop = watchCalendar((digits, previous) => {
+            if (previous) c.change(digits, performance.now())
+            else c.show(digits)
+          })
+          cleanupFns.push(stop)
+          if (import.meta.env.DEV) {
+            window.__catCalendar = { digits: c.digits, busy: c.busy, moving: c.moving, hide: c.hide }
+            cleanupFns.push(() => {
+              if (window.__catCalendar?.digits === c.digits) delete window.__catCalendar
+            })
+          }
+        }
         // Timer replaces the deprecated Clock (r183). It isn't connected to
         // the document, so like the Clock it keeps counting while the tab is
         // hidden. Made here so the sway starts from zero on the first frame.
@@ -386,6 +422,7 @@ export function Drawing3D({
           charm.rotation.y += velY
           charm.rotation.x += velX
           if (!reduced) charm.position.y = Math.sin(t * 1.2) * 0.03
+          cal?.update(time)
           renderer.render(scene, camera)
         }
         frame(performance.now())
@@ -419,7 +456,7 @@ export function Drawing3D({
       }
       owned.forEach((x) => x.dispose())
     }
-  }, [textures, meta, depth, reduced, maxSegments])
+  }, [textures, meta, depth, reduced, maxSegments, calendar])
 
   return (
     <div
