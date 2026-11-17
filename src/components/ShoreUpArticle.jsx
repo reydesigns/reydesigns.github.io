@@ -4,7 +4,8 @@ import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 import { useSaveData } from '@/lib/useSaveData'
 import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
-import globeVideo from '@assets/shore-up/video/globe-720p.webm'
+import pitchVideo from '@assets/shore-up/video/pitch-720p.webm'
+import pitchPoster from '@assets/shore-up/video/pitch-poster.webp'
 import demoVideo from '@assets/shore-up/video/demo-720p.webm'
 import demoPoster from '@assets/shore-up/video/demo-poster.webp'
 import goal3 from '@assets/shore-up/images/sdg/goal-03.jpg'
@@ -16,9 +17,12 @@ import goal14 from '@assets/shore-up/images/sdg/goal-14.jpg'
    Shore-Up: a one-day hackathon web app for cleaning up local beaches
    together (https://shore-up-danielchahine0-stripe.vercel.app).
 
-   The two videos are recordings of the live app (1280x720 VP9 WebM): the
-   globe turning, which is also the Works card, and a demo searching
-   Woodbine Beach in Toronto. The four goal tiles are the UN's official SDG
+   The hero is a short, silent cut of the pitch, filmed from the audience on
+   the day: the title and the ocean-trash statistic, the app's map of a
+   beach, and the globe turning, on the big screen (1280x720 VP9 WebM, made
+   by scripts/make-shore-up-pitch.mjs from the phone's recording). The demo
+   further down is a recording of the live app searching Woodbine Beach in
+   Toronto; the Works card is another, of the globe turning. The four goal tiles are the UN's official SDG
    icons (sdgs.un.org, used unaltered, as the UN's guidelines allow for
    information), laid out after Assets/shore-up/shoreup assets/UN goals shore
    up.png with the targets the app answers to in circles on their corners.
@@ -86,7 +90,12 @@ function DemoVideo({ src, poster, label }) {
 export function ShoreUpArticle({ next }) {
   return (
     <article className={`${ARTICLE} su-article`}>
-      <CaseHero src={globeVideo} aspect="16 / 9" label="The Shore-Up globe, turning, with beach clean-ups pinned around the world" />
+      <CaseHero
+        src={pitchVideo}
+        poster={pitchPoster}
+        aspect="16 / 9"
+        label="Pitching Shore-Up at the hackathon, seen from the audience: the title slide, a statistic on ocean trash, the app's map of a beach, and the globe turning on the big screen"
+      />
 
       <ClientLine logo={shoreUpLogo}>Hackathon project</ClientLine>
 

@@ -72,8 +72,11 @@ export function Section({ id, children, className = '' }) {
  *  downloading. Data saver is about bytes, not motion, so there the native
  *  controls let the visitor choose to spend them; reduced motion stays still.
  *  The hero sits at the top of the page, so there is no "near view" to wait
- *  for — when it plays, it plays from the first paint. */
-export function CaseHero({ src, label, aspect }) {
+ *  for — when it plays, it plays from the first paint.
+ *
+ *  `poster` is for a hero that is not the case study's card video (Shore-Up's
+ *  pitch); otherwise the card's poster is looked up from the video. */
+export function CaseHero({ src, label, aspect, poster }) {
   const videoRef = useRef(null)
   const reduced = useReducedMotion()
   const saveData = useSaveData()
@@ -104,7 +107,7 @@ export function CaseHero({ src, label, aspect }) {
       <video
         ref={videoRef}
         src={src}
-        poster={posterForVideo(src)}
+        poster={poster ?? posterForVideo(src)}
         autoPlay={!still}
         loop
         controls={tapToPlay}
