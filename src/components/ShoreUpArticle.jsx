@@ -17,15 +17,16 @@ import goal14 from '@assets/shore-up/images/sdg/goal-14.jpg'
    Shore-Up: a one-day hackathon web app for cleaning up local beaches
    together (https://shore-up-danielchahine0-stripe.vercel.app).
 
-   The hero is a short, silent cut of the pitch, filmed from the audience on
-   the day: the title and the ocean-trash statistic, the app's map of a
-   beach, and the globe turning, on the big screen (1280x720 VP9 WebM, made
-   by scripts/make-shore-up-pitch.mjs from the phone's recording). The demo
+   The hero is a six-second, silent cut of the pitch, filmed from the
+   audience on the day: the title, the ocean-trash statistic and the app's
+   map of a beach, on the big screen (1280x720 VP9 WebM, made by
+   scripts/make-shore-up-pitch.mjs from the phone's recording). The demo
    further down is a recording of the live app searching Woodbine Beach in
-   Toronto; the Works card is another, of the globe turning. The four goal tiles are the UN's official SDG
-   icons (sdgs.un.org, used unaltered, as the UN's guidelines allow for
-   information), laid out after Assets/shore-up/shoreup assets/UN goals shore
-   up.png with the targets the app answers to in circles on their corners.
+   Toronto; the Works card is another, of the globe turning. The four goal
+   tiles are the UN's official SDG icons (sdgs.un.org, used unaltered, as
+   the UN's guidelines allow for information), laid out after
+   Assets/shore-up/shoreup assets/UN goals shore up.png with the targets the
+   app answers to in circles on their corners.
 --------------------------------------------------------------------------- */
 
 const OCEAN_STATS = 'https://www.condorferries.co.uk/marine-ocean-pollution-statistics-facts'
@@ -94,7 +95,7 @@ export function ShoreUpArticle({ next }) {
         src={pitchVideo}
         poster={pitchPoster}
         aspect="16 / 9"
-        label="Pitching Shore-Up at the hackathon, seen from the audience: the title slide, a statistic on ocean trash, the app's map of a beach, and the globe turning on the big screen"
+        label="Pitching Shore-Up at the hackathon, seen from the audience: the title slide, a statistic on ocean trash, and the app's map of a beach on the big screen"
       />
 
       <ClientLine logo={shoreUpLogo}>Hackathon project</ClientLine>

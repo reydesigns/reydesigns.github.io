@@ -2,11 +2,11 @@
 /**
  * Cuts the Shore-Up case study's hero clip (ShoreUpArticle, at the top) from
  * the phone recording of the pitch, Assets/shore-up/video/IMG_7546.MOV (six
- * minutes, 740 MB, kept out of git). Three moments from the big screen: the
- * Shore Up title giving way to the ocean-trash statistic, the app's map of
- * a beach with its clean-ups, and the globe turning. Each is cropped in on
- * the screen and the stage, the shots dissolve into one another, and the
- * last dissolves back into the first, so the loop has no seam.
+ * minutes, 740 MB, kept out of git). Six seconds of the big screen, kept
+ * short for the file's sake: the Shore Up title giving way to the
+ * ocean-trash statistic, then the app's map of a beach with its clean-ups.
+ * Each shot is cropped in on the screen and the stage, and they dissolve
+ * into one another both ways, so the loop has no seam.
  *
  * Silent: the clip has no audio track at all. The phone's metadata (its
  * location among it) is left behind.
@@ -33,9 +33,8 @@ const CH = 756
 /* [start s, length s, crop left, crop top]. The phone moves between shots,
    so each has its own crop, centred on the screen. */
 const SHOTS = [
-  [8.0, 4.6, 430, 110], // the title, then the statistic
-  [156.5, 5.0, 358, 230], // the map of a beach and its clean-ups
-  [175.0, 6.5, 358, 220], // the globe turning
+  [8.9, 3.6, 430, 110], // the title; the statistic comes up at 10.5 s
+  [157.5, 3.2, 358, 230], // the map of a beach and its clean-ups
 ]
 
 const inputs = SHOTS.flatMap(([start, len]) => ['-ss', String(start), '-t', String(len), '-i', SOURCE])
@@ -53,8 +52,8 @@ const parts = [
 ]
 let label = 'head'
 let length = lens[0] - FADE
-const next = ['s1', 's2', 'tail']
-const nextLen = [lens[1], lens[2], FADE]
+const next = [...SHOTS.slice(1).map((_, i) => `s${i + 1}`), 'tail']
+const nextLen = [...lens.slice(1), FADE]
 next.forEach((into, i) => {
   const out = `x${i}`
   parts.push(`[${label}][${into}]xfade=transition=fade:duration=${FADE}:offset=${(length - FADE).toFixed(3)}[${out}]`)
