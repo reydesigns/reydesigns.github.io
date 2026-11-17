@@ -14,9 +14,6 @@ import heysoLogo from '@assets/brand/icons/clients/heyso.png'
 import tmuLogo from '@assets/brand/icons/clients/tmu-kpop.png'
 import liptonLogo from '@assets/brand/icons/clients/lipton.png'
 import shoreUpLogo from '@assets/brand/icons/clients/shore-up.png'
-import vibeBloom from '@assets/current-vibes/binary-bloom.webp'
-import vibeVinyl from '@assets/current-vibes/vinyl-player.webp'
-import vibeComics from '@assets/current-vibes/comic-collection.webp'
 
 /**
  * The Works grid and every case-study route are driven from this list.
@@ -134,20 +131,21 @@ export const WORKS_GRID = CASE_STUDIES
 
 /**
  * "current vibes": the row of three under the case studies
- * (ExpandingProjectCards). Each card is a square still that widens on hover
- * to show its title and labels, and opens the toy's own pop-up.
+ * (ExpandingProjectCards). Each card is a square picture that widens on
+ * hover to show its title and labels, and opens the toy's own pop-up.
  *
- * The stills are square crops of each toy's old Works card artwork (Binary
- * Bloom in bloom, the Vinyl Player's turntable, the comic rack), 924px, in
- * Assets/current-vibes/. Swap a file to change a picture.
+ * The pictures are the toys themselves, drawn live (WorksGrid hands each
+ * card its `Art`): Binary Bloom's spider lily, the Vinyl Player's turntable
+ * and the comic rack. While a card is open the flower blooms, the record
+ * spins and the comics hop.
  *
  * `labels` — DRAFT: the client to edit. Shown in capitals; written in
  * sentence case so screen readers say them as words.
  */
 export const CURRENT_VIBES = [
-  { ...BINARY_BLOOM, image: vibeBloom, labels: ['Interactive', 'Generative', 'Canvas'] },
-  { ...VINYL_PLAYER, image: vibeVinyl, labels: ['Interactive', 'Music', 'Song recs'] },
-  { ...COMIC_HOARDER, image: vibeComics, labels: ['Interactive', 'Collection', 'Ratings'] },
+  { ...BINARY_BLOOM, labels: ['Interactive', 'Generative', 'Canvas'] },
+  { ...VINYL_PLAYER, labels: ['Interactive', 'Music', 'Song recs'] },
+  { ...COMIC_HOARDER, labels: ['Interactive', 'Collection', 'Ratings'] },
 ]
 
 export const getCaseStudy = (slug) => CASE_STUDIES.find((c) => c.slug === slug)

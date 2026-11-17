@@ -61,6 +61,12 @@
   border-radius: var(--card-radius);
   background: var(--color-surface-sunken);
 }
+/* A live picture (Art) in place of the still: a box its layers fill. */
+.epc__art {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
 
 .epc__panel {
   display: block;

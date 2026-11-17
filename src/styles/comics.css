@@ -183,8 +183,8 @@ button.ch-comic:focus-visible {
 
 /* --- the card ------------------------------------------------------------
    The rack on its own, 92% of the card tall, on a plain wall of warm
-   green-grey (client). Hovering the card lifts the comics out of their
-   pockets, one after another. */
+   green-grey (client). While the card is open its comics hop in their
+   pockets (ComicThumb, by script). */
 .ch-card {
   container-type: size;
   display: grid;
@@ -193,17 +193,6 @@ button.ch-comic:focus-visible {
 }
 .ch-card .ch-rack {
   --ch-u: calc(92cqh / var(--ch-h));
-}
-.ch-card .ch-comic {
-  transition-delay: calc(var(--i) * 40ms);
-}
-@media (hover: hover) {
-  [data-card]:hover .ch-card .ch-comic {
-    translate: 0 calc(var(--ch-u) * -1.7);
-  }
-}
-[data-card]:has(:focus-visible) .ch-card .ch-comic {
-  translate: 0 calc(var(--ch-u) * -1.7);
 }
 /* A card too small for its tags to be read keeps the wire bare. */
 @container (max-height: 18rem) {

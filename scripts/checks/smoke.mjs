@@ -277,6 +277,22 @@ async function vinyl(page, tag, how) {
   if (!card) return
   await card.evaluate((b) => b.scrollIntoView({ block: 'center' }))
   await sleep(400)
+  if (how === 'click') {
+    // Hovering the card spins its record up; leaving runs it down to a stop.
+    const angle = () => page.$eval('.epc__item[data-slug="vinyl-player"] .vp-card-record', (r) => r.style.transform)
+    const rest = await angle()
+    await card.hover()
+    await sleep(700)
+    const a = await angle()
+    await sleep(300)
+    const b = await angle()
+    check(`${tag}: hovering the Vinyl Player card spins its record`, a !== rest && b !== a, `${rest} ${a} ${b}`)
+    await page.mouse.move(4, 4)
+    await sleep(2500)
+    const c = await angle()
+    await sleep(300)
+    check(`${tag}: leaving the card runs the record down to a stop`, (await angle()) === c, c)
+  }
   await (how === 'tap' ? card.tap() : card.click())
   const opened = await page.waitForFunction(() => document.querySelector('dialog.vp-pop')?.open, { timeout: 6000 }).then(() => true, () => false)
   await sleep(800)

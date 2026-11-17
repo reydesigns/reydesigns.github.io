@@ -8,10 +8,16 @@ import '@/styles/expanding-cards.css'
    the right with the card's title and a few labels. Used for "current vibes",
    the three toys under the case studies (WorksGrid).
 
-     items   [{ slug, title, image, labels: [...], onOpen(event) }]
+     items   [{ slug, title, image | Art, labels: [...], onOpen(event) }]
 
    onOpen gets the click event, whose currentTarget is the card's button, so
    the pop-up it opens can hand focus back to it.
+
+   A card's picture is a still (`image`) or a live one (`Art`, a component).
+   Art is told whether its card is open (`open`), and plays its hover
+   animation while it is: for the three toys, Binary Bloom's flower blooms,
+   the Vinyl Player's record spins, and the comics hop in their rack. It sits
+   inside the card's <button>, so it is built of spans, SVG and canvas.
 
    Which card is open is React state, not :hover, for two things :hover gets
    wrong. The gap between two cards belongs to neither, so with :hover a
@@ -131,7 +137,13 @@ export function ExpandingProjectCards({ items, className = '' }) {
                 onBlur={onBlur}
                 onClick={onClick}
               >
-                <img className="epc__img" src={item.image} alt="" loading="lazy" decoding="async" />
+                {item.Art ? (
+                  <span className="epc__img epc__art" aria-hidden="true">
+                    <item.Art open={active === i} />
+                  </span>
+                ) : (
+                  <img className="epc__img" src={item.image} alt="" loading="lazy" decoding="async" />
+                )}
                 <span className="epc__panel">
                   <span className="epc__text">
                     <span id={titleId} className="epc__title">

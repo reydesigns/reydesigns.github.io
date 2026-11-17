@@ -613,33 +613,20 @@ html.lenis body {
   height: 1.75rem;
   transform: translate(-50%, -50%);
 }
-/* The Works card's spinning record (VinylThumb): a box over the platter,
-   between the scene and the arm, turned by a CSS animation so the browser
-   rotates it on the compositor instead of repainting the card. 1.8s a turn
-   is 33 1/3 rpm. It pauses where it is while the card is off screen, and
-   never runs under reduced motion. */
+/* The "current vibes" card's spinning record (VinylThumb): a box over the
+   platter, between the scene and the arm. VinylThumb turns it by its
+   transform, so the browser rotates it on the compositor instead of
+   repainting the card. */
 .vp-card-record {
   position: absolute;
+  display: block;
   pointer-events: none;
+  will-change: transform;
 }
 .vp-card-record > svg {
   display: block;
   width: 100%;
   height: 100%;
-  animation: vp-spin 1.8s linear infinite paused;
-}
-.vp-card-record[data-spin] > svg {
-  animation-play-state: running;
-}
-@keyframes vp-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .vp-card-record > svg {
-    animation: none;
-  }
 }
 /* The equaliser behind a playing record (VinylPlayerModal Equaliser): a
    canvas with one pixel per cell, stretched over the frame with hard edges

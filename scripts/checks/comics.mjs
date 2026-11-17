@@ -5,7 +5,8 @@
  *   SHOTS=/some/dir node scripts/checks/comics.mjs   also saves screenshots
  *
  * Desktop: the card, My Comic Collection, is last in the current vibes row
- * under the case studies, one button by that name over a still of the rack.
+ * under the case studies, one button by that name over the rack, whose
+ * comics hop while the card is hovered and settle once it is left.
  * A click opens the pop-up: the rack on the left under
  * its "Comic Hoarder" sign (the window's title, no cats), one pocket per
  * comic in character order with the character on a black tag under each,
@@ -115,18 +116,28 @@ const browser = await launch({ gpu: true })
   await sleep(1200)
   const thumb = await page.evaluate((s) => {
     const card = document.querySelector(s)
-    const img = card.querySelector('img')
+    const covers = [...card.querySelectorAll('.ch-card .ch-comic__cover')]
     const button = card.querySelector('button')
     return {
-      loaded: !!img && img.complete && img.naturalWidth > 0,
-      decorative: img?.getAttribute('alt') === '',
+      covers: covers.length,
+      loaded: covers.every((i) => i.complete && i.naturalWidth > 0),
+      hidden: !!card.querySelector('.epc__art[aria-hidden="true"] .ch-rack'),
       buttons: card.querySelectorAll('button').length,
       name: document.getElementById(button?.getAttribute('aria-labelledby'))?.textContent,
     }
   }, CARD)
-  check('card shows its still of the rack', thumb.loaded && thumb.decorative, JSON.stringify(thumb))
+  check('card shows the rack, nine comics, as a picture', thumb.covers === 9 && thumb.loaded && thumb.hidden, JSON.stringify(thumb))
   check('the card is one button named My Comic Collection', thumb.buttons === 1 && thumb.name === 'My Comic Collection', JSON.stringify(thumb))
+  const hopping = (page) =>
+    page.evaluate((s) => [...document.querySelectorAll(`${s} .ch-card .ch-comic`)].filter((c) => c.getAnimations().some((a) => a.playState === 'running')).length, CARD)
+  check('the comics sit still at rest', (await hopping(page)) === 0)
+  await page.hover(CARD)
+  await sleep(1200)
+  check('hovering the card sets every comic hopping', (await hopping(page)) === 9)
   if (SHOTS) await (await page.$(CARD)).screenshot({ path: `${SHOTS}/comics-card.png` })
+  await page.mouse.move(4, 4)
+  await sleep(1600)
+  check('leaving the card lets each comic land and settle', (await hopping(page)) === 0)
 
   await page.click(`${CARD} button`)
   await sleep(800)

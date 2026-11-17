@@ -2,9 +2,9 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { WorkCard } from './WorkCard'
 import { ExpandingProjectCards } from './ExpandingProjectCards'
 import { useOpenCaseStudy } from './CaseStudyModal'
-import { VinylPlayerModal, prepareVinylAudio } from './VinylPlayerModal'
-import { FlowerModal } from './FlowerGenerator'
-import { ComicModal } from './ComicHoarder'
+import { VinylPlayerModal, VinylThumb, prepareVinylAudio } from './VinylPlayerModal'
+import { FlowerModal, FlowerThumb } from './FlowerGenerator'
+import { ComicModal, ComicThumb } from './ComicHoarder'
 import { WORKS_GRID, CURRENT_VIBES } from '@/data/caseStudies'
 import { loadCaseStudy } from '@/lib/caseStudyChunk'
 
@@ -13,7 +13,9 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
    (WORKS_GRID: the four case studies in two rows.) Under it, "current
    vibes": the three toys, Binary Bloom, the Vinyl Player and the Comic
    Hoarder, in a row of square cards that widen on hover
-   (ExpandingProjectCards), each opening its own pop-up.
+   (ExpandingProjectCards), each opening its own pop-up. Their pictures are
+   the toys themselves, live (FlowerThumb, VinylThumb, ComicThumb), so that
+   while a card is open its flower blooms, its record spins or its comics hop.
 
    It is rendered twice: as the second screen of the landing page (under the
    hero, on every width), and as the whole of the `/works` route. Both have to
@@ -48,6 +50,9 @@ import { loadCaseStudy } from '@/lib/caseStudyChunk'
 const SECTION =
   'flex flex-1 items-center justify-center px-[var(--page-gutter)] lg:px-[1.5rem] ' +
   'pt-[clamp(1rem,2.5vh,2rem)] pb-[max(2rem,calc(var(--dock-clear,7rem)-var(--footer-h,0px)))]'
+
+/** Each toy's live picture for its current vibes card. */
+const ARTS = { 'binary-bloom': FlowerThumb, 'vinyl-player': VinylThumb, 'comic-hoarder': ComicThumb }
 
 export function WorksGrid({ className = '', ...rest }) {
   const openCaseStudy = useOpenCaseStudy()
@@ -84,7 +89,7 @@ export function WorksGrid({ className = '', ...rest }) {
 
   const vibes = useMemo(() => {
     const opens = { 'binary-bloom': openFlowers, 'vinyl-player': openVinyl, 'comic-hoarder': openComics }
-    return CURRENT_VIBES.map((item) => ({ ...item, onOpen: opens[item.slug] }))
+    return CURRENT_VIBES.map((item) => ({ ...item, Art: ARTS[item.slug], onOpen: opens[item.slug] }))
   }, [openFlowers, openVinyl, openComics])
 
   const onClick = useCallback(

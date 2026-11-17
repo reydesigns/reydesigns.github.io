@@ -5,7 +5,8 @@
  *   SHOTS=/some/dir node scripts/checks/flowers.mjs   also saves screenshots
  *
  * Desktop: the card leads the current vibes row under the case studies,
- * shows its still and opens on hover; a click opens the pop-up, titled Binary Bloom under a title bar
+ * draws its flower in bud, and opens on hover, where the flower blooms and
+ * then closes again once the pointer leaves; a click opens the pop-up, titled Binary Bloom under a title bar
  * with red and green dots, the flower on a dark square with its botanical
  * name in the top corner, and a plain list of plants (the chosen one
  * burgundy); hovering one flower blooms that flower alone, and it closes
@@ -107,13 +108,23 @@ const browser = await launch({ gpu: true })
 
   await page.evaluate((s) => document.querySelector(s)?.scrollIntoView({ block: 'center' }), CARD)
   await sleep(1200)
-  const still = await page.$eval(`${CARD} img`, (i) => i.complete && i.naturalWidth > 0)
-  check('card shows its still', still)
+  const thumb = `${CARD} .epc__art canvas`
+  const cardBud = await ink(page, thumb)
+  check('card draws its flower, in bud', cardBud > 0, cardBud)
   await page.hover(CARD)
   await sleep(800)
   check('hovering the card opens it', await page.$eval(CARD, (li) => li.hasAttribute('data-open')))
+  await sleep(1800)
+  const cardBloom = await ink(page, thumb)
+  check('hovering the card blooms its flower', cardBloom > cardBud * 1.5, `${cardBud} -> ${cardBloom}`)
   const card = await page.$(CARD)
   if (SHOTS) await card.screenshot({ path: `${SHOTS}/flowers-card.png` })
+  await page.mouse.move(4, 4)
+  await sleep(3000)
+  const cardShut = await ink(page, thumb)
+  check('leaving the card closes it back into bud', cardShut < cardBloom * 0.7, `${cardBloom} -> ${cardShut}`)
+  await page.hover(CARD)
+  await sleep(300)
 
   await page.click(`${CARD} button`)
   await sleep(700)

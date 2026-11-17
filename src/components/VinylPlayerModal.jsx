@@ -33,7 +33,6 @@ import { SizeGlyph } from '@/components/CaseStudyModal'
 import { SongRecs } from '@/components/SongRecs'
 import { RECS_ON } from '@/lib/songRecs'
 import { useMediaQuery, SM, HOVER } from '@/lib/useMediaQuery'
-import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 
 /* ---------------------------------------------------------------------------
@@ -1098,10 +1097,12 @@ const register = (parts, key, i) =>
     : undefined
 
 /** The SVG itself, shared by the card's still and the live pop-up. */
-function Diorama({ layout, coverPx, still, layer, live, parts, order, tabStop, on, svgEvents, playing, onStop, describedBy, className }) {
+function Diorama({ layout, view, bare = false, coverPx, still, layer, live, parts, order, tabStop, on, svgEvents, playing, onStop, describedBy, className }) {
   // The card's top layer (see VinylThumb) is only what lies over its
-  // spinning record: no table, no stack.
+  // spinning record: no table, no stack. `view` shows only part of the scene
+  // (scene units), and `bare` leaves the stack out, both for the card.
   const onlyTop = layer === 'top'
+  const vb = view ?? { x: 0, y: 0, w: layout.w, h: layout.h }
   const clipId = useId()
   const coverSrc = useCallback((v) => coverAt(v.coverUrl, coverPx), [coverPx])
   const P = layout.player
@@ -1114,7 +1115,7 @@ function Diorama({ layout, coverPx, still, layer, live, parts, order, tabStop, o
             }
           : undefined
       }
-      viewBox={`0 0 ${layout.w} ${layout.h}`}
+      viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
       preserveAspectRatio={live ? 'xMidYMid meet' : 'xMidYMid slice'}
       className={className}
       role={live ? 'group' : undefined}
@@ -1154,7 +1155,7 @@ function Diorama({ layout, coverPx, still, layer, live, parts, order, tabStop, o
           layer={layer}
         />
       </g>
-      {!onlyTop && (
+      {!onlyTop && !bare && (
         <VinylStack
           vinyls={vinyls}
           slots={layout.slots}
@@ -1217,38 +1218,79 @@ function LoneRecord({ v, coverPx }) {
   )
 }
 
+/* The "current vibes" card is a square: the card scene's full height, across
+   the turntable (its plinth and the bevel down its right side centred). */
+const THUMB_VIEW = { x: 645, y: 0, w: 900, h: 900 }
+// 33 1/3 rpm, in degrees a second.
+const RPM_33 = 200
+// How quickly the platter gets up to speed, and runs down again (seconds:
+// the time constant of an ease towards the speed it is heading for).
+const SPIN_UP_S = 0.25
+const SPIN_DOWN_S = 0.35
+
 /**
- * The Works card's thumbnail: the scene mid-song, nothing interactive, with
- * the record on the platter turning while the card is on screen (the way the
- * other cards' walkthroughs play only in view), and holding still under
- * reduced motion.
+ * The "current vibes" card's picture (ExpandingProjectCards): the scene
+ * mid-song, nothing interactive. While the card is open (`open`: hovered,
+ * focused, or tapped once on a touch tablet) the record on the platter spins
+ * up to 33 1/3, and once it shuts it runs down and stops where it is, as a
+ * platter does. Never under reduced motion.
  *
  * The spin is three layers, not one animated SVG: the scene without that
- * record, the record alone in an HTML box over its place on the platter, and
- * what lies over it (sheen, spindle, arm) on top. The box turns with a CSS
- * animation, which the browser runs on its compositor, so the card never has
- * to be repainted while it spins (an animated SVG repaints every frame, and
- * slowed the other cards' hover fades); an HTML box also turns about its own
- * centre in every browser. The card is 16:9 like its scene, so the box's
- * percentages line up with the platter exactly.
+ * record, the record alone in a box over its place on the platter, and what
+ * lies over it (sheen, spindle, arm) on top. Only the box turns, by its
+ * transform, so the browser rotates it on the compositor and the scene is
+ * never repainted while it spins (an animated SVG repaints every frame); a
+ * box also turns about its own centre in every browser.
+ *
+ * Spans and SVG only, as it sits inside the card's <button>.
  */
-export function VinylThumb() {
+export function VinylThumb({ open = false }) {
   const reduced = useReducedMotion()
-  const [viewRef, inView] = useInView({ threshold: 0 })
+  const discRef = useRef(null)
+  const spin = useRef({ angle: 0, speed: 0, want: 0, last: 0, raf: 0 })
   const L = LAYOUTS.card
   const P = L.player
+  const V = THUMB_VIEW
   const r = RECORD_R * P.s
   const cx = P.x + PLATTER.x * P.s
   const cy = P.y + PLATTER.y * P.s
-  const box = { left: pct(cx - r, L.w), top: pct(cy - r, L.h), width: pct(2 * r, L.w), height: pct(2 * r, L.h) }
+  const box = { left: pct(cx - r - V.x, V.w), top: pct(cy - r - V.y, V.h), width: pct(2 * r, V.w), height: pct(2 * r, V.h) }
+
+  useEffect(() => {
+    const s = spin.current
+    s.want = open && !reduced ? RPM_33 : 0
+    if (reduced) s.speed = 0
+    if (s.raf || (!s.want && !s.speed)) return
+    const tick = (now) => {
+      const dt = s.last ? Math.min(0.1, (now - s.last) / 1000) : 0
+      s.last = now
+      const tau = s.want > s.speed ? SPIN_UP_S : SPIN_DOWN_S
+      s.speed += (s.want - s.speed) * (1 - Math.exp(-dt / tau))
+      if (!s.want && s.speed < 3) s.speed = 0
+      s.angle = (s.angle + s.speed * dt) % 360
+      if (discRef.current) discRef.current.style.transform = `rotate(${r2(s.angle)}deg)`
+      s.raf = s.want || s.speed ? requestAnimationFrame(tick) : 0
+      if (!s.raf) s.last = 0
+    }
+    s.raf = requestAnimationFrame(tick)
+  }, [open, reduced])
+  useEffect(() => {
+    const s = spin.current
+    return () => {
+      cancelAnimationFrame(s.raf)
+      s.raf = 0
+      s.last = 0
+    }
+  }, [])
+
   return (
-    <div ref={viewRef} className="absolute inset-0">
-      <Diorama layout={L} coverPx={200} still={STILL} layer="base" className="absolute inset-0 block h-full w-full" />
-      <div className="vp-card-record" data-spin={(inView && !reduced) || undefined} style={box}>
+    <span className="absolute inset-0 block">
+      <Diorama layout={L} view={V} bare coverPx={200} still={STILL} layer="base" className="absolute inset-0 block h-full w-full" />
+      <span ref={discRef} className="vp-card-record" style={box}>
         <LoneRecord v={vinyls[STILL.platter]} coverPx={200} />
-      </div>
-      <Diorama layout={L} coverPx={200} still={STILL} layer="top" className="absolute inset-0 block h-full w-full" />
-    </div>
+      </span>
+      <Diorama layout={L} view={V} bare coverPx={200} still={STILL} layer="top" className="absolute inset-0 block h-full w-full" />
+    </span>
   )
 }
 

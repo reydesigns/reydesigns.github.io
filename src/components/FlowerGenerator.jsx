@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { useLocation } from 'react-router-dom'
 import { createFlowerView } from '@/lib/flowers/render'
 import { SPECIES, speciesByKey } from '@/lib/flowers/species'
 import { holdScroll } from '@/lib/scrollLock'
 import { setCursorHost } from '@/components/CustomCursor'
 import { SizeGlyph } from '@/components/CaseStudyModal'
 import { useMediaQuery, HOVER, SM } from '@/lib/useMediaQuery'
-import { useInView } from '@/lib/useInView'
 import { useReducedMotion } from '@/lib/useReducedMotion'
 
 /* ---------------------------------------------------------------------------
@@ -109,59 +107,54 @@ function useFlowerView(canvasRef, { species, swatch, rest = 0, reduced, running,
 
 /* --- the card ------------------------------------------------------------ */
 
-const CARD_REST = 0.45 // the spider lily's florets half open, until the card is hovered
+const CARD_REST = 0.3 // the spider lily's florets in bud, until the card opens
+// How long the drawing keeps running once the card shuts: long enough for
+// the five florets to close one after another (render.js: STAGGER_S apart,
+// CLOSE_S each), and a little over.
+const CARD_SETTLE_MS = 2200
 
 /**
- * The Works card's thumbnail: a spider lily, its florets half open, shedding
- * pollen while at least half the card is on screen (the rule the other
- * cards' videos play by; otherwise it holds still on its last frame).
- * Hovering or focusing the card opens the florets one after another, a taste
- * of what the pop-up does. It stops while anything covers the grid: a pop-up
- * on this page (`paused`) or a case study (as WorkCard's videos do).
+ * The "current vibes" card's picture (ExpandingProjectCards): a spider lily
+ * on its dark square, its florets in bud. While the card is open
+ * (`open`: hovered, focused, or tapped once on a touch tablet) they bloom
+ * one after another, a taste of what the pop-up does, and close again once
+ * it shuts. The drawing only runs for that; the rest of the time it holds
+ * still on its last frame. Under reduced motion the bloom happens at once.
+ *
+ * Spans and a canvas only, as it sits inside the card's <button>.
  */
-export function FlowerThumb({ paused = false }) {
+export function FlowerThumb({ open = false }) {
   const reduced = useReducedMotion()
-  const covered = Boolean(useLocation().state?.caseStudy)
-  const [boxRef, inView] = useInView({ threshold: 0.5 })
   const canvasRef = useRef(null)
-  const [hot, setHot] = useState(false)
 
-  // The card (the <article> round this thumbnail) is what the pointer and
-  // focus land on; the thumbnail itself sits under its button.
-  useEffect(() => {
-    const card = canvasRef.current?.closest('[data-card]')
-    if (!card) return undefined
-    const on = () => setHot(true)
-    const off = () => setHot(false)
-    card.addEventListener('pointerenter', on)
-    card.addEventListener('pointerleave', off)
-    card.addEventListener('focusin', on)
-    card.addEventListener('focusout', off)
-    return () => {
-      card.removeEventListener('pointerenter', on)
-      card.removeEventListener('pointerleave', off)
-      card.removeEventListener('focusin', on)
-      card.removeEventListener('focusout', off)
-    }
-  }, [])
-
+  // The loop is started and stopped here rather than through `running`: it
+  // has to be going before the florets are asked to open, or they would all
+  // open at once instead of in turn.
   const viewRef = useFlowerView(canvasRef, {
     species: DEFAULT_SPECIES,
     swatch: DEFAULT_SWATCH,
     rest: CARD_REST,
     reduced,
-    running: inView && !paused && !covered,
+    running: false,
     framing: 0.84,
     sway: 0.6,
   })
-  useEffect(() => viewRef.current?.setAll(hot), [hot, viewRef])
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return undefined
+    if (open && !reduced) view.start()
+    view.setAll(open)
+    if (open || reduced) return undefined
+    const t = setTimeout(() => view.stop(), CARD_SETTLE_MS)
+    return () => clearTimeout(t)
+  }, [open, reduced, viewRef])
 
   return (
-    <div ref={boxRef} className="fl-card absolute inset-0">
-      <div className="fl-square">
-        <canvas ref={canvasRef} className="fl-canvas" aria-hidden="true" />
-      </div>
-    </div>
+    <span className="fl-card absolute inset-0">
+      <span className="fl-square">
+        <canvas ref={canvasRef} className="fl-canvas" />
+      </span>
+    </span>
   )
 }
 

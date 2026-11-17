@@ -229,8 +229,10 @@ function Rack({ decorative = false, shown, slotRefs, handlers }) {
   const count = decorative ? CARD_TIERS : TIERS
   const size = rackSize(count, !decorative)
   const tiers = Array.from({ length: count }, (_, t) => COMICS.slice(t * COLUMNS, t * COLUMNS + COLUMNS))
+  // On the card the rack sits inside a <button>, so it is built of spans.
+  const Box = decorative ? 'span' : 'div'
   return (
-    <div
+    <Box
       className="ch-rack"
       style={{
         '--ch-w': RACK_W,
@@ -255,7 +257,7 @@ function Rack({ decorative = false, shown, slotRefs, handlers }) {
         </div>
       )}
       {tiers.map((row, t) => (
-        <div key={t} className="ch-tier" style={{ '--t': t, '--top': size.top + t * G.step }}>
+        <Box key={t} className="ch-tier" style={{ '--t': t, '--top': size.top + t * G.step }}>
           {row.map((comic, c) => (
             <RackComic
               key={comic.id}
@@ -273,9 +275,9 @@ function Rack({ decorative = false, shown, slotRefs, handlers }) {
               {comic.who}
             </span>
           ))}
-        </div>
+        </Box>
       ))}
-    </div>
+    </Box>
   )
 }
 
@@ -318,12 +320,68 @@ function Stand({ comic, coverRef, standRef, hint }) {
 
 /* --- the card ------------------------------------------------------------ */
 
-/** The Works card's thumbnail: the rack, on a pale halftone wall. */
-export function ComicThumb() {
+/* A hop: up out of the pocket and back down, smooth both ways, then a beat
+   at rest before the next. The lift is a share of the comic's own height
+   (about the 1.7 rack units the window lifts a comic it is reached for). */
+const HOP_KEYS = [
+  { transform: 'translateY(0)', easing: 'cubic-bezier(0.33, 0, 0.3, 1)' },
+  { transform: 'translateY(-12%)', offset: 0.4, easing: 'cubic-bezier(0.5, 0, 0.55, 1)' },
+  { transform: 'translateY(0)', offset: 0.8 },
+  { transform: 'translateY(0)' },
+]
+const HOP_MS = 1100
+// Comics on the same diagonal hop together, so a ripple runs from the top
+// left to the bottom right.
+const HOP_STAGGER_MS = 110
+
+/**
+ * The "current vibes" card's picture (ExpandingProjectCards): the rack on
+ * its own, on a plain wall. While the card is open (`open`: hovered,
+ * focused, or tapped once on a touch tablet) the comics hop up and down in
+ * their pockets, one diagonal after another; once it shuts, each finishes
+ * the hop it is in and settles, rather than dropping back. Never under
+ * reduced motion.
+ *
+ * Spans only, as it sits inside the card's <button>.
+ */
+export function ComicThumb({ open = false }) {
+  const reduced = useReducedMotion()
+  const boxRef = useRef(null)
+  const hops = useRef(new Map())
+
+  useEffect(() => {
+    const comics = boxRef.current?.querySelectorAll('.ch-comic') ?? []
+    comics.forEach((el) => {
+      const i = Number(el.style.getPropertyValue('--i'))
+      const hop = hops.current.get(el)
+      const going = hop && hop.playState === 'running'
+      if (open && !reduced) {
+        if (going) hop.effect.updateTiming({ iterations: Infinity })
+        else {
+          const delay = ((i % COLUMNS) + Math.floor(i / COLUMNS)) * HOP_STAGGER_MS
+          hops.current.set(el, el.animate(HOP_KEYS, { duration: HOP_MS, delay, iterations: Infinity }))
+        }
+      } else if (going) {
+        // The hop in the air comes down; one still waiting to start never does.
+        const { currentIteration } = hop.effect.getComputedTiming()
+        if (reduced || currentIteration == null) hop.cancel()
+        else hop.effect.updateTiming({ iterations: currentIteration + 1 })
+      }
+    })
+  }, [open, reduced])
+
+  useEffect(() => {
+    const map = hops.current
+    return () => {
+      map.forEach((hop) => hop.cancel())
+      map.clear()
+    }
+  }, [])
+
   return (
-    <div className="ch-card absolute inset-0">
+    <span ref={boxRef} className="ch-card absolute inset-0">
       <Rack decorative />
-    </div>
+    </span>
   )
 }
 
